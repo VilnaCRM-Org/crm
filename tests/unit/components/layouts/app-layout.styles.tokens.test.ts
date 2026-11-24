@@ -11,6 +11,8 @@ const loadStyles = (): Promise<AppLayoutStyles> =>
 
 const FROM_SIDEBAR = '@media (min-width:768px)';
 
+const CLEARANCE = 'calc(64px + var(--app-top-overhang, 0px))';
+
 describe('app layout styles', () => {
   it('pins the sidebar breakpoint to the toolkit md value', async () => {
     const styles = await loadStyles();
@@ -62,14 +64,20 @@ describe('app layout styles', () => {
     expect(styles.frame.gridTemplateRows).toBe(`${styles.headerHeight} 1fr auto`);
   });
 
+  it('names the overhang property the bell notice sets on the root element', async () => {
+    const styles = await loadStyles();
+
+    expect(styles.overhangProperty).toBe('--app-top-overhang');
+  });
+
   it('places the navigation slot and shows its placeholder only from the breakpoint', async () => {
     const styles = await loadStyles();
 
     expect(styles.navSlot).toEqual({
       gridColumn: 1,
       gridRow: 2,
-      scrollMarginTop: '64px',
-      '& *': { scrollMarginTop: '64px' },
+      scrollMarginTop: CLEARANCE,
+      '& *': { scrollMarginTop: CLEARANCE },
     });
     expect(styles.navPlaceholder).toEqual({
       display: 'none',
@@ -104,8 +112,8 @@ describe('app layout styles', () => {
     const styles = await loadStyles();
 
     expect(styles.main).toEqual({
-      scrollMarginTop: '64px',
-      '& *': { scrollMarginTop: '64px' },
+      scrollMarginTop: CLEARANCE,
+      '& *': { scrollMarginTop: CLEARANCE },
       gridColumn: 1,
       gridRow: 2,
       minWidth: 0,
@@ -122,8 +130,8 @@ describe('app layout styles', () => {
     expect(styles.footerArea).toEqual({
       gridColumn: '1 / -1',
       gridRow: 3,
-      scrollMarginTop: '64px',
-      '& *': { scrollMarginTop: '64px' },
+      scrollMarginTop: CLEARANCE,
+      '& *': { scrollMarginTop: CLEARANCE },
     });
     expect(styles.footerSlot).toEqual({ minHeight: '4.125rem' });
   });

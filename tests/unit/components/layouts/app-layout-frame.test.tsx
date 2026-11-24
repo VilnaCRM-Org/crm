@@ -6,7 +6,7 @@ import { MemoryRouter, Outlet, Route, Routes } from 'react-router';
 import AppLayoutFrame from '@/components/layouts/app-layout-frame';
 import type { AppShellModuleLoader } from '@/components/types/layouts/app-layout-frame';
 import type { UIAppShellProps } from '@/components/types/ui-app-shell';
-import type { ShellFailureHandler, UserMenuSlot } from '@/routes/types/shell-slot';
+import type { ShellFailureHandler, ShellSlot } from '@/routes/types/shell-slot';
 import testI18n from '@tests/i18n/test-i18n';
 
 jest.mock('@/components/layouts/footer-loader', () => ({
@@ -14,15 +14,28 @@ jest.mock('@/components/layouts/footer-loader', () => ({
   default: { load: (): Promise<unknown> => new Promise(() => undefined) },
 }));
 
-function LoadedShell({ signOut, userMenu: UserMenu }: UIAppShellProps): ReactElement {
+function LoadedShell({
+  signOut,
+  userMenu: UserMenu,
+  notifications: Notifications,
+}: UIAppShellProps): ReactElement {
   return (
     <header>
       <button type="button" onClick={signOut}>
         shell sign out
       </button>
-      {UserMenu === undefined ? null : <UserMenu signOut={signOut} onAvatar={jest.fn()} />}
+      {UserMenu === undefined ? null : (
+        <UserMenu layout="desktop" signOut={signOut} onAvatar={jest.fn()} />
+      )}
+      {Notifications === undefined ? null : (
+        <Notifications layout="desktop" signOut={signOut} onAvatar={jest.fn()} />
+      )}
     </header>
   );
+}
+
+function StubNotifications(): JSX.Element {
+  return <span>notifications slot</span>;
 }
 
 function StubUserMenu(): JSX.Element {
@@ -34,7 +47,8 @@ const loaderOf = (load: AppShellModuleLoader['load']): AppShellModuleLoader => (
 function renderFrame(
   shellLoader: AppShellModuleLoader,
   onShellFailure?: ShellFailureHandler,
-  userMenu?: UserMenuSlot
+  userMenu?: ShellSlot,
+  notifications?: ShellSlot
 ): { signOut: jest.Mock } {
   const signOut = jest.fn();
   render(
@@ -48,6 +62,7 @@ function renderFrame(
                   shellLoader={shellLoader}
                   onShellFailure={onShellFailure}
                   userMenu={userMenu}
+                  notifications={notifications}
                 />
               }
             >
@@ -109,5 +124,17 @@ describe('AppLayoutFrame', () => {
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('banner')).toHaveTextContent('user menu');
     expect(shellPlaceholders()).toHaveLength(0);
+  });
+
+  it('renders the loaded shell with the notifications slot', async () => {
+    renderFrame(
+      loaderOf(() => Promise.resolve({ default: LoadedShell })),
+      undefined,
+      undefined,
+      StubNotifications
+    );
+
+    expect(await screen.findByRole('banner')).toHaveTextContent('notifications slot');
+    expect(screen.getByRole('banner')).not.toHaveTextContent('user menu');
   });
 });

@@ -1,8 +1,9 @@
 import '@testing-library/jest-dom';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import HeaderIconButton from '@/components/ui-app-header/header-icon-button';
+import findBellWrapper from '@tests/unit/utils/find-bell-wrapper';
 import renderShell from '@tests/unit/utils/render-shell';
 
 describe('HeaderIconButton', () => {
@@ -79,7 +80,11 @@ describe('HeaderIconButton', () => {
       const button = screen.getByRole('button', { name });
 
       expect(button).toHaveAccessibleDescription(`Not available yet ${text}`);
-      expect(button).toHaveTextContent(String(count));
+      expect(button).toHaveTextContent(/^$/u);
+      expect(within(findBellWrapper(button)).getByText(String(count))).toHaveAttribute(
+        'aria-hidden',
+        'true'
+      );
     }
   );
 
@@ -88,7 +93,8 @@ describe('HeaderIconButton', () => {
 
     const button = screen.getByRole('button', { name: 'Notifications' });
 
-    expect(button).toHaveTextContent(/^150$/u);
+    expect(findBellWrapper(button)).toHaveTextContent(/^150$/u);
+    expect(button).toHaveTextContent(/^$/u);
     expect(button).toHaveAccessibleDescription('Not available yet 150 notifications');
   });
 
@@ -116,6 +122,23 @@ describe('HeaderIconButton', () => {
     expect(button).toHaveTextContent(/^$/u);
     expect(button).toHaveStyle({ width: '24px', height: '24px' });
     expect(screen.queryByText(/8/u)).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['desktop', '48px'],
+    ['tablet', '52px'],
+    ['mobile', '24px'],
+  ] as const)('boxes the disabled control and its badge in its own %s size', (layout, size) => {
+    renderShell(<HeaderIconButton layout={layout} kind="tasks" count={8} />);
+
+    const button = screen.getByRole('button', { name: 'Tasks' });
+
+    expect(findBellWrapper(button)).toHaveStyle({
+      position: 'relative',
+      width: size,
+      height: size,
+    });
+    expect(button).toHaveStyle({ width: size, height: size });
   });
 
   it('renders no MUI ripple inside the control', () => {
