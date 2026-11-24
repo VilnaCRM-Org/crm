@@ -17,8 +17,8 @@ The design and the plan are in
    the provider's authorization URL and a `state`, keeps the `state`, and sends the browser there.
 2. The provider (or the mock consent page) redirects back to `/auth/callback/<provider>` with the
    `state` and either a `code` or, when you cancel, `error=access_denied`.
-3. A cancel shows the cancelled view. Otherwise the page accepts only the `state` this tab started
-   with, then calls `completeSocialSignInUser` and signs in.
+3. The page accepts only the `state` this tab started with. A cancel then shows the cancelled view;
+   a code goes to `completeSocialSignInUser`, which signs in.
 
 | Mode     | `OAUTH_MODE` | Provider screen        | Answers the mutations | Keys you need |
 | -------- | ------------ | ---------------------- | --------------------- | ------------- |
