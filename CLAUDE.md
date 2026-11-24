@@ -3294,7 +3294,10 @@ replaces.
    chip. The sign-out redirect carries
    `state.focusMain`, so `AuthPageLayout` focuses `<main>` of `/sign-in` through the same
    `useArrivalFocus` hook, which then clears the marker from the history entry so Back never moves
-   focus again.
+   focus again. The hook clears the marker only while the router is still on that entry — a replace
+   fired after Back or a newer navigation has left it would overwrite the entry that took its place
+   — and a Back or Forward arrival never takes focus, so an entry left uncleared is only cleared on
+   its next visit.
 
 4. **Testing Philosophy**:
    - Unit tests for components and utilities

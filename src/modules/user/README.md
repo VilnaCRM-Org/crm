@@ -143,7 +143,10 @@ follow-up. Once the token is cleared, the guard redirects to `/sign-in` with `st
 to its `<main>` once, through the same `useArrivalFocus` hook (`src/hooks/use-arrival-focus.ts`)
 that `AppLayout` uses after a login. The hook then replaces the entry's state with
 `focusMain: false` (keeping `from`), so returning to that entry with Back never moves focus again,
-even though `AuthPageLayout` remounts with every auth page.
+even though `AuthPageLayout` remounts with every auth page. It replaces the entry only while the
+router is still on it: when Back or another navigation has already left, a replace would overwrite
+the newer entry, so the marker stays and the next visit clears it. A Back or Forward arrival never
+takes focus, so that visit does not move it either.
 
 ## Password recovery decisions
 

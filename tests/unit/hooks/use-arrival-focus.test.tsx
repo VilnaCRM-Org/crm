@@ -1,9 +1,11 @@
 import { act, render, screen } from '@testing-library/react';
-import type { JSX } from 'react';
+import { type JSX, useEffect } from 'react';
 import {
+  createMemoryRouter,
   MemoryRouter,
   Outlet,
   Route,
+  RouterProvider,
   Routes,
   useLocation,
   useNavigate,
@@ -56,6 +58,30 @@ function tree(entries: Entry, label = 'layout'): JSX.Element {
 
 function renderAt(entries: Entry): ReturnType<typeof render> {
   return render(tree(entries));
+}
+
+type TestRouter = ReturnType<typeof createMemoryRouter>;
+
+function LeavingPage({ pending }: { pending: (() => void)[] }): JSX.Element {
+  useEffect(() => pending.pop()?.(), [pending]);
+
+  return <p>boards page</p>;
+}
+
+function routerWithLeavingPage(leave: (router: TestRouter) => void): TestRouter {
+  const pending = [(): void => leave(router)];
+  const router = createMemoryRouter([
+    {
+      element: <Landmark label="layout" />,
+      children: [
+        { path: '/', element: <p>landing page</p> },
+        { path: '/boards', element: <LeavingPage pending={pending} /> },
+        { path: '/deals', element: <p>deals page</p> },
+      ],
+    },
+  ]);
+  render(<RouterProvider router={router} />);
+  return router;
 }
 
 const history = (): HTMLElement => screen.getByRole('status', { name: 'history' });
@@ -184,5 +210,108 @@ describe('useArrivalFocus', () => {
     expect(screen.getByRole('main')).toBe(main);
     expect(main).toHaveFocus();
     expect(history()).toHaveTextContent('REPLACE / {"focusMain":false}');
+  });
+
+  it('keeps the entry Back returned to when Back lands before the marker is cleared', async () => {
+    const router = routerWithLeavingPage((current) => {
+      void current.navigate(-1);
+    });
+    const home = router.state.location;
+
+    await act(() => router.navigate('/boards', { state: { focusMain: true } }));
+
+    expect(router.state.location).toEqual(home);
+    expect(router.state.historyAction).toBe('POP');
+    expect(screen.getByText('landing page')).toBeInTheDocument();
+  });
+
+  it('keeps the entry a newer navigation pushed before the marker is cleared', async () => {
+    const router = routerWithLeavingPage((current) => {
+      void current.navigate('/deals', { state: { from: { pathname: '/' } } });
+    });
+
+    await act(() => router.navigate('/boards', { state: { focusMain: true } }));
+
+    expect(router.state.location).toMatchObject({
+      pathname: '/deals',
+      state: { from: { pathname: '/' } },
+    });
+    expect(router.state.historyAction).toBe('PUSH');
+    expect(screen.getByText('deals page')).toBeInTheDocument();
+  });
+
+  it('clears an abandoned marker on the next visit without moving focus', async () => {
+    const router = routerWithLeavingPage((current) => {
+      void current.navigate(-1);
+    });
+    await act(() => router.navigate('/boards', { state: { focusMain: true } }));
+    const main = screen.getByRole('main');
+    act(() => main.blur());
+
+    await act(() => router.navigate(1));
+
+    expect(router.state.location).toMatchObject({
+      pathname: '/boards',
+      state: { focusMain: false },
+    });
+    expect(main).not.toHaveFocus();
+
+    await act(() => router.navigate(-1));
+    await act(() => router.navigate(1));
+
+    expect(router.state.location.pathname).toBe('/boards');
+    expect(main).not.toHaveFocus();
+  });
+
+  it('returns to an entry a push abandoned without moving focus or losing Forward', async () => {
+    const router = routerWithLeavingPage((current) => {
+      void current.navigate('/deals');
+    });
+    await act(() => router.navigate('/boards', { state: { focusMain: true } }));
+    const main = screen.getByRole('main');
+    act(() => main.blur());
+
+    await act(() => router.navigate(-1));
+
+    expect(router.state.location).toMatchObject({
+      pathname: '/boards',
+      state: { focusMain: false },
+    });
+    expect(main).not.toHaveFocus();
+
+    await act(() => router.navigate(1));
+
+    expect(router.state.location.pathname).toBe('/deals');
+  });
+
+  it('focuses the newer arrival when it carries a marker as well', async () => {
+    const router = routerWithLeavingPage((current) => {
+      screen.getByRole('main').blur();
+      void current.navigate('/deals', { state: { focusMain: true } });
+    });
+
+    await act(() => router.navigate('/boards', { state: { focusMain: true } }));
+
+    expect(screen.getByText('deals page')).toBeInTheDocument();
+    expect(screen.getByRole('main')).toHaveFocus();
+    expect(router.state.location).toMatchObject({
+      pathname: '/deals',
+      state: { focusMain: false },
+    });
+    expect(router.state.historyAction).toBe('REPLACE');
+  });
+
+  it('still clears the marker when Back and Forward return before it is cleared', async () => {
+    const router = routerWithLeavingPage((current) => {
+      void current.navigate(-1);
+      void current.navigate(1);
+    });
+
+    await act(() => router.navigate('/boards', { state: { focusMain: true } }));
+
+    expect(router.state.location).toMatchObject({
+      pathname: '/boards',
+      state: { focusMain: false },
+    });
   });
 });
