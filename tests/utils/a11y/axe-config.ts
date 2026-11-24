@@ -88,14 +88,6 @@ export const A11Y_EXCEPTIONS: readonly A11yException[] = [
   },
   {
     ruleId: 'color-contrast',
-    selector: '#social-sign-in-actions > .MuiButton-contained',
-    reason:
-      'Social sign-in callback primary action: white on the Figma primary #1EAEFF is 2.45:1; ' +
-      'design-owned.',
-    trackingUrl: PALETTE_CONTRAST_ISSUE,
-  },
-  {
-    ruleId: 'color-contrast',
     selector: '#settings-greeting',
     reason:
       'Settings greeting: Figma grey #969B9D on white is 2.81:1; product-owner call, issue #330.',

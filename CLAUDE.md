@@ -357,8 +357,8 @@ shard under the file cap that holds the fewest mutants (the lighter load, then t
 breaking ties), so the 1.05x figure is a target the fallback can overshoot, never a guarantee.
 Counting the whole scope takes about 4 s, so every shard job and the merge job
 count at run time and derive the same packing from the same commit; no weight file is committed, so
-none can go stale. At 588 files the scope holds 528 sharded files; 60 files run in no shard. The 76
-shards carry 46 to 146 runnable mutants (mean 139) and 1,616 to 3,224 weight units, except
+none can go stale. At 565 files the scope holds 508 sharded files; 57 files run in no shard. The 76
+shards carry 41 to 139 runnable mutants (mean 132) and 1,254 to 3,120 weight units, except
 `ui-form/styles.ts`, alone at 5,394. Weighing by scored mutants alone had packed that scrubber's 103
 mutants (then still inside `pii-scrubber.ts`, 149 mutants with 37 related test files) and
 `lazy-catalog-loader.ts` (111 related test files) into shards that ran an estimated 22 and 29
@@ -368,9 +368,8 @@ as the scrubber was twice: its free-text patterns moved to `PiiTextScrubber`, an
 alone still took 14.6 minutes cold, its two-factor patterns moved to `TwoFactorTextScrubber` (47 and
 60 mutants). The cap binds the same way: at 63 shards it fell to 166, under the 177 runnable
 mutants `user-service-error-transformer.ts` held alone, so its field-violation parsing moved to an
-injected `FieldViolationParser`; at 76 it was 139, one over the 138 runnable mutants
-`graphql-sign-in-transformer.ts` holds alone, and is 146 since #331 and #150 grew the scope.
-File size was a poor proxy too: under the 30-shard
+injected `FieldViolationParser`; at 76 it is 139, one over the 138 runnable mutants
+`graphql-sign-in-transformer.ts` holds alone. File size was a poor proxy too: under the 30-shard
 size packing a cold shard 11 drew 253 mutants and met the 15-minute kill switch before it finished.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
 workflows' count passes 240 scored mutants, so scope growth reddens a unit test before a shard meets
@@ -509,11 +508,11 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-Seventeen directives are annotated today, at two mutators. Sixteen are `ArrayDeclaration` on a
+Sixteen directives are annotated today, at two mutators. Fifteen are `ArrayDeclaration` on a
 React hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
 `[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
 constant one-element array is equal on every render and the effect or memo fires exactly as it
-does with `[]`. Six annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
+does with `[]`. Five annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
 and each is equivalent for a reason worth stating separately:
 
 - `use-login-submitter.ts` annotates `[run, loginControllersRef]`: `run` is the `SignInRun` that
@@ -525,9 +524,8 @@ and each is equivalent for a reason worth stating separately:
 - `use-profile-save.ts` and `use-email-resend.ts` (issue #330) annotate `[provider]`, the deps of
   the `run` callback handed to `useAbortableSubmit`. `provider` comes from
   `useService(AUTH_TOKENS.ProfileProvider)`, which memoizes `container.resolve` on the token, and
-  the token is a module constant; `src/modules/user/features/settings/di.ts` (`UserSettingsRegistrar`,
-  which `src/modules/user/config/di.ts` composes) binds it with `registerSingleton`, so every resolve
-  returns the same instance. The identity of `provider` is
+  the token is a module constant; `src/modules/user/config/di.ts` binds it with
+  `registerSingleton`, so every resolve returns the same instance. The identity of `provider` is
   therefore fixed for the component's lifetime, and an emptied list memoizes the same `run`.
 - `challenge-code-field.tsx` (issue #331) annotates `[setFocus]` on the effect that focuses the
   code field when the challenge mounts. `setFocus` comes from `useFormContext`, and react-hook-form
@@ -535,18 +533,12 @@ and each is equivalent for a reason worth stating separately:
   effect exactly once, as `[setFocus]` does. jsdom shows no focus from that call, while the e2e
   spec pins the first cell focused on arrival, so only a test that fakes a changing `setFocus`
   could tell the two apart.
-- `use-social-callback-relay.ts` (specs/social-sign-in) annotates `[loader, run]`, the deps of
-  the effect that settles one social sign-in relay. `loader` is held in `useState` by
-  `use-auth-provider-loader.ts`, `run` is a `useState` initializer in `use-social-callback.ts`,
-  and the callback page remounts its content on every history entry (keyed by `location.key`),
-  so neither identity changes while the effect is mounted and an emptied list runs it exactly as
-  often.
 
 Hoisting any of these literals to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
 array literal, so there is nothing left to change.
 
-The seventeenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+The sixteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
 `{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
 re-validates the confirmation field when the new password changes once the confirmation is touched
 or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
@@ -555,12 +547,12 @@ is `confirmPassword` itself, and the effect only triggers in that same armed win
 (`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
 re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
 the same result and no rendered state differs. Narrowing the watch is what the source should say,
-so the annotation stays rather than the simpler-looking `{}`. Adding an eighteenth needs the same
+so the annotation stays rather than the simpler-looking `{}`. Adding a seventeenth needs the same
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is the 588 files counted under "Mutation testing scope and baseline" above; not all of
-them produce scored mutants — the 60 unsharded ones hold no runnable mutant (re-export barrels,
+mutate scope is the 565 files counted under "Mutation testing scope and baseline" above; not all of
+them produce scored mutants — the 57 unsharded ones hold no runnable mutant (re-export barrels,
 token modules, route maps), and a sharded file whose only mutants are static is skipped by
 `ignoreStatic`.
 
@@ -693,7 +685,7 @@ request, distinct from `static testing` and `performance testing`.
 the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
 not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
 `applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
-The allowlist today carries thirteen `color-contrast` entries rooted in the Figma palette tokens
+The allowlist today carries twelve `color-contrast` entries rooted in the Figma palette tokens
 (`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, the
 error-page primary actions and decorative status digits, the sign-in "Забули пароль?" brand
 text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, the password-recovery
@@ -701,10 +693,9 @@ in-card link buttons "До входу" and "Запросити нове поси
 issue #315, the recovery cards' "Назад" back link in the Figma `#969B9D` at 2.81:1 by the user's
 decision on issue #315, the settings greeting "Вітаємо!" in `#969B9D` at 2.81:1 by the product
 owner's call on issue #330, and the current navigation row and sub-item, Figma's active `#0399ED`
-on the 10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362, the
+on the 10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362, and the
 two-factor challenge's "Назад" back control in the Figma `#969B9D` at 2.81:1 by the owner's
-decision of 2026-11-04, issue #331, and the social sign-in callback's primary action, white on
-`#1EAEFF` at 2.45:1 by the owner's decision of 2026-11-19, specs/social-sign-in), tracked in
+decision of 2026-11-04, issue #331), tracked in
 issue #276 and deleted when it closes. Each entry is a known WCAG 2.1 AA non-conformance kept by owner
 decision, not a pass; the owner re-confirmed the current navigation row on 2026-11-09.
 `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless button and an `alt`-less image really
@@ -2625,10 +2616,8 @@ Three different things are outside the gate, and the distinction matters when yo
   **container-free render-path singletons** — `auth-store-selectors`,
   `response-schemas`, `map-registration-error`,
   `load-registration-notification`, `registration-handlers-factory`,
-  the social sign-in `social-sign-in-flow-source`, `social-sign-in-navigator` and
-  `social-callback-view-mapper`,
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
-  boundaries receive by prop, issue #116), `locale-formatter-core`, the
+  boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, the
   `security-event-core` and its `auth-failure-monitor` leaf, the observability core /
   correlation-id / sentry-client / sentry-config / pii-scrubber / pii-text-scrubber / web-vitals
   leaves, the
@@ -2746,9 +2735,9 @@ container-resolved classes inject it instead of value-importing it (issue #130).
    validates the **committed** block in `public/index.html` against the schema so the shipped
    default cannot drift from the contract.
 
-**Settings:** `apiBaseUrl` (`APP_CONFIG_API_BASE_URL`; no client reader since `url-builder` went
-with the last REST caller, so today it only widens the CSP `connect-src`), `graphqlUrl`
-(`APP_CONFIG_GRAPHQL_URL`, injected into `GraphQLUrl`, falling back to `REACT_APP_GRAPHQL_URL`), and
+**Settings:** `apiBaseUrl` (`APP_CONFIG_API_BASE_URL`, consumed by `@/utils/url-builder`, falling
+back to `REACT_APP_MOCKOON_URL`), `graphqlUrl` (`APP_CONFIG_GRAPHQL_URL`, injected into
+`GraphQLUrl`, falling back to `REACT_APP_GRAPHQL_URL`), and
 `flags.<name>` (`APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>`). Languages stay build-time — `src/i18n.js`
 initializes i18next at module evaluation and `src/config/i18n-config.js` is `require`d by node
 tooling without a TypeScript loader, so that is an i18n boot-path restructuring, not a config

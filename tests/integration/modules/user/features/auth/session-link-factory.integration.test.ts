@@ -116,8 +116,6 @@ describe('SessionLinkFactory over the container Apollo client', () => {
     'ConfirmPasswordReset',
     'SignInUser',
     'CompleteTwoFactorUser',
-    'InitiateSocialSignIn',
-    'CompleteSocialSignIn',
   ])('sends %s anonymously and never ends the session on its 401', async (name) => {
     const token = buildToken();
     const authorization: Array<string | null> = [];

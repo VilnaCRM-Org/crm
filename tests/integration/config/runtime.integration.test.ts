@@ -79,6 +79,7 @@ describe('runtime configuration Integration', () => {
   it('exposes empty configuration and no flags when no block is rendered', async () => {
     const { container, tokens } = await loadRuntimeGraph();
     const { default: appConfigSource } = await import('@/config/runtime/app-config-source');
+    const { default: urlBuilder } = await import('@/utils/url-builder');
     const appConfig = container.resolve<AppConfig>(tokens.appConfig);
     const flags = container.resolve<FeatureFlagService>(tokens.featureFlagService);
 
@@ -93,7 +94,7 @@ describe('runtime configuration Integration', () => {
     expect(flags.names()).toEqual({ items: [] });
     expect(flags.isEnabled(PROBE_FLAG as never)).toBeUndefined();
     expect(flags.snapshot()).toEqual({});
-    expect(appConfigSource.url('apiBaseUrl')).toBeUndefined();
+    expect(urlBuilder.build('/users')).toBe(`${ORIGINAL_ENV.REACT_APP_MOCKOON_URL}/users`);
   });
 
   it('resolves the GraphQL url from the container using the build-time environment', async () => {
@@ -114,29 +115,31 @@ describe('runtime configuration Integration', () => {
     );
 
     const { container, tokens } = await loadRuntimeGraph();
-    const { default: appConfigSource } = await import('@/config/runtime/app-config-source');
+    const { default: urlBuilder } = await import('@/utils/url-builder');
     const appConfig = container.resolve<AppConfig>(tokens.appConfig);
 
     expect(appConfig.get()).toEqual({ apiBaseUrl, graphqlUrl, flags: {} });
     expect(appConfig.apiBaseUrl()).toBe(apiBaseUrl);
     expect(container.resolve<GraphQLUrl>(tokens.graphQlUrl).resolve()).toBe(graphqlUrl);
     expect(container.resolve<FeatureFlagService>(tokens.featureFlagService).snapshot()).toEqual({});
-    expect(appConfigSource.url('apiBaseUrl')).toBe(apiBaseUrl);
+    expect(urlBuilder.build('/users')).toBe(`${apiBaseUrl}/users`);
   });
 
   // The paint path reads endpoints before the zod layer loads, so a block that reached the
   // document without passing through the container entrypoint must not hand a non-http(s) value
-  // to fetch: the container-free reader treats it as absent instead.
+  // to fetch — url-builder falls back to the build-time origin instead.
   // 'not-a-url' fails to parse at all; 'javascript:alert(1)' parses but carries a scheme no HTTP
   // client can use. Both must be treated as absent rather than handed to fetch.
   it.each(['not-a-url', 'javascript:alert(1)'])(
-    'ignores the runtime api base url %s on the container-free path',
+    'ignores the runtime api base url %s and keeps the build-time origin',
     async (apiBaseUrl) => {
+      const buildTimeApi = buildHttpUrl();
+      process.env.REACT_APP_MOCKOON_URL = buildTimeApi;
       renderRuntimeConfig(JSON.stringify({ apiBaseUrl }));
 
-      const { default: appConfigSource } = await import('@/config/runtime/app-config-source');
+      const { default: urlBuilder } = await import('@/utils/url-builder');
 
-      expect(appConfigSource.url('apiBaseUrl')).toBeUndefined();
+      expect(urlBuilder.build('/users')).toBe(`${buildTimeApi}/users`);
       // The same value is a hard failure once the validated layer loads.
       await expect(import('@/config/dependency-injection-config')).rejects.toThrow(
         /Invalid runtime configuration[\s\S]*apiBaseUrl/

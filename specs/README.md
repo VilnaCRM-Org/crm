@@ -24,7 +24,6 @@ specs/
 | `sign-up-sign-in-pages`       | In progress |
 | `enterprise-app-shell`        | Implemented |
 | `309-error-pages`             | In progress |
-| `social-sign-in`              | In progress |
 
 ## Conventions
 

@@ -15,7 +15,6 @@ import {
   assertSingleResponse,
   PINNED_SDL_FIXTURE,
   PROFILE_SDL_FIXTURE,
-  SOCIAL_SIGN_IN_SDL,
   REQUEST_RESET,
 } from './mock-schema-fixtures';
 import { TWO_FACTOR_SDL_FIXTURES } from './two-factor-fixtures';
@@ -87,12 +86,7 @@ describe('pending schema loading on the mock', () => {
 
   it('serves a reset mutation and a second pending field from the loaded schema', async () => {
     const server = new ApolloServer({
-      typeDefs: [
-        ...loadTypeDefs(source),
-        PROFILE_SDL_FIXTURE,
-        ...TWO_FACTOR_SDL_FIXTURES,
-        ...SOCIAL_SIGN_IN_SDL,
-      ],
+      typeDefs: [...loadTypeDefs(source), PROFILE_SDL_FIXTURE, ...TWO_FACTOR_SDL_FIXTURES],
       resolvers,
       formatError,
     });

@@ -1,6 +1,3 @@
-import fs from 'node:fs';
-import path from 'node:path';
-
 import type { GraphQLResponse } from '@apollo/server';
 
 export const PINNED_SDL_FIXTURE = `#graphql
@@ -103,26 +100,3 @@ export function assertSingleResponse(body: GraphQLResponse['body']): asserts bod
     throw new Error(`Expected a single GraphQL response body, received: ${body.kind}`);
   }
 }
-
-// The social sign-in extension the shared resolver map answers; every server built from that map
-// needs it in its schema (specs/social-sign-in).
-export const SOCIAL_SIGN_IN_SDL = [
-  `#graphql
-  interface Node {
-    id: ID!
-  }
-`,
-  fs.readFileSync(
-    path.join(
-      __dirname,
-      '..',
-      '..',
-      'src',
-      'api',
-      'contracts',
-      'pending',
-      'social-sign-in.graphql'
-    ),
-    'utf-8'
-  ),
-];
