@@ -183,6 +183,7 @@ test.describe('Settings save failures (issues #330, #391)', () => {
 
     await expectErrorOutcome(page, text.saveFailed);
     await expectFocusKeptOnAppearance(page);
+    await expect(saveNameButton(page)).toBeFocused();
     await expect(page.getByRole('button', { name: text.tryAgain })).toHaveCount(0);
     expect(stub.count('UpdateUser')).toBe(1);
   });

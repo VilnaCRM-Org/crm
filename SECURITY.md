@@ -268,9 +268,12 @@ script cannot execute, which is the property the CSP exists to protect.
 `REACT_APP_SENTRY_DSN` when it is set), and the runtime overrides an operator sets at container
 start (`APP_CONFIG_API_BASE_URL`, `APP_CONFIG_GRAPHQL_URL`; issue #145, and
 `APP_CONFIG_NOTIFICATION_EVENTS_URL`; issue #391). The browser talks only to the GraphQL and Sentry
-origins today, and to notification-service where that last setting names it. That service authorizes
-no subscriber, so the CRM takes broadcast events only from it, sends it no token, and shows no text
-an event carries: the REST base URL (`REACT_APP_MOCKOON_URL`,
+origins today, and to notification-service where that last setting names it. The setting is absent
+by default. Connecting to the service directly departs from the rule that the frontend reaches
+services through the API gateway; it follows the owner's decision of 2026-11-23 to take broadcast
+events only (PRD items 37 to 40), and the setting may name a gateway origin instead without a code
+change. The service authorizes no subscriber, so the CRM takes broadcast events only from it, sends
+it no token, and shows no text an event carries. The REST base URL (`REACT_APP_MOCKOON_URL`,
 `APP_CONFIG_API_BASE_URL`) has no client reader since the last REST caller went, and stays
 admitted only until the separate decision on keeping the `apiBaseUrl` setting
 (`src/config/runtime/README.md`) narrows the policy. The generator reads the
