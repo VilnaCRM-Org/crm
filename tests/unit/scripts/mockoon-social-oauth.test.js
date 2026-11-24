@@ -80,20 +80,38 @@ describe('mockoon-social-oauth', () => {
           operator: 'regex',
         },
         {
-          target: 'query',
-          modifier: 'redirect_uri',
+          target: 'templating',
+          modifier: "{{queryParam 'redirect_uri'}}",
           value: REDIRECT_URI_PATTERN,
           invert: false,
           operator: 'regex',
         },
         {
-          target: 'query',
-          modifier: 'state',
+          target: 'templating',
+          modifier: "{{queryParam 'state'}}",
           value: STATE_PATTERN,
           invert: false,
           operator: 'regex',
         },
       ]);
+    });
+
+    it('tests the very text the page renders for each query value', () => {
+      const [page] = addConsentRoute(importedEnv()).routes[0].responses;
+      const tested = page.rules.slice(1).map(({ modifier }) => modifier);
+      const rendered = page.body.match(/\{\{queryParam [^}]*\}\}/g);
+
+      expect(new Set(rendered)).toEqual(new Set(tested));
+    });
+
+    it.each([
+      [REDIRECT_URI_PATTERN, 'http://localhost:3000/auth/callback/google'],
+      [STATE_PATTERN, '3f2504e0-4f89-41d3-9a0c-0305e82c3301'],
+    ])('refuses a repeated value, which Mockoon renders as a JSON array: %s', (pattern, value) => {
+      expect(matches(pattern, value)).toBe(true);
+      expect(matches(pattern, JSON.stringify([value, 'x']))).toBe(false);
+      expect(matches(pattern, JSON.stringify([value]))).toBe(false);
+      expect(matches(pattern, JSON.stringify({ a: value }))).toBe(false);
     });
 
     it('rejects anything else with a plain-text 400 that reflects nothing', () => {

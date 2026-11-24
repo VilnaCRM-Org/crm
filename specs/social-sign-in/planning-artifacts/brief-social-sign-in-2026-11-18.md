@@ -4,12 +4,13 @@ workflowType: 'product-brief'
 bmadCommand: 'create-brief'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-19'
-iteration: 4
+revised: '2026-11-20'
+iteration: 5
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR'
   - '2026-11-19 review: stale REST passages corrected'
   - '2026-11-19 review: GraphQL field names and scope aligned'
+  - '2026-11-20 after #331 merged: 2FA hand-off to the challenge'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'

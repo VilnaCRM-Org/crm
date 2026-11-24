@@ -416,7 +416,7 @@ by chance as files changed: 63 failed it once a later commit added files. The pa
 caps every shard at twice the mean file count. That cap is a hard bound rather than a target:
 `total` shards at the cap always seat every sharded file, so the mutant fallback never has to
 breach it, and the spread holds by construction while the scope has at least half as many sharded
-files as there are shards (508 against 76 today). Below that, twice the mean is under one file and
+files as there are shards (528 against 76 today). Below that, twice the mean is under one file and
 `fileCap` clamps the cap to `max(1, …)`, so a shard holding one file is over twice the mean.
 
 ### Honest mutant classification (issue #171)
