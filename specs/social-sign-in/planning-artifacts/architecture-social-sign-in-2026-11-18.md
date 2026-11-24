@@ -5,7 +5,7 @@ bmadCommand: 'create-architecture'
 project_name: 'crm'
 date: '2026-11-18'
 revised: '2026-11-24'
-iteration: 6
+iteration: 7
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR'
   - '2026-11-19 review: stale REST passages corrected'
@@ -13,6 +13,7 @@ revisionPasses:
   - '2026-11-20 after #331 merged: 2FA hand-off to the challenge, session start, url-builder removed'
   - '2026-11-24 FR/NFR gate iteration 7: transport answers, scrubber, stale rows'
   - '2026-11-24 review: superseded completions, encoded parameter names'
+  - '2026-11-24 FR/NFR gate iteration 8: spent start marker'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'
@@ -283,7 +284,7 @@ sequenceDiagram
 | Data provider    | `SocialSignInProvider.start` / `.complete`; a session or a pending 2FA challenge starts through `SocialSignInDeps` (the auth store, the security signals, `session`: `authSessionProvider`, `signedOut`: `CLEARED_AUTH_STATE`), ending any earlier session first, as main's `SignInSubmitProcessor` does; _(2026-11-24)_ a completion is dropped as `aborted` when the store's token or pending session changed at any point while it ran, which a store subscription held for the request records |
 | 2FA hand-off     | `SocialCallbackViewMapper.outcomeView` maps a `two-factor` outcome to a replace redirect to `ROUTE_PATHS.twoFactorChallenge` with `{ from }` built from the saved destination; main's challenge page and `usePostLoginRedirect` finish the sign-in                                                                                                                                                                                                                                                 |
 | Tab binding      | `SocialSignInFlowSource` in `sessionStorage`: the destination, validated twice and consumed once by `takeDestination()` after a sign-in; `provider:state`, read without consuming so StrictMode sees one answer                                                                                                                                                                                                                                                                                    |
-| Navigation       | `SocialSignInNavigator`: `start` pushes the callback page, `restart` replaces it, `leave` uses `location.replace` so Back from the provider returns to sign-in                                                                                                                                                                                                                                                                                                                                     |
+| Navigation       | `SocialSignInNavigator`: `start` pushes the callback page, `restart` replaces it, `leave` uses `location.replace` so Back from the provider returns to sign-in, `consumeStart` spends the entry's start marker so Back never starts again (FR15)                                                                                                                                                                                                                                                   |
 | Page             | `useSocialCallback` + `useSocialCallbackRelay` (one relay per history entry, whose query is stripped, so one per `state`) + `SocialCallbackViewMapper` (`starting`, `relaying`, `leaving`, `failed`, `redirect`)                                                                                                                                                                                                                                                                                   |
 | Pending view     | `SocialSignInPendingView`: `RouteFallback` with the localized loading text, for every view but `failed`                                                                                                                                                                                                                                                                                                                                                                                            |
 | Leak protection  | `SocialCallbackTextScrubber` (`src/services/observability/`), run by `PiiTextScrubber`: redacts `code` and `state` values, plain and percent-encoded, behind plain or percent-encoded names, in every event and breadcrumb (NFR7)                                                                                                                                                                                                                                                                  |

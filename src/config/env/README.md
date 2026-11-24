@@ -58,8 +58,8 @@ validated as URLs and `mainLanguage`/`fallbackLanguage` as the `['uk','en']` enu
 an aggregated startup error. `NODE_ENV` is the exception — it is a runtime/build flag that can vary
 by environment, so its enum uses `.catch(undefined)`: an unrecognised value degrades to
 "not production" (matching the previous `NODE_ENV === 'production'` compare) rather than crashing
-the app. Every field is `optional`, because each reader supplies its own default/fallback (empty
-mockoon URL, localhost GraphQL URL in dev, `uk`/`en` languages), so absence is valid; only a
+the app. Every field is `optional`, because each reader supplies its own default/fallback
+(localhost GraphQL URL in dev, `uk`/`en` languages), so absence is valid; only a
 _present but malformed_ value fails.
 
 ## Enforcement
