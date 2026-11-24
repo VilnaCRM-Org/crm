@@ -9,8 +9,8 @@ const PARSE_BASE = 'http://destination.invalid';
 
 // What a social sign-in round trip must remember while the browser is at the provider: where
 // the user was heading (issue #150), and the state user-service issued, so the callback only
-// accepts the state this tab started with (login-CSRF binding). Both live in sessionStorage,
-// are read once, and the destination is validated by loginRedirectTarget on save and on read.
+// accepts the state this tab started with (login-CSRF binding). Both live in sessionStorage; the
+// destination is read once and validated by loginRedirectTarget on save and on read.
 class SocialSignInFlowSource {
   public saveDestination(routerState: unknown): void {
     this.write(DESTINATION_KEY, loginRedirectTarget.resolve(routerState));

@@ -116,10 +116,14 @@ describe('settings page states accessibility', () => {
     await announced('alert', TRANSIENT);
     await waitForSettledSave();
 
-    const shown = screen
-      .getAllByText(TRANSIENT, { exact: false })
-      .filter((node) => node.getAttribute('role') !== 'alert');
-    expect(shown).toHaveLength(1);
-    expect(within(screen.getByRole('banner')).getByText(TRANSIENT)).toBe(shown[0]);
+    const copies = screen.getAllByText(TRANSIENT, { exact: false });
+    const announcement = copies.filter((node) =>
+      node.matches('[role="alert"][aria-atomic="true"]')
+    );
+    const inBell = within(screen.getByRole('banner')).getAllByText(TRANSIENT);
+    expect(announcement).toHaveLength(1);
+    expect(inBell).toHaveLength(1);
+    expect(copies).toHaveLength(2);
+    expect(copies).toEqual(expect.arrayContaining([...announcement, ...inBell]));
   });
 });

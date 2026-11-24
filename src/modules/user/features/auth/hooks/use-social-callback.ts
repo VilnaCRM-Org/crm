@@ -22,7 +22,7 @@ import socialCallbackViewMapper from '@auth/utils/social-callback-view-mapper';
 import socialSignInNavigator from '@auth/utils/social-sign-in-navigator';
 
 // Decided once, from how the page was opened; StrictMode may call the initializer twice, so it
-// only reads, and the query is stripped in a layout effect.
+// only reads, and the query and the start marker are dropped in a layout effect.
 function useInitialCallback(): SocialCallbackInitial {
   const { provider } = useParams();
   const location = useLocation();
@@ -31,8 +31,11 @@ function useInitialCallback(): SocialCallbackInitial {
     const starting = (location.state as RedirectNavigationState | null)?.socialStart === true;
     return { query, view: socialCallbackViewMapper.initialView(provider, query, starting) };
   });
-  // Every render: stripping is idempotent and returns at once once the query is gone.
-  useLayoutEffect(() => socialCallbackViewMapper.stripQuery());
+  // Every render: both are idempotent and return at once when there is nothing left to drop.
+  useLayoutEffect(() => {
+    socialCallbackViewMapper.stripQuery();
+    socialSignInNavigator.consumeStart();
+  });
   return initial;
 }
 

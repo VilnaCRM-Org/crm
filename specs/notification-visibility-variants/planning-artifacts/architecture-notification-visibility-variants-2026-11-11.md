@@ -189,7 +189,8 @@ src/modules/user/features/notifications/
 │   ├── use-notification-repository.ts   # the one seam returning the adapter
 │   ├── use-notification-recorder.ts     # outlet store → repository.record
 │   ├── use-notification-history.ts      # list + unread + markAllRead
-│   └── use-bell-disclosure.ts           # open, close, Escape, outside, route close, visited
+│   ├── use-bell-disclosure.ts           # open, close, Escape, outside, route close, visited, opens
+│   └── use-retryable-chunk.ts           # lazy chunk, loaded again on the attempt after a failure
 ├── components/
 │   ├── notifications-shell-slot.tsx     # chunk `notifications-shell`, every style
 │   ├── bell-notifications.tsx           # in `notifications-shell`: bell, badge, panel host
@@ -341,7 +342,8 @@ previous.revision`), never against a revision the hook remembers, and `clear()` 
   P-9); under `toast` and `inline` opening hides nothing, because `dismissAll()` empties `shown`
   and `useInlineBatch` would then return an empty block (A-26). The result carries
   `visited: boolean`, `true` from the first `show()` for the rest of the component's life, which
-  is what loads the panel chunk once and keeps it mounted (A-25).
+  is what loads the panel chunk once and keeps it mounted (A-25), and `opens: number`, the count of
+  `show()` calls, which is the attempt `useRetryableChunk` retries the panel chunk on (PRD item 56).
 
 > Assumption: the shell-side hooks read the repository through `useNotificationRepository()`, not
 > `useService`. NFR-12 forbids the composition root, tsyringe and Apollo on `/` under every style;
@@ -754,7 +756,8 @@ registers the `notification_center` catalog at module evaluation, and renders tw
   (the in-page `Suspense` pattern of CLAUDE.md), so `aria-controls` resolves before the chunk
   arrives. The panel chunk is never prefetched (no hover or focus warm-up), so no request for it
   exists before the first open. When its loader gives up it reports
-  `onChunkFailure('app-shell:notifications-history', error)` and the host stays empty;
+  `onChunkFailure('app-shell:notifications-history', error)` and the host stays empty until the
+  next open loads the chunk again (PRD item 56);
 - the merged card `BellOutcomeNotice` (through `bell-outcome-notice-loader.ts`, chunk
   `notifications-notice`), only when `useNotificationSurface('header')` is true. It sits in its
   own `Suspense` inside `BellNotifications`, whose fallback is a fixed-size empty `aria-hidden` box
@@ -763,7 +766,8 @@ registers the `notification_center` catalog at module evaluation, and renders tw
   two-chunk waterfall before the bell paints under `bell`, and an outcome raised while the chunk
   loads is recorded and counted (FR-5, A-31, readiness R3-02). On a final failure it reports
   `onChunkFailure('app-shell:notifications-notice', error)` and renders `null`, and the bell keeps
-  working. Under `toast` and `inline` its loader is never called.
+  working; the next revision loads the chunk again (PRD item 56). Under `toast` and `inline`
+  its loader is never called.
 
 The slot declares no `Suspense` of its own: the header renders it inside `BellSlotFrame`, a
 fixed-size box whose own `Suspense` fallback is the bell-sized `aria-hidden` placeholder (§11.3).

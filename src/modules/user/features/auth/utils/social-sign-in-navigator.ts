@@ -1,6 +1,7 @@
 import type { NavigateFunction } from 'react-router';
 
 import ROUTE_PATHS from '@/routes/route-paths';
+import type { RouterHistoryEntry } from '@auth/types/social-sign-in/router-history-entry';
 import type { SocialProvider } from '@auth/types/social-sign-in/social-provider';
 import browserNavigator from '@auth/utils/browser-navigator';
 import socialSignInFlowSource from '@auth/utils/social-sign-in-flow-source';
@@ -19,6 +20,14 @@ class SocialSignInNavigator {
   // earlier attempt.
   public restart(provider: SocialProvider, navigate: NavigateFunction): void {
     void navigate(this.pathOf(provider), { replace: true, state: { socialStart: true } });
+  }
+
+  // The marker is spent once the page has read it, without a router navigation that would remount
+  // the page: Back to the entry, or a reload, then offers "Try again" instead of starting again.
+  public consumeStart(): void {
+    const entry = window.history.state as RouterHistoryEntry | null;
+    if (entry?.usr?.socialStart !== true) return;
+    window.history.replaceState({ ...entry, usr: null }, document.title);
   }
 
   // Replaces the start entry, so Back from the provider's screen returns to the sign-in page

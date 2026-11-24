@@ -185,8 +185,12 @@ GraphQL URL at it, and the pin bump removes the pending contract.
 - **Still the mock page in Provider mode.** That provider's client ID is empty, or the Apollo
   mock was not restarted.
 - **"Your sign-in attempt expired".** The state was not started in this tab (for example the
-  callback was opened in another tab or the Apollo mock restarted in between), or it was already
-  used: start again from the button.
+  callback was opened in another tab or the Apollo mock restarted in between), it was already used,
+  or it is at least ten minutes old (the mock also keeps only the newest 1000): start again from the
+  button.
+
+- **"Google did not return the sign-in details".** The callback was opened without its `code` or
+  `state` (Back to a failed start, or a reload, opens it this way), or the mock got a blank `code`.
 
 ## 8. Safety
 

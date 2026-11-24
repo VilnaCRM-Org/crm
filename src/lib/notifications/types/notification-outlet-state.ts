@@ -24,6 +24,17 @@ export interface NotificationOutletState {
   readonly marked: boolean;
 }
 
+export type NotificationShownPatch = Pick<NotificationOutletState, 'shown'>;
+
+export type NotificationRecordedPatch = Pick<NotificationOutletState, 'recorded'>;
+
+export type NotificationFocusPatch = Pick<NotificationOutletState, 'focus'>;
+
+export type NotificationClearPatch = Pick<
+  NotificationOutletState,
+  'shown' | 'raised' | 'announcement' | 'focus'
+>;
+
 export type NotificationTranslate = (key: NotificationMessageKey) => string;
 
 export type NotificationClock = () => number;

@@ -27,7 +27,9 @@ export default class SocialSignInProvider {
 
   public async start(provider: SocialProvider, signal: AbortSignal): Promise<SocialStartOutcome> {
     try {
-      return this.transformer.toStart(await this.repository.initiate(provider, signal));
+      const initiation = await this.repository.initiate(provider, signal);
+      signal.throwIfAborted();
+      return this.transformer.toStart(initiation);
     } catch (caught) {
       return this.failed(caught, signal);
     }

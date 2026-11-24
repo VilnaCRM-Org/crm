@@ -355,6 +355,19 @@ describe('DI collaborator gate — allowlisted barrels expose data only (issue #
       .map((statement) => /from ['"]([^'"]+)['"]/.exec(statement)?.[1] ?? '')
       .filter(Boolean);
 
+  const parser = require('@typescript-eslint/parser') as {
+    parse: (
+      code: string,
+      options: object
+    ) => { body: ReadonlyArray<{ type: string; exportKind?: string }> };
+  };
+
+  const valueExports = (code: string): string[] =>
+    parser
+      .parse(code, { sourceType: 'module' })
+      .body.filter(({ type, exportKind }) => type.startsWith('Export') && exportKind !== 'type')
+      .map(({ type }) => type);
+
   it.each(barrelPaths)('%s re-exports values only from allowlisted contract modules', (barrel) => {
     const sources = valueReExports(barrel);
 
@@ -366,7 +379,27 @@ describe('DI collaborator gate — allowlisted barrels expose data only (issue #
 
   it.each(typesOnlyBarrelPaths)('%s re-exports no value at all', (barrel) => {
     expect(readFile(barrel).trim().length).toBeGreaterThan(0);
-    expect(valueReExports(barrel)).toEqual([]);
+    expect(valueExports(readFile(barrel))).toEqual([]);
+  });
+
+  it.each([
+    ['a local value', 'export const collaborator = {};'],
+    ['a local class', 'export class Collaborator {}'],
+    ['a default value', 'export default {};'],
+    ['a named value re-export', "export { collaborator } from './collaborator';"],
+    ['a value star re-export', "export * from './collaborator';"],
+    ['a value without a semicolon', 'export const collaborator = {}'],
+  ])('finds %s in a barrel', (_name, code) => {
+    expect(valueExports(code)).toHaveLength(1);
+  });
+
+  it.each([
+    ['a type alias', 'export type Draft = string;'],
+    ['an interface', 'export interface Draft {}'],
+    ['a type re-export', "export type { Draft } from './draft';"],
+    ['a type star re-export', "export type * from './draft';"],
+  ])('leaves %s in a barrel alone', (_name, code) => {
+    expect(valueExports(code)).toEqual([]);
   });
 
   it('covers every barrel the allowlist opens up', () => {

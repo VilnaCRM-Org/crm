@@ -176,7 +176,7 @@ describe('socialCallbackViewMapper', () => {
 
   it.each([
     ['a failed start', { kind: 'failed', error: 'unsupported_provider' }, 'unsupported_provider'],
-    ['an aborted start', { kind: 'aborted' }, 'unavailable'],
+    ['an aborted start', { kind: 'aborted' }, 'expired'],
   ] as const)('shows %s as an error and saves no state', async (_label, outcome, error) => {
     const { mapper, saveState } = await load();
 
@@ -216,7 +216,7 @@ describe('socialCallbackViewMapper', () => {
 
   it.each([
     ['a failed completion', { kind: 'failed', error: 'duplicate_email' }, 'duplicate_email'],
-    ['an aborted completion', { kind: 'aborted' }, 'unavailable'],
+    ['an aborted completion', { kind: 'aborted' }, 'expired'],
   ] as const)(
     'shows %s as its error without taking the destination',
     async (_label, outcome, error) => {

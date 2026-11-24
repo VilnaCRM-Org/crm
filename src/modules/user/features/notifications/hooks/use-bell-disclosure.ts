@@ -10,14 +10,14 @@ import useBellDismissal from './use-bell-dismissal';
 
 export default function useBellDisclosure(layout: ShellLayout): BellDisclosure {
   const [expanded, setExpanded] = useState(false);
-  const [visited, setVisited] = useState(false);
+  const [opens, setOpens] = useState(0);
   const bell = useRef<HTMLButtonElement>(null);
   const wrapper = useRef<HTMLDivElement>(null);
   const { dismissAll } = useNotifications();
 
   const show = useCallback((): void => {
     setExpanded(true);
-    setVisited(true);
+    setOpens((count) => count + 1);
     dismissAll();
   }, [dismissAll]);
   const close = useCallback(
@@ -29,5 +29,5 @@ export default function useBellDisclosure(layout: ShellLayout): BellDisclosure {
   const dismissal = useBellDismissal({ expanded, close, bell, wrapper });
   useBellContextClose({ layout, close });
 
-  return { expanded, visited, bell, wrapper, show, close, toggle, ...dismissal };
+  return { expanded, visited: opens > 0, opens, bell, wrapper, show, close, toggle, ...dismissal };
 }

@@ -5,11 +5,13 @@ bmadCommand: 'create-epics-stories'
 project_name: 'crm'
 date: '2026-11-18'
 revised: '2026-11-24'
-iteration: 4
+iteration: 6
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR; stories rewritten to the landed flow'
   - '2026-11-24 FR/NFR gate iteration 7: S2.4 transport answers and scrubber, S4.2 status, waves'
   - '2026-11-24 review: S2.4 superseded completions, encoded parameter names'
+  - '2026-11-24 FR/NFR gate iteration 8: S1.1 blank code, expiry and bound, wave 5'
+  - '2026-11-24 FR/NFR gate iteration 9: S1.1 repeated parameters, S3.1 stories, graph, matrix'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/prd-social-sign-in-2026-11-18.md'
@@ -44,6 +46,7 @@ S1.2 env + make       ─┤  S2.3 contract+schemas ─┬─► S2.4 repository
 S1.3 local guide ◄─────┘                                                      ▲        │
                                                   S3.1 error view (component) ─┘        ├─► S4.1 E2E + visual
                           S2.5 initiation (buttons) ─────────────────────────────────── ┘    S4.2 docs
+                                                                                             S4.3 url-builder removal (independent)
 ```
 
 ## Epic 1 — Local back-end for social sign-in (FR16-FR19)
@@ -65,16 +68,19 @@ Acceptance criteria:
   `extensions: { status: 400, error_code: 'unsupported_provider' }`.
 - `completeSocialSignInUser(provider, code, state)` accepts only a state it issued, for that
   provider, once; a reused or unknown state answers `invalid_state`, another provider
-  `provider_mismatch`.
+  `provider_mismatch`. _(2026-11-24)_ A state expires after ten minutes (`state_expired`), and at
+  most 1000 are kept, oldest dropped first (`invalid_state`).
 - Scenario codes (`mock-expired`, `mock-unverified`, `mock-no-email`, `mock-duplicate`,
-  `mock-unavailable`, `mock-2fa`) answer the matching FR12 `error_code` or the 2FA result; any
+  `mock-unavailable`, `mock-2fa`) answer the matching FR12 `error_code` or the 2FA result; a
+  blank code answers `missing_oauth_parameters` and leaves the state unused _(2026-11-24)_; any
   other code signs in with an `accessToken` and a `refreshToken`.
 - The consent page lists, as real links with visible text, Allow, Allow (2FA account), Deny and
   one link per scenario, each targeting `${OAUTH_SPA_ORIGIN}/auth/callback/<provider>`.
 - Given `OAUTH_MODE=provider` and `OAUTH_GOOGLE_CLIENT_ID` set, the Google `authorizationUrl` is
   `accounts.google.com` with that client ID; a provider without a client ID keeps the mock page.
 - The consent page renders only for a known provider, a local SPA callback URL and a v4 state,
-  and answers anything else with a plain-text 400 that reflects nothing.
+  and answers anything else with a plain-text 400 that reflects nothing. _(2026-11-24)_ Its rules
+  test each query value as the page renders it, so a repeated or nested parameter is refused too.
 - `Mockoon.Dockerfile` imports the pinned spec at build time, copies the consent-page script and
   its entrypoint, and keeps its digest pin and healthcheck; `hadolint` clean,
   `tests/unit/tooling/image-hardening.test.ts` unchanged and green, and
@@ -185,7 +191,7 @@ Component story (feature-local; no kit component is missing — architecture §2
 - Renders an `<h1>` that receives focus on mount, the localized message inside a polite `role="status"` (changed from an alert after the
   accessibility review, so it does not cut off the heading),
   "Try again" (`UIButton`) only for retryable kinds, and an always-present "Back to sign in" link.
-- Storybook: default plus one story per kind (Ukrainian copy, the main language); `make
+- Storybook: one story per kind, `Cancelled` first as the default (Ukrainian copy, the main language); `make
 storybook-build` and `make check-storybook-static` green.
 - jest-axe clean; 44 px targets; keyboard: Tab reaches both actions, Enter/Space activate.
 - Palette tokens only (assumption A4); contrast AA in the browser lane.
@@ -280,25 +286,26 @@ The #331 merge removed both consumers of `src/utils/url-builder.ts` (main delete
 
 ## Coverage matrix
 
-| FR / NFR          | Stories                              |
-| ----------------- | ------------------------------------ |
-| FR1-FR4           | S2.5                                 |
-| FR5-FR10, FR14    | S3.2                                 |
-| FR11              | S3.3                                 |
-| FR12, FR13, FR15  | S2.4, S3.1, S3.2                     |
-| FR16-FR18         | S1.1, S1.2                           |
-| FR19              | S1.3                                 |
-| NFR1-NFR3, NFR9   | all                                  |
-| NFR4              | S2.5, S3.2                           |
-| NFR5              | S2.5, S4.1                           |
-| NFR6              | S3.1, S3.2, S4.1                     |
-| NFR7, NFR8, NFR10 | S2.4                                 |
-| NFR11             | S3.2 (`make check-security-headers`) |
-| NFR12             | S4.1                                 |
-| NFR13             | S1.2                                 |
+| FR / NFR         | Stories                              |
+| ---------------- | ------------------------------------ |
+| FR1-FR4          | S2.5                                 |
+| FR5-FR10, FR14   | S3.2                                 |
+| FR11             | S3.3                                 |
+| FR12, FR13, FR15 | S2.4, S3.1, S3.2                     |
+| FR16-FR18        | S1.1, S1.2                           |
+| FR19             | S1.3                                 |
+| NFR1-NFR3, NFR9  | all                                  |
+| NFR4             | S2.5, S3.2                           |
+| NFR5             | S2.5, S4.1                           |
+| NFR6             | S3.1, S3.2, S4.1                     |
+| NFR7, NFR8       | S2.4, S3.2                           |
+| NFR10            | S2.4                                 |
+| NFR11            | S3.2 (`make check-security-headers`) |
+| NFR12            | S4.1                                 |
+| NFR13            | S1.2                                 |
 
 ## Parallel dispatch
 
-Wave 1 (independent): S1.1, S2.3, S3.1. Wave 2: S1.2, S2.4, S2.5. Wave 3: S1.3,
-S3.2. Wave 4: S3.3, S4.1, S4.2. Per the host resource rules, implementation agents that run Jest,
-`tsc`, Docker builds or Playwright execute one at a time even inside a wave.
+Wave 1 (independent): S1.1, S2.3, S3.1. Wave 2: S1.2, S2.4, S2.5. Wave 3: S1.3, S3.2. Wave 4:
+S3.3, S4.1, S4.2. Wave 5: S4.3. Per the host resource rules, implementation agents that run
+Jest, `tsc`, Docker builds or Playwright execute one at a time even inside a wave.

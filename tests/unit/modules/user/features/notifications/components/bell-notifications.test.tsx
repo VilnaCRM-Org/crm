@@ -355,6 +355,49 @@ describe('BellNotifications', () => {
     expect(bell()).toHaveAttribute('aria-expanded', 'false');
   });
 
+  it('loads the panel again on the next open after its loader gave up', async () => {
+    const load = jest
+      .spyOn(notificationHistoryPanelLoader, 'load')
+      .mockImplementationOnce(async (report) => {
+        await Promise.resolve();
+        report('app-shell:notifications-history', new Error('chunk'));
+
+        return { default: (): null => null };
+      })
+      .mockResolvedValue({ default: NotificationHistoryPanel });
+    const { report } = mount();
+    await openWithEnter();
+    await waitFor(() => expect(report).toHaveBeenCalledTimes(1));
+    expect(within(host()).queryByRole('heading')).not.toBeInTheDocument();
+
+    await userEvent.keyboard('{Escape}');
+    expect(load).toHaveBeenCalledTimes(1);
+    await openWithEnter();
+
+    expect(await within(host()).findByRole('heading', { name: 'Сповіщення' })).toBeVisible();
+    expect(load).toHaveBeenCalledTimes(2);
+  });
+
+  it('loads the notice again for the next outcome after its loader gave up', async () => {
+    const { load } = bellOutcomeNoticeLoader;
+    const spy = jest
+      .spyOn(bellOutcomeNoticeLoader, 'load')
+      .mockImplementationOnce(async (report) => {
+        await Promise.resolve();
+        report('app-shell:notifications-notice', new Error('chunk'));
+
+        return { default: (): null => null };
+      })
+      .mockImplementation(load.bind(bellOutcomeNoticeLoader));
+    const { report } = mount();
+    await waitFor(() => expect(report).toHaveBeenCalledTimes(1));
+
+    raise(1);
+
+    expect(await screen.findByRole('button', { name: 'Закрити сповіщення' })).toBeVisible();
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
   it('shows the deferred route fallback in the host until the panel resolves', async () => {
     let resolvePanel: (panel: NotificationHistoryPanelModule) => void = () => undefined;
     jest.spyOn(notificationHistoryPanelLoader, 'load').mockReturnValue(

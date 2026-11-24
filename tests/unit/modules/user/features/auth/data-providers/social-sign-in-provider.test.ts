@@ -91,6 +91,20 @@ describe('SocialSignInProvider', () => {
     expect(loginFailed).not.toHaveBeenCalled();
   });
 
+  it('drops a start whose page went while the answer arrived', async () => {
+    const { provider, initiate, loginFailed } = setup();
+    const controller = new AbortController();
+    initiate.mockImplementation(() => {
+      controller.abort();
+      return Promise.resolve({ authorizationUrl: 'https://late.example.test', state: 'late' });
+    });
+
+    await expect(provider.start('google', controller.signal)).resolves.toEqual({
+      kind: 'aborted',
+    });
+    expect(loginFailed).not.toHaveBeenCalled();
+  });
+
   it('starts a clean session with the access token and marks it signed in', async () => {
     const { provider, complete, setState, signedIn, loginFailed, signOut } = setup();
     const accessToken = buildToken();

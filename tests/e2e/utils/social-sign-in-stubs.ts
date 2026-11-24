@@ -54,6 +54,17 @@ export async function answerInitiate(
   });
 }
 
+export async function refuseInitiate(
+  page: Page,
+  status: number,
+  errorCode: string
+): Promise<Array<Record<string, string>>> {
+  return answerOperation(page, 'InitiateSocialSignIn', () => ({
+    data: { initiateSocialSignInUser: null },
+    errors: [{ message: errorCode, extensions: { status, error_code: errorCode } }],
+  }));
+}
+
 export async function answerComplete(
   page: Page,
   result: Record<string, unknown>

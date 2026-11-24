@@ -108,7 +108,8 @@ All hooks in `hooks/` are container-free and read the repository through
   rejected `list` or `countUnread` is reported as `app-shell:notifications-list` and keeps the last
   snapshot; a rejected `markAllRead` is reported as `app-shell:notifications-mark-read` and leaves
   the rows unread.
-- `useBellDisclosure(layout)` owns the bell's open state and `visited`. Opening dismisses the
+- `useBellDisclosure(layout)` owns the bell's open state, `visited` and `opens`, the number of
+  times the panel was opened. Opening dismisses the
   merged card; an outcome raised while the panel is open is listed there, and its card waits until
   the panel closes. Escape, a pointerdown or focus leaving the bell wrapper, a
   route change and a layout change close it. It is built from `useBellOutsideClose`,
@@ -150,14 +151,18 @@ notifications wait for authorized subscriptions there and for user-service #526 
   bell through `useBellAnchor`, and registers this feature's catalog on `@/i18n` when the module
   evaluates, so the panel and the card translate on every protected page.
 - `NotificationHistoryPanel` (chunk `notifications-history`) is the panel content. It mounts in
-  the host on the first open and stays mounted, so its loader runs once; the host's deferred
-  `RouteFallback` covers the wait. It receives the records and `onMarkAllRead` from the bell.
+  the host on the first open and stays mounted, so its loader runs once unless it gave up; the
+  host's deferred `RouteFallback` covers the wait. It receives the records and `onMarkAllRead` from
+  the bell.
 - `BellOutcomeNotice` (chunk `notifications-notice`) draws the shown items as `UIBellNotice`. It
   sits in its own `Suspense` with a `0 × 0` `aria-hidden` fallback, so neither the bell nor the
   badge suspends on it. Its edge is neutral for every kind; only the row icons keep the status
   colour.
 - Each loader reports a final chunk failure as `app-shell:notifications-history` or
-  `app-shell:notifications-notice` and resolves to an empty component, so the bell keeps working.
+  `app-shell:notifications-notice` and resolves to an empty component, so the bell keeps
+  working. `useRetryableChunk` loads that chunk again on the next open of the panel, or on the next
+  recorded outcome or broadcast for the card, so a dropped connection does not cost the rest of the
+  session.
 
 - `NotificationsShellSlot` (`components/notifications-shell-slot.tsx`) is the shell slot of
   every protected page. It calls `useNotificationRecorder(onChunkFailure)`,

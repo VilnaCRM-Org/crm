@@ -155,6 +155,19 @@ describe('pending social sign-in mutations on the mock', () => {
     expect(github.pathname).toBe('/__mock-oauth/github/authorize');
   });
 
+  it.each([['mock'], [undefined]])(
+    'keeps a provider with a client id on the consent page when OAUTH_MODE is %s',
+    (mode) => {
+      if (mode !== undefined) process.env.OAUTH_MODE = mode;
+      process.env.OAUTH_GOOGLE_CLIENT_ID = 'g-id';
+
+      const url = new URL(authorizationUrlFor('google', 's-1'));
+
+      expect(url.origin + url.pathname).toBe('http://localhost:8080/__mock-oauth/google/authorize');
+      expect(url.searchParams.has('client_id')).toBe(false);
+    }
+  );
+
   it.each([
     ['github', 'https://github.com/login/oauth/authorize', { scope: 'read:user user:email' }],
     ['facebook', 'https://www.facebook.com/v19.0/dialog/oauth', { scope: 'email' }],
@@ -225,7 +238,19 @@ describe('pending social sign-in mutations on the mock', () => {
     }
   );
 
-  it('answers a state older than ten minutes as expired and forgets it', async () => {
+  it('accepts a state until just before it is ten minutes old', async () => {
+    const now = jest.spyOn(Date, 'now');
+    now.mockReturnValue(1_000);
+    const { state } = await initiate();
+    now.mockReturnValue(1_000 + 10 * 60 * 1000 - 1);
+
+    const result = await execute(COMPLETE, { provider: 'google', code: '4/real-code', state });
+
+    expect(result.errors).toBeUndefined();
+    expect(result.data?.completeSocialSignInUser).toMatchObject({ user: { success: true } });
+  });
+
+  it('answers a state that is ten minutes old as expired and forgets it', async () => {
     const now = jest.spyOn(Date, 'now');
     now.mockReturnValue(1_000);
     const { state } = await initiate();
