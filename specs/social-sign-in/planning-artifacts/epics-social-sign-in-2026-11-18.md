@@ -4,10 +4,11 @@ workflowType: 'epics-and-stories'
 bmadCommand: 'create-epics-stories'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-19'
-iteration: 2
+revised: '2026-11-24'
+iteration: 3
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR; stories rewritten to the landed flow'
+  - '2026-11-24 FR/NFR gate iteration 7: S2.4 transport answers and scrubber, S4.2 status, waves'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/prd-social-sign-in-2026-11-18.md'
@@ -131,14 +132,20 @@ _(2026-11-19)_ A pending GraphQL contract with two mutations plus zod schemas fo
   `clientMutationId` and the caller signal, and is never retried (FR15).
 - Both operations are anonymous in `SessionLinkFactory`: no `Authorization` header, and a 401
   never ends a current session.
-- `SocialSignInTransformer` maps every FR12 `extensions.error_code`, a network error to
-  `unavailable`, and anything else to `generic`; table-driven unit test.
+- `SocialSignInTransformer` maps every FR12 `extensions.error_code`, a request nothing answered (a
+  dropped connection or the deadline) to `unavailable`, and anything else to `generic`, an HTTP
+  error status and an unparsable body included; table-driven unit test.
 - `SocialSignInProvider.complete` starts the session on success and the pending challenge on a
-  2FA result (S3.3), and reports failures through `AuthSecuritySignals` with a reason code (NFR10).
+  2FA result (S3.3), and reports failures through `AuthSecuritySignals` with a reason code, which
+  for an HTTP-level answer comes from its status (NFR10).
 - `accessToken` and `refreshToken` are scrubbed by the existing `token` fragment of
-  `piiScrubber`; `code`, `state` and `pendingSessionId` never reach an event, because the page
-  strips them from the address bar before rendering and no path logs them (NFR7).
-- Integration suite covers every FR12 response through msw GraphQL handlers.
+  `piiScrubber`. The page strips `code` and `state` from the address bar before rendering, and
+  `SocialCallbackTextScrubber`, run by `PiiTextScrubber`, redacts their values, plain and
+  percent-encoded, from every event and breadcrumb that saw the earlier URL; its own tests and
+  `pii-scrubber.social-callback.test.ts` pin both forms. `pendingSessionId` never enters a URL and
+  no path logs it (NFR7).
+- Integration suite covers every FR12 response through msw GraphQL handlers, HTTP error statuses,
+  an unparsable body and the deadline included.
 - Tokens in `modules/user/config/tokens.ts`, registered by the feature registrar; DI gates green.
 
 ### S2.5 Initiation from the provider buttons — **independent**
@@ -247,7 +254,7 @@ carries `[no-adr]`.
 
 - `src/modules/user/README.md` and `src/routes/README.md` mention the new route and contract.
 - `specs/README.md` lists `social-sign-in` as "In progress" while the pull request is open; it
-  moves to "Done" when the feature is merged.
+  moves to "Implemented" when the feature is merged.
 
 ### S4.3 Remove the orphaned `url-builder` — **independent** _(2026-11-20)_
 
@@ -282,6 +289,6 @@ The #331 merge removed both consumers of `src/utils/url-builder.ts` (main delete
 
 ## Parallel dispatch
 
-Wave 1 (independent): S1.1, S2.1, S2.3, S3.1. Wave 2: S1.2, S2.4, S2.5. Wave 3: S1.3,
+Wave 1 (independent): S1.1, S2.3, S3.1. Wave 2: S1.2, S2.4, S2.5. Wave 3: S1.3,
 S3.2. Wave 4: S3.3, S4.1, S4.2. Per the host resource rules, implementation agents that run Jest,
 `tsc`, Docker builds or Playwright execute one at a time even inside a wave.

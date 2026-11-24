@@ -1,9 +1,11 @@
-import { HttpResponse } from 'msw';
+import { HttpResponse, delay } from 'msw';
 
 import '../../../../setup';
 import container from '@/config/dependency-injection-config';
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
+import type RequestDeadlineFactory from '@/lib/reliability/request-deadline-factory';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
+import HTTP_TOKENS from '@/services/https-client/tokens';
 import SECURITY_EVENT_TOKENS from '@/services/security-events/tokens';
 import type { SecurityEventRecorder } from '@/services/types/security-events/security-event';
 import SocialSignInProvider from '@auth/data-providers/social-sign-in-provider';
@@ -86,6 +88,59 @@ describe('SocialSignInProvider over the container and msw', () => {
     });
     expect(recorded).toHaveBeenCalledTimes(1);
     expect(recorded).toHaveBeenCalledWith('login', 'network');
+  });
+
+  const answered = (status: number) => (): Response => new HttpResponse(null, { status });
+  const gateway = (): Response => new HttpResponse('<html>Bad gateway</html>', { status: 502 });
+  const unparsable = (): Response => new HttpResponse('<html>', { status: 200 });
+
+  it.each<[string, () => Response, string]>([
+    ['an HTTP 423', answered(423), 'locked'],
+    ['an HTTP 429', answered(429), 'rate_limited'],
+    ['an HTTP 500', answered(500), 'server'],
+    ['an HTTP 503', answered(503), 'server'],
+    ['a gateway page', gateway, 'server'],
+    ['an unparsable body', unparsable, 'unknown'],
+  ])('shows the generic error for %s and records why', async (_label, respond, reason) => {
+    const recorded = authFailures();
+    const started = answer('InitiateSocialSignIn', respond);
+    const completed = answer('CompleteSocialSignIn', respond);
+    const signal = new AbortController().signal;
+
+    await expect(provider.start('google', signal)).resolves.toEqual({
+      kind: 'failed',
+      error: 'generic',
+    });
+    await expect(provider.complete('google', PARAMS, signal)).resolves.toEqual({
+      kind: 'failed',
+      error: 'generic',
+    });
+    expect([started, completed]).toEqual([[expect.anything()], [expect.anything()]]);
+    expect(recorded.mock.calls).toEqual([
+      ['login', reason],
+      ['login', reason],
+    ]);
+  });
+
+  it('shows unavailable for a request the deadline cut short', async () => {
+    const recorded = authFailures();
+    jest
+      .spyOn(
+        container.resolve<RequestDeadlineFactory>(HTTP_TOKENS.RequestDeadlineFactory),
+        'defaultTimeoutMs'
+      )
+      .mockReturnValue(20);
+    server.use(
+      userServiceGraphql.mutation('CompleteSocialSignIn', async () => {
+        await delay('infinite');
+        return HttpResponse.json({});
+      })
+    );
+
+    await expect(
+      provider.complete('google', PARAMS, new AbortController().signal)
+    ).resolves.toEqual({ kind: 'failed', error: 'unavailable' });
+    expect(recorded.mock.calls).toEqual([['login', 'network']]);
   });
 
   it('resolves one container singleton', () => {

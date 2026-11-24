@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import { ApolloError } from '@apollo/client';
 
+import { HttpError } from '@/services/https-client/http-error';
 import type SocialSignInTransformer from '@auth/transformers/social-sign-in-transformer';
 import { buildToken, buildUserId } from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
@@ -14,6 +15,9 @@ const coded = (errorCode: unknown): ApolloError =>
   new ApolloError({
     graphQLErrors: [{ message: 'refused', extensions: { status: 422, error_code: errorCode } }],
   });
+
+const answeredOverHttp = (statusCode: unknown): ApolloError =>
+  new ApolloError({ networkError: Object.assign(new Error('refused'), { statusCode }) });
 
 describe('SocialSignInTransformer', () => {
   beforeEach(async () => {
@@ -47,11 +51,14 @@ describe('SocialSignInTransformer', () => {
   });
 
   it.each([
+    [200, 'unknown'],
+    [399, 'unknown'],
     [401, 'authentication'],
     [403, 'authentication'],
     [409, 'conflict'],
     [400, 'validation'],
     [422, 'validation'],
+    [423, 'validation'],
     [429, 'validation'],
     [499, 'validation'],
     [500, 'server'],
@@ -62,10 +69,15 @@ describe('SocialSignInTransformer', () => {
     });
 
     expect(transformer.signalOf(error)).toEqual({ kind, status });
+    expect(transformer.signalOf(answeredOverHttp(status))).toEqual({ kind, status });
   });
 
-  it('signals an unreachable user-service as a network failure', () => {
-    expect(transformer.signalOf(new ApolloError({ networkError: new Error('offline') }))).toEqual({
+  it.each([
+    ['an unreachable user-service', new Error('offline')],
+    ['an expired deadline', new HttpError({ status: 0, message: 'Request timed out' })],
+    ['a non-numeric HTTP status', Object.assign(new Error('odd'), { statusCode: '500' })],
+  ])('signals %s as a network failure', (_label, networkError) => {
+    expect(transformer.signalOf(new ApolloError({ networkError }))).toEqual({
       kind: 'network',
       status: undefined,
     });
@@ -109,8 +121,11 @@ describe('SocialSignInTransformer', () => {
     expect(transformer.fromFailure(coded(code), live())).toEqual({ kind: 'failed', error: kind });
   });
 
-  it('maps a transport failure to unavailable', () => {
-    const error = new ApolloError({ networkError: new Error('Failed to fetch') });
+  it.each([
+    ['a dropped connection', new Error('Failed to fetch')],
+    ['an expired deadline', new HttpError({ status: 0, message: 'Request timed out' })],
+  ])('maps %s to unavailable', (_label, networkError) => {
+    const error = new ApolloError({ networkError });
 
     expect(transformer.fromFailure(error, live())).toEqual({
       kind: 'failed',
@@ -119,6 +134,10 @@ describe('SocialSignInTransformer', () => {
   });
 
   it.each([
+    ['an HTTP 500 answer', answeredOverHttp(500)],
+    ['an HTTP 503 answer', answeredOverHttp(503)],
+    ['an HTTP 429 answer', answeredOverHttp(429)],
+    ['an unparsable HTTP 200 answer', answeredOverHttp(200)],
     ['a non-string error code', coded(42)],
     ['a GraphQL error without extensions', new ApolloError({ graphQLErrors: [{ message: 'x' }] })],
     ['an error with no GraphQL errors', new ApolloError({})],

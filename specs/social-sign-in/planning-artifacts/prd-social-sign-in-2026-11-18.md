@@ -4,7 +4,7 @@ workflowType: 'prd'
 bmadCommand: 'create-prd'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-20'
+revised: '2026-11-24'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'
@@ -47,7 +47,7 @@ Predecessors: [research](research-social-sign-in-2026-11-18.md) ·
 > Twitter/X are wired identically and verified in `mock` mode only.
 >
 > Assumption A3: The access token from the callback is handled exactly like the password sign-in
-> token (memory-only `AuthStateVar`); `refresh_token` is ignored, consistent with the 2FA bundle's
+> token (memory-only, in `useAuthStore`); `refresh_token` is ignored, consistent with the 2FA bundle's
 > deferred refresh-token follow-up.
 >
 > Assumption A4: No Figma frame covers the callback route. The callback screen composes existing
@@ -91,18 +91,21 @@ false` and an `accessToken` starts a session the way a password sign-in does: an
   stored destination or `/`.
 - **FR12** Each documented failure renders its own localized message and recovery:
 
-  | Source                                         | Message key (`auth.social.error.*`) | Recovery actions                           |
-  | ---------------------------------------------- | ----------------------------------- | ------------------------------------------ |
-  | provider `error`                               | `cancelled`                         | Try again (same provider), Back to sign in |
-  | `missing_oauth_parameters` (400)               | `missing_parameters`                | Try again, Back to sign in                 |
-  | `provider_mismatch` (400)                      | `provider_mismatch`                 | Back to sign in                            |
-  | `unsupported_provider` (400)                   | `unsupported_provider`              | Back to sign in                            |
-  | `duplicate_email` (409)                        | `duplicate_email`                   | Back to sign in (use email + password)     |
-  | `invalid_state`, `state_expired` (422)         | `expired`                           | Try again, Back to sign in                 |
-  | `provider_email_unavailable` (422)             | `email_unavailable`                 | Try again, Back to sign in                 |
-  | `unverified_provider_email` (422)              | `email_unverified`                  | Try again, Back to sign in                 |
-  | `provider_unavailable` (503), network, timeout | `unavailable`                       | Try again, Back to sign in                 |
-  | unknown `error_code`, 5xx, malformed body      | `generic`                           | Try again, Back to sign in                 |
+  | Source                                                      | Message key (`auth.social.error.*`) | Recovery actions                           |
+  | ----------------------------------------------------------- | ----------------------------------- | ------------------------------------------ |
+  | provider `error`                                            | `cancelled`                         | Try again (same provider), Back to sign in |
+  | `missing_oauth_parameters` (400)                            | `missing_parameters`                | Try again, Back to sign in                 |
+  | `provider_mismatch` (400)                                   | `provider_mismatch`                 | Back to sign in                            |
+  | `unsupported_provider` (400)                                | `unsupported_provider`              | Back to sign in                            |
+  | `duplicate_email` (409)                                     | `duplicate_email`                   | Back to sign in (use email + password)     |
+  | `invalid_state`, `state_expired` (422)                      | `expired`                           | Try again, Back to sign in                 |
+  | `provider_email_unavailable` (422)                          | `email_unavailable`                 | Try again, Back to sign in                 |
+  | `unverified_provider_email` (422)                           | `email_unverified`                  | Try again, Back to sign in                 |
+  | `provider_unavailable`, network, timeout                    | `unavailable`                       | Try again, Back to sign in                 |
+  | unknown `error_code`, any HTTP error status, malformed body | `generic`                           | Try again, Back to sign in                 |
+
+  `provider_unavailable` is the `error_code` of a GraphQL error; its 503 travels in
+  `extensions.status`. An HTTP-level 503 is an HTTP error status and shows `generic`.
 
 - **FR13** (the two email kinds became retryable after the S3.1 accessibility review: granting or
   verifying the email at the provider is fixed by a fresh round trip) "Try again" restarts FR1 for the same provider; "Back to sign in" links to `/sign-in`.
@@ -136,7 +139,7 @@ Quality floors restate `.claude/react-sdlc.yml` `quality.*` — raise-only:
 | NFR10 | _(2026-11-19)_ Observability: success and every failure user-service answers (or that cannot reach it) emit through the existing boundaries — `auth_failure` security events with reason codes; refusals decided in the page before any request (cancel, missing parameters, a foreign state) emit nothing, because a crafted link alone triggers them; no new direct Sentry calls |
 | NFR11 | CSP unchanged; `make check-security-headers` green                                                                                                                                                                                                                                                                                                                                 |
 | NFR12 | Determinism: the E2E suite uses `OAUTH_MODE=mock` only, with `retries: 0`                                                                                                                                                                                                                                                                                                          |
-| NFR13 | No secrets committed: `.env.example` carries empty `OAUTH_*_CLIENT_ID` keys only; client secrets appear only in the `backend` mode guide and never in this repository                                                                                                                                                                                                              |
+| NFR13 | No secrets committed: `.env.example` carries empty `OAUTH_*_CLIENT_ID` keys only; client secrets never appear in this repository (the local modes of D4 do not use one)                                                                                                                                                                                                            |
 
 ## 4. Acceptance-criteria trace
 

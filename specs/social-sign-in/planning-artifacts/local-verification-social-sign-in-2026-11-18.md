@@ -3,7 +3,7 @@ status: 'complete'
 workflowType: 'local-verification-guide'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-19'
+revised: '2026-11-24'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/prd-social-sign-in-2026-11-18.md'
@@ -12,7 +12,7 @@ inputDocuments:
 
 # Local Verification Guide: Social Sign-In
 
-> Revised 2026-11-19 for the GraphQL design; the published copy is `docs/social-sign-in-local.md`.
+> Revised 2026-11-24; the published copy is `docs/social-sign-in-local.md`.
 
 How to try the Google, GitHub, Facebook and Twitter/X sign-in buttons on your machine. The SPA
 talks to user-service over GraphQL only: two mutations, `initiateSocialSignInUser` and
@@ -34,10 +34,13 @@ The design and the plan are in
 3. A cancel shows the cancelled view. Otherwise the page accepts only the `state` this tab started
    with, then calls `completeSocialSignInUser` and signs in.
 
-| Mode     | `OAUTH_MODE` | Provider screen      | Answers the mutations | Keys you need |
-| -------- | ------------ | -------------------- | --------------------- | ------------- |
-| Mock     | `mock`       | Mockoon consent page | Apollo mock           | none          |
-| Provider | `provider`   | real Google / GitHub | Apollo mock           | client ID     |
+| Mode     | `OAUTH_MODE` | Provider screen        | Answers the mutations | Keys you need |
+| -------- | ------------ | ---------------------- | --------------------- | ------------- |
+| Mock     | `mock`       | Mockoon consent page   | Apollo mock           | none          |
+| Provider | `provider`   | the real provider page | Apollo mock           | client ID     |
+
+In Provider mode a provider reaches its real screen only when its `OAUTH_<PROVIDER>_CLIENT_ID` is
+set; any provider without one, Facebook and Twitter/X included, stays on the Mockoon page.
 
 The redirect URI is always a **frontend** URL:
 
@@ -60,8 +63,8 @@ where `<provider>` is `google`, `github`, `facebook` or `twitter`. Use `localhos
 4. The mock consent page lists one link per outcome. What you should see (English copy shown;
    Ukrainian is the main language):
    - **Allow**: signed in, on `/` or on the protected page you came from.
-   - **Allow (2FA account)**: the two-factor challenge at `/sign-in/two-factor`; any six-digit code
-     signs in on the mock and lands on `/`.
+   - **Allow (2FA account)**: the two-factor challenge at `/sign-in/two-factor`. On the mock, any
+     six-digit code finishes the sign-in and lands on `/` or on the protected page you came from.
    - **Deny**: "Sign-in with Google was cancelled…", Try again and Back to sign in.
    - **Expired state**: "Your sign-in attempt expired…" and Try again.
    - **Unverified email**: "Your Google email address is not verified…" and Try again.
@@ -152,7 +155,12 @@ The Apollo mock does not exchange the code, so the identity is canned: this mode
 registrations, redirect URIs and the browser round trip, not account linking.
 
 For the prod-parity stack on port 3001, set `OAUTH_SPA_ORIGIN=http://localhost:3001`, use the
-`:3001` GitHub app, and start it with `make start-prod`.
+`:3001` GitHub app, and start it with `make start-prod`. That target does not start
+the Apollo mock, so start it, and after changing `.env` recreate it, with:
+
+```bash
+docker compose -f docker-compose.test.yml up -d --force-recreate --no-deps apollo
+```
 
 ## 6. Against a real user-service
 

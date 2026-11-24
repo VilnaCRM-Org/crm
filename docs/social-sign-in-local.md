@@ -141,8 +141,8 @@ The Apollo mock does not exchange the code, so the identity is canned: this mode
 registrations, redirect URIs and the browser round trip, not account linking.
 
 For the prod-parity stack on port 3001, set `OAUTH_SPA_ORIGIN=http://localhost:3001`, use the
-`:3001` GitHub app, and start it with `make start-prod`. That target reuses running containers,
-so after changing `.env` recreate its Apollo mock as well:
+`:3001` GitHub app, and start it with `make start-prod`. That target does not start
+the Apollo mock, so start it, and after changing `.env` recreate it, with:
 
 ```bash
 docker compose -f docker-compose.test.yml up -d --force-recreate --no-deps apollo

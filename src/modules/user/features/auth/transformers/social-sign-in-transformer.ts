@@ -1,4 +1,4 @@
-import type { ApolloError } from '@apollo/client';
+import type { ApolloError, ServerError } from '@apollo/client';
 import { injectable } from 'tsyringe';
 
 import type { AuthFailureReason } from '@/services/types/security-events/security-event';
@@ -32,6 +32,7 @@ const STATUS_REASONS = new Map<number, AuthFailureReason>([
   [403, 'authentication'],
   [409, 'conflict'],
 ]);
+const CLIENT_ERROR = 400;
 const SERVER_ERROR = 500;
 
 @injectable()
@@ -52,22 +53,33 @@ export default class SocialSignInTransformer {
   }
 
   public signalOf(error: unknown): SocialFailureSignal {
+    const status = this.statusOf(error);
+    return { kind: this.isUnanswered(error) ? 'network' : this.reasonOf(status), status };
+  }
+
+  private isUnanswered(error: unknown): boolean {
+    const { networkError } = Object(error) as Partial<ApolloError>;
+    return Boolean(networkError) && this.statusOf(error) === undefined;
+  }
+
+  private statusOf(error: unknown): number | undefined {
     const { networkError, graphQLErrors } = Object(error) as Partial<ApolloError>;
-    const answered = graphQLErrors?.[0]?.extensions?.status;
-    const status = typeof answered === 'number' ? answered : undefined;
-    return { kind: networkError ? 'network' : this.reasonOf(status), status };
+    const { statusCode } = Object(networkError) as Partial<ServerError>;
+    const status: unknown = statusCode ?? graphQLErrors?.[0]?.extensions?.status;
+    return typeof status === 'number' ? status : undefined;
   }
 
   private reasonOf(status: number | undefined): AuthFailureReason {
-    if (status === undefined) return 'unknown';
+    if (status === undefined || status < CLIENT_ERROR) return 'unknown';
     return status >= SERVER_ERROR ? 'server' : (STATUS_REASONS.get(status) ?? 'validation');
   }
 
-  // A transport failure (no answer at all) is "unavailable"; a GraphQL error names its reason in
-  // `extensions.error_code`, and anything unmapped, including an unparsable body, is "generic".
+  // No answer at all (a dropped connection or the deadline) is "unavailable"; a GraphQL error names
+  // its reason in `extensions.error_code`, and anything unmapped, including an HTTP error status or
+  // an unparsable body, is "generic".
   private errorKindOf(error: unknown): SocialSignInErrorKind {
-    const { networkError, graphQLErrors } = Object(error) as Partial<ApolloError>;
-    if (networkError) return 'unavailable';
+    if (this.isUnanswered(error)) return 'unavailable';
+    const { graphQLErrors } = Object(error) as Partial<ApolloError>;
     const code = graphQLErrors?.[0]?.extensions?.error_code;
     return (typeof code === 'string' ? ERROR_KINDS.get(code) : undefined) ?? 'generic';
   }
