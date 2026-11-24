@@ -5,13 +5,14 @@ bmadCommand: 'create-epics-stories'
 project_name: 'crm'
 date: '2026-11-18'
 revised: '2026-11-24'
-iteration: 6
+iteration: 7
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR; stories rewritten to the landed flow'
   - '2026-11-24 FR/NFR gate iteration 7: S2.4 transport answers and scrubber, S4.2 status, waves'
   - '2026-11-24 review: S2.4 superseded completions, encoded parameter names'
   - '2026-11-24 FR/NFR gate iteration 8: S1.1 blank code, expiry and bound, wave 5'
   - '2026-11-24 FR/NFR gate iteration 9: S1.1 repeated parameters, S3.1 stories, graph, matrix'
+  - '2026-11-24 FR/NFR gate iteration 10: S3.1 contrast, S4.1 dependency'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/prd-social-sign-in-2026-11-18.md'
@@ -191,10 +192,11 @@ Component story (feature-local; no kit component is missing — architecture §2
 - Renders an `<h1>` that receives focus on mount, the localized message inside a polite `role="status"` (changed from an alert after the
   accessibility review, so it does not cut off the heading),
   "Try again" (`UIButton`) only for retryable kinds, and an always-present "Back to sign in" link.
-- Storybook: one story per kind, `Cancelled` first as the default (Ukrainian copy, the main language); `make
-storybook-build` and `make check-storybook-static` green.
+- Storybook: one story per kind, `Cancelled` first as the default (Ukrainian copy, the main
+  language); `make storybook-build` and `make check-storybook-static` green.
 - jest-axe clean; 44 px targets; keyboard: Tab reaches both actions, Enter/Space activate.
-- Palette tokens only (assumption A4); contrast AA in the browser lane.
+- Palette tokens only (assumption A4); contrast AA in the browser lane, except the
+  contained action's accepted gap (PRD NFR6, readiness W7).
 
 ### S3.2 Callback page and relay — **dependent on S2.4, S3.1**
 
@@ -240,7 +242,7 @@ _(2026-11-20)_ Re-planned against the merged challenge (#331), as readiness W2 r
 
 ## Epic 4 — Verification and documentation
 
-### S4.1 E2E, mobile and visual coverage — **dependent on S1.2, S2.5, S3.2**
+### S4.1 E2E, mobile and visual coverage — **dependent on S2.5, S3.2**
 
 _(2026-11-19)_ Rewritten to the landed suite. The browser lanes answer both mutations with
 GraphQL stubs (`tests/e2e/utils/social-sign-in-stubs.ts`): the stubbed authorization URL is

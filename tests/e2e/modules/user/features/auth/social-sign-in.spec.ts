@@ -75,11 +75,14 @@ test.describe('Social sign-in', () => {
   });
 
   test('refuses a cancel for a state this tab never started', async ({ page }) => {
+    const completed = await answerComplete(page, signedIn());
+
     await page.goto(`/auth/callback/github?error=access_denied&state=${E2E_STATE}`);
 
     await expect(
       page.getByRole('status').filter({ hasText: t('auth.social.error.expired') })
     ).toBeVisible();
+    expect(completed).toHaveLength(0);
   });
 
   test('refuses a callback for a state this tab never started', async ({ page }) => {

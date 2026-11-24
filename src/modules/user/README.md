@@ -1167,7 +1167,7 @@ engines: `two-factor-challenge-states` and `two-factor-settings-states` run the 
 scan plus the no-positive-`tabindex` check (`expectCleanScan`) on every state, and
 `two-factor-challenge-keyboard` and `two-factor-settings-keyboard` walk the tab order with
 `expectTabOrder`, then check Enter, Space, Escape, the focus target of each change and the
-colours with `toHaveCSS`. `A11Y_EXCEPTIONS` has twelve entries, and the unit test pins the count;
+colours with `toHaveCSS`. `A11Y_EXCEPTIONS` has thirteen entries, and the unit test pins the count;
 the twelfth is the challenge's grey "Назад" (`#969B9D`, 2.81:1), kept on the owner's decision of
 2026-11-04 and recorded in
 [`docs/accessibility/acceptance-standard.md`](../../../docs/accessibility/acceptance-standard.md),
