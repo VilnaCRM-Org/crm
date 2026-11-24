@@ -61,7 +61,7 @@ describe('notification content styles', () => {
     expect(styles.action['&:focus-visible']).toEqual(ring);
   });
 
-  it('keeps both controls transparent on hover and focus, with no ripple in reduced motion', async () => {
+  it('keeps both controls transparent and draws no ripple in reduced motion', async () => {
     const styles = await loadStyles();
 
     for (const control of [styles.action, styles.close]) {

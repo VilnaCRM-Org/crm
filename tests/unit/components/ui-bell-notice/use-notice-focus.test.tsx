@@ -179,7 +179,7 @@ describe('useNoticeFocus', () => {
     const first = jest.fn();
     const second = jest.fn();
     const { result, rerender } = renderHook(useNoticeFocus, {
-      initialProps: { views, returnFocusRef: { current: save }, onDismiss: first },
+      initialProps: { views, returnFocusRef: { current: save as HTMLElement }, onDismiss: first },
     });
     const two = document.createElement('button');
     document.body.append(two);
@@ -244,7 +244,7 @@ describe('useNoticeFocus release', () => {
     const { save, heading } = targets();
     const onDismiss = jest.fn();
     const { result, rerender } = renderHook(useNoticeFocus, {
-      initialProps: { views, returnFocusRef: { current: save }, onDismiss },
+      initialProps: { views, returnFocusRef: { current: save as HTMLElement }, onDismiss },
     });
     const three = closeButton('three');
     result.current.registry.current.set('three', three);
