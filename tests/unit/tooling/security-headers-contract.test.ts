@@ -103,11 +103,7 @@ describe('browser security-header baseline (issue #113)', () => {
   it('derives connect-src from the build-time and runtime API variables the app reads', () => {
     expect(policy.contentSecurityPolicy.connectSrcFromEnv).toEqual({
       build: ['REACT_APP_MOCKOON_URL', 'REACT_APP_GRAPHQL_URL', 'REACT_APP_SENTRY_DSN'],
-      runtime: [
-        'APP_CONFIG_API_BASE_URL',
-        'APP_CONFIG_GRAPHQL_URL',
-        'APP_CONFIG_NOTIFICATION_EVENTS_URL',
-      ],
+      runtime: ['APP_CONFIG_API_BASE_URL', 'APP_CONFIG_GRAPHQL_URL'],
     });
 
     const rawEnv = readRepoFile('src/config/env/raw-env.ts');

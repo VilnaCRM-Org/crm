@@ -7,10 +7,10 @@ import settingsEn from '@/modules/user/features/settings/i18n/en.json';
 import settingsUk from '@/modules/user/features/settings/i18n/uk.json';
 
 import createLocaleI18n from './create-locale-i18n';
-import createContentI18n from './create-notification-content-locale-i18n';
+import createToastLocaleI18n from './create-toast-locale-i18n';
 
 const createSettingsLocaleI18n = (...args: Parameters<typeof createLocaleI18n>): I18nType => {
-  const instance = createContentI18n(...args);
+  const instance = createToastLocaleI18n(...args);
   lazyCatalogLoader.register(instance, { en: settingsEn, uk: settingsUk });
   lazyCatalogLoader.register(instance, { en: policyEn, uk: policyUk });
 

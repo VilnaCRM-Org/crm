@@ -18,7 +18,6 @@ export const shellText = {
   unavailable: t('app_shell.unavailable'),
   search: t('app_shell.search.label'),
   notifications: t('app_shell.notifications.label'),
-  seedUnread: t('notification_center.bell.unread_count', { count: 1 }),
   tasks: t('app_shell.tasks.label'),
   userMenu: t('user_menu.button'),
   profileItem: t('user_menu.my_profile'),
@@ -51,17 +50,9 @@ export const drawerOf = (page: Page): Locator =>
 export const burgerOf = (page: Page): Locator =>
   page.getByRole('banner').getByRole('button', { name: shellText.openMenu, exact: true });
 
-export const logoOf = (page: Page): Locator =>
-  page.getByRole('banner').getByRole('link', { name: 'VilnaCRM', exact: true });
-
-export const bellOf = (page: Page): Locator =>
-  page.getByRole('banner').getByRole('button', { name: shellText.notifications, exact: true });
-
 export async function expectShellReady(page: Page): Promise<void> {
   await expect(page.getByRole('banner')).toBeVisible();
   await expect(chipOf(page)).toBeVisible();
-  await expect(bellOf(page)).toBeEnabled();
-  await expect(bellOf(page)).toHaveAttribute('aria-expanded', 'false');
   await expect(page.getByRole('contentinfo')).toBeVisible();
 }
 

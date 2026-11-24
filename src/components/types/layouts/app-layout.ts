@@ -1,7 +1,6 @@
-import type { ShellFailureHandler, ShellSlot } from '@/routes/types/shell-slot';
+import type { ShellFailureHandler, UserMenuSlot } from '@/routes/types/shell-slot';
 
 export interface AppLayoutProps {
-  readonly userMenu?: ShellSlot | undefined;
-  readonly notifications?: ShellSlot | undefined;
+  readonly userMenu?: UserMenuSlot | undefined;
   readonly onShellFailure?: ShellFailureHandler | undefined;
 }

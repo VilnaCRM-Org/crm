@@ -155,13 +155,11 @@ describe('scripts/security-headers.js (issue #113)', () => {
       const env = {
         APP_CONFIG_API_BASE_URL: 'https://api.example/api',
         APP_CONFIG_GRAPHQL_URL: 'https://graphql.example/graphql',
-        APP_CONFIG_NOTIFICATION_EVENTS_URL: 'https://events.example',
       };
 
       expect(extendRuntimeConnectSrc(serveConfig, policy, env)).toEqual([
         'https://api.example',
         'https://graphql.example',
-        'https://events.example',
       ]);
       extendRuntimeConnectSrc(serveConfig, policy, env);
 
@@ -170,7 +168,6 @@ describe('scripts/security-headers.js (issue #113)', () => {
         'http://localhost:8080',
         'https://api.example',
         'https://graphql.example',
-        'https://events.example',
       ]);
     });
 

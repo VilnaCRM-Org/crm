@@ -2,7 +2,6 @@ import Box from '@mui/material/Box';
 import type { Decorator, Meta, StoryObj } from '@storybook/react-webpack5';
 import type { JSX } from 'react';
 
-import bellStyles from './bell-styles';
 import HeaderBadge from './header-badge';
 import styles from './styles';
 
@@ -41,26 +40,5 @@ type Story = StoryObj<typeof HeaderBadge>;
 export const One: Story = {};
 
 export const Eight: Story = { args: { count: 8 } };
-
-export const Alert: Story = {
-  args: { tone: 'alert' },
-  decorators: [
-    (Story): JSX.Element => (
-      <Box sx={{ ...bellStyles.enabled.tablet, margin: '24px' }}>
-        <Story />
-      </Box>
-    ),
-  ],
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'The alert tone for the enabled bell: a `#D63333` fill with white 12 px digits, 4.79:1 ' +
-          'on the white bell and 4.63:1 on the page, and a 1 px `CanvasText` border in forced ' +
-          'colors. It is drawn at desktop and tablet only.',
-      },
-    },
-  },
-};
 
 export const NoCount: Story = { args: { count: null } };

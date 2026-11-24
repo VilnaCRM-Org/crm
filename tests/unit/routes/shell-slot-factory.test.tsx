@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { type JSX, Suspense, useCallback } from 'react';
 
 import ShellSlotFactory from '@/routes/shell-slot-factory';
-import type { ShellSlotLayout, ShellSlotProps } from '@/routes/types/shell-slot';
+import type { ShellSlotProps } from '@/routes/types/shell-slot';
 import { paletteColors } from '@/styles/colors';
 
 const chunkFailure = (): Error =>
@@ -36,13 +36,12 @@ function LoadedSlot({ signOut, onChunkFailure, onAvatar }: ShellSlotProps): JSX.
 const mount = (
   Slot: ReturnType<ShellSlotFactory['create']>,
   signOut = jest.fn(),
-  onAvatar = jest.fn(),
-  layout: ShellSlotLayout = 'desktop'
+  onAvatar = jest.fn()
 ): RenderResult =>
   render(
     <div role="group" aria-label="slot">
       <Suspense fallback={<p>pending</p>}>
-        <Slot layout={layout} signOut={signOut} onAvatar={onAvatar} />
+        <Slot signOut={signOut} onAvatar={onAvatar} />
       </Suspense>
     </div>
   );
@@ -53,9 +52,8 @@ function ThemedSlot(): JSX.Element {
 
 describe('ShellSlotFactory', () => {
   it('gives the loaded slot the CRM theme from the theme chunk', async () => {
-    const Slot = new ShellSlotFactory(jest.fn()).create(
-      () => Promise.resolve({ default: ThemedSlot }),
-      'app-shell:user-menu'
+    const Slot = new ShellSlotFactory(jest.fn()).create(() =>
+      Promise.resolve({ default: ThemedSlot })
     );
 
     mount(Slot);
@@ -66,9 +64,8 @@ describe('ShellSlotFactory', () => {
   it('renders the loaded slot with the outlet sign-out and the failure handler bound', async () => {
     const report = jest.fn();
     const signOut = jest.fn();
-    const Slot = new ShellSlotFactory(report).create(
-      () => Promise.resolve({ default: LoadedSlot }),
-      'app-shell:user-menu'
+    const Slot = new ShellSlotFactory(report).create(() =>
+      Promise.resolve({ default: LoadedSlot })
     );
     mount(Slot, signOut);
     const user = userEvent.setup();
@@ -83,9 +80,8 @@ describe('ShellSlotFactory', () => {
 
   it('hands the loaded slot the host avatar callback unchanged', async () => {
     const onAvatar = jest.fn();
-    const Slot = new ShellSlotFactory(jest.fn()).create(
-      () => Promise.resolve({ default: LoadedSlot }),
-      'app-shell:user-menu'
+    const Slot = new ShellSlotFactory(jest.fn()).create(() =>
+      Promise.resolve({ default: LoadedSlot })
     );
     mount(Slot, jest.fn(), onAvatar);
 
@@ -98,10 +94,7 @@ describe('ShellSlotFactory', () => {
   it('publishes no avatar from the empty slot a twice-failed chunk leaves', async () => {
     const report = jest.fn();
     const onAvatar = jest.fn();
-    const Slot = new ShellSlotFactory(report).create(
-      () => Promise.reject(chunkFailure()),
-      'app-shell:user-menu'
-    );
+    const Slot = new ShellSlotFactory(report).create(() => Promise.reject(chunkFailure()));
     mount(Slot, jest.fn(), onAvatar);
 
     await waitFor(() => expect(report).toHaveBeenCalledTimes(1));
@@ -111,10 +104,7 @@ describe('ShellSlotFactory', () => {
 
   it('holds an aria-hidden placeholder of its own while the chunk is pending', () => {
     const report = jest.fn();
-    const Slot = new ShellSlotFactory(report).create(
-      () => new Promise(() => undefined),
-      'app-shell:user-menu'
-    );
+    const Slot = new ShellSlotFactory(report).create(() => new Promise(() => undefined));
 
     mount(Slot);
     const slot = screen.getByRole('group', { name: 'slot' });
@@ -131,7 +121,7 @@ describe('ShellSlotFactory', () => {
       .fn()
       .mockRejectedValueOnce(chunkFailure())
       .mockResolvedValueOnce({ default: LoadedSlot });
-    const Slot = new ShellSlotFactory(report).create(load, 'app-shell:user-menu');
+    const Slot = new ShellSlotFactory(report).create(load);
 
     mount(Slot);
 
@@ -144,7 +134,7 @@ describe('ShellSlotFactory', () => {
     const report = jest.fn();
     const failure = chunkFailure();
     const load = jest.fn().mockRejectedValue(failure);
-    const Slot = new ShellSlotFactory(report).create(load, 'app-shell:user-menu');
+    const Slot = new ShellSlotFactory(report).create(load);
 
     mount(Slot);
 
@@ -161,7 +151,7 @@ describe('ShellSlotFactory', () => {
       .mockRejectedValueOnce(chunkFailure())
       .mockRejectedValueOnce(chunkFailure())
       .mockResolvedValueOnce({ default: LoadedSlot });
-    const Slot = new ShellSlotFactory(report).create(load, 'app-shell:user-menu');
+    const Slot = new ShellSlotFactory(report).create(load);
     const { unmount } = mount(Slot);
     await waitFor(() => expect(report).toHaveBeenCalledTimes(1));
     unmount();
@@ -175,12 +165,12 @@ describe('ShellSlotFactory', () => {
 
   it('keeps one load per host across its re-renders', async () => {
     const load = jest.fn().mockResolvedValue({ default: LoadedSlot });
-    const Slot = new ShellSlotFactory(jest.fn()).create(load, 'app-shell:user-menu');
-    const view = render(<Slot layout="desktop" signOut={jest.fn()} onAvatar={jest.fn()} />);
+    const Slot = new ShellSlotFactory(jest.fn()).create(load);
+    const view = render(<Slot signOut={jest.fn()} onAvatar={jest.fn()} />);
     await screen.findByRole('button', { name: 'sign out' });
     const button = screen.getByRole('button', { name: 'sign out' });
 
-    view.rerender(<Slot layout="desktop" signOut={jest.fn()} onAvatar={jest.fn()} />);
+    view.rerender(<Slot signOut={jest.fn()} onAvatar={jest.fn()} />);
 
     expect(screen.getByRole('button', { name: 'sign out' })).toBe(button);
     expect(load).toHaveBeenCalledTimes(1);
@@ -190,43 +180,11 @@ describe('ShellSlotFactory', () => {
     const report = jest.fn();
     const failure = new Error('boom');
     const load = jest.fn().mockRejectedValue(failure);
-    const Slot = new ShellSlotFactory(report).create(load, 'app-shell:user-menu');
+    const Slot = new ShellSlotFactory(report).create(load);
 
     mount(Slot);
 
     await waitFor(() => expect(report).toHaveBeenCalledWith('app-shell:user-menu', failure));
     expect(load).toHaveBeenCalledTimes(1);
   });
-
-  it('reports a twice-failed chunk with the source it was created for', async () => {
-    const report = jest.fn();
-    const failure = chunkFailure();
-    const Slot = new ShellSlotFactory(report).create(
-      () => Promise.reject(failure),
-      'app-shell:notifications'
-    );
-
-    mount(Slot);
-
-    await waitFor(() => expect(report).toHaveBeenCalledTimes(1));
-    expect(report).toHaveBeenCalledWith('app-shell:notifications', failure);
-    expect(report).not.toHaveBeenCalledWith('app-shell:user-menu', failure);
-  });
-
-  it.each(['mobile', 'tablet', 'desktop'] as const)(
-    'passes the host %s layout through to the loaded slot',
-    async (layout) => {
-      function LayoutSlot(props: ShellSlotProps): JSX.Element {
-        return <p>layout:{props.layout}</p>;
-      }
-      const Slot = new ShellSlotFactory(jest.fn()).create(
-        () => Promise.resolve({ default: LayoutSlot }),
-        'app-shell:notifications'
-      );
-
-      mount(Slot, jest.fn(), jest.fn(), layout);
-
-      expect(await screen.findByText(`layout:${layout}`)).toBeInTheDocument();
-    }
-  );
 });

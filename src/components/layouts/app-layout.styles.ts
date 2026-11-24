@@ -5,11 +5,9 @@ const FROM_SIDEBAR = `@media (min-width:${SIDEBAR_BREAKPOINT}px)`;
 const TABLET_ONLY = `${FROM_SIDEBAR} and (max-width:${DESKTOP_BREAKPOINT - 0.05}px)`;
 
 const HEADER_HEIGHT = '64px';
-const OVERHANG_PROPERTY = '--app-top-overhang';
-const HEADER_CLEARED = `calc(${HEADER_HEIGHT} + var(${OVERHANG_PROPERTY}, 0px))`;
 const HEADER_CLEARANCE = {
-  scrollMarginTop: HEADER_CLEARED,
-  '& *': { scrollMarginTop: HEADER_CLEARED },
+  scrollMarginTop: HEADER_HEIGHT,
+  '& *': { scrollMarginTop: HEADER_HEIGHT },
 };
 
 const NAV_INSET_TOP = 10;
@@ -21,7 +19,6 @@ export default {
   sidebarBreakpoint: SIDEBAR_BREAKPOINT,
   sidebarExpandedWidth: '238px',
   headerHeight: HEADER_HEIGHT,
-  overhangProperty: OVERHANG_PROPERTY,
   frame: {
     flexGrow: 1,
     display: 'grid',

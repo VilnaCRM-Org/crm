@@ -21,9 +21,7 @@ const meta: Meta<typeof DrawerHeaderCopies> = {
           'The bell, list and avatar copies in the drawer header. They are aria-hidden and not ' +
           'operable; the glyphs keep the disabled `#D0D4D8` of the header they cover, and the ' +
           'avatar is the 40 px `#E1E7EA` circle. It shows the no-data person glyph until the ' +
-          "user module's menu slot supplies a copy of the header avatar, which takes its place. " +
-          'With `liveBell` (a `shell.notifications` slot is mounted) the bell copy takes the ' +
-          'enabled `#1A1C1E` glyph colour and stays aria-hidden.',
+          "user module's menu slot supplies a copy of the header avatar, which takes its place.",
       },
       story: { inline: false },
     },
@@ -37,5 +35,3 @@ type Story = StoryObj<typeof DrawerHeaderCopies>;
 export const Default: Story = {};
 
 export const SuppliedAvatar: Story = { args: { avatar: 'ОП' } };
-
-export const LiveBell: Story = { args: { liveBell: true } };

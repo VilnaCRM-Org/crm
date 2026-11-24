@@ -106,24 +106,3 @@ describe('render-path import graph', () => {
     expect(graph.packages.get(packageName) ?? []).toEqual([]);
   });
 });
-
-describe('notifications port import graph (#391)', () => {
-  const graph = walkStaticGraph('src/hooks/use-notifications.ts');
-  const files = [...graph.files];
-
-  it('reaches the outlet store and its actions', () => {
-    expect(graph.files.has('src/lib/notifications/use-notification-outlet-store.ts')).toBe(true);
-    expect(graph.files.has('src/lib/notifications/notification-outlet-actions.ts')).toBe(true);
-  });
-
-  it.each(FORBIDDEN)('never statically imports %s', (packageName) => {
-    expect(graph.packages.get(packageName) ?? []).toEqual([]);
-  });
-
-  it('reaches no DI bridge, composition root or runtime schema', () => {
-    expect(files.filter((file) => file.startsWith('src/providers/di'))).toEqual([]);
-    expect(files).not.toContain('src/config/dependency-injection-config.ts');
-    expect(files).not.toContain('src/config/runtime/app-config.ts');
-    expect(files).not.toContain('src/config/runtime/app-config-schema.ts');
-  });
-});

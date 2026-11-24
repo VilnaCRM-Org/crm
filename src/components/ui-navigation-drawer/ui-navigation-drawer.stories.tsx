@@ -52,8 +52,3 @@ export const OpenOnLargePhone: Story = {
   decorators: [withMemoryRouter('/settings')],
   globals: { viewport: { value: 'sm', isRotated: false } },
 };
-
-export const OpenWithLiveBell: Story = {
-  args: { liveBell: true },
-  decorators: [withMemoryRouter('/settings')],
-};

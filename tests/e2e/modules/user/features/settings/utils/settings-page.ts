@@ -6,14 +6,7 @@ import fillInput from '@tests/e2e/utils/fill-input';
 import { expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 
-import {
-  PROFILE_NODE,
-  type ProfileReplies,
-  type RecordedCall,
-  configuredOrigin,
-  originsOf,
-  replyWithSaved,
-} from './profile-stub';
+import { PROFILE_NODE, type RecordedCall, configuredOrigin, originsOf } from './profile-stub';
 
 export const text = {
   title: `${t('settings.title')} - VilnaCRM`,
@@ -37,10 +30,8 @@ export const text = {
   passwordChanged: t('settings.toasts.password_changed'),
   resent: t('settings.toasts.resent'),
   transient: t('settings.toasts.save_failed_transient'),
-  saveFailed: t('settings.toasts.save_failed'),
-  resendFailed: t('settings.toasts.resend_failed'),
   rateLimited: t('settings.toasts.rate_limited'),
-  noticeClose: t('ui_notification.close'),
+  toastClose: t('ui_toast.close'),
   passwordWrong: t('settings.errors.password_wrong'),
   emailTaken: t('sign_up.errors.email_used'),
   tryAgain: t('auth.error.tryAgain'),
@@ -67,14 +58,24 @@ export const saveEmailButton = (page: Page): Locator =>
 export const clearButtonOf = (field: Locator): Locator =>
   field.locator('xpath=ancestor::form').getByRole('button', { name: text.clear, exact: true });
 
-export const noticeClose = (page: Page): Locator =>
-  page.getByRole('banner').getByRole('button', { name: text.noticeClose, exact: true });
+export const toastClose = (page: Page): Locator =>
+  page.getByRole('button', { name: text.toastClose, exact: true });
 
-export const noticeCardOf = (page: Page): Locator =>
-  noticeClose(page).first().locator('xpath=ancestor::ul[1]/../..');
+const shownToasts = (page: Page): Locator => toastClose(page).locator('xpath=..');
 
-export const outcomeIn = (page: Page, message: string): Locator =>
-  page.getByRole('banner').getByText(message, { exact: true });
+export const toastMessage = (page: Page, message: string): Locator =>
+  shownToasts(page).getByText(message, { exact: true });
+
+export async function expectSuccessToast(page: Page, message: string): Promise<void> {
+  await expect(toastMessage(page, message)).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: message })).toBeAttached();
+}
+
+export async function expectErrorToast(page: Page, message: string): Promise<void> {
+  await expect(toastMessage(page, message)).toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: message })).toBeAttached();
+  await expect(toastClose(page)).toHaveAccessibleDescription(message);
+}
 
 export async function openSettingsFromHome(page: Page): Promise<void> {
   await page.goto(ROUTE_PATHS.home, { waitUntil: 'domcontentloaded' });
@@ -129,6 +130,13 @@ export async function editPassword(
   await fillInput(newPasswordField(page), newPassword);
 }
 
+export async function expectToastsInOrder(page: Page, messages: string[]): Promise<void> {
+  const escaped = messages.map((message) => message.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const toasts = shownToasts(page).getByText(new RegExp(`^(${escaped.join('|')})$`));
+  await expect(toasts).toHaveText(messages);
+  await expect(page.getByRole('status').filter({ hasText: messages.at(-1) ?? '' })).toBeAttached();
+}
+
 export function expectOnlyAllowedOrigins(
   urls: readonly string[],
   documentUrl: string,
@@ -144,110 +152,4 @@ export function expectOnlyAllowedOrigins(
 export function expectNoPersonalDataInUrls(urls: readonly string[], secrets: string[]): void {
   const decoded = urls.map((url) => decodeURIComponent(url));
   expect(decoded.filter((url) => secrets.some((secret) => url.includes(secret)))).toEqual([]);
-}
-
-type LiveRole = 'status' | 'alert';
-
-const OTHER_LIVE_ROLE: Record<LiveRole, LiveRole> = { status: 'alert', alert: 'status' };
-
-export async function expectAnnouncedOnce(
-  page: Page,
-  message: string,
-  role: LiveRole
-): Promise<void> {
-  await expect(page.getByRole(role).filter({ hasText: message })).toHaveCount(1);
-  await expect(page.getByRole(OTHER_LIVE_ROLE[role]).filter({ hasText: message })).toHaveCount(0);
-}
-
-async function expectShownOnce(page: Page, message: string): Promise<void> {
-  await expect(outcomeIn(page, message)).toHaveCount(1);
-  await expect(outcomeIn(page, message)).toBeVisible();
-}
-
-export async function expectSuccessOutcome(page: Page, message: string): Promise<void> {
-  await expectShownOnce(page, message);
-  await expectAnnouncedOnce(page, message, 'status');
-}
-
-export async function expectErrorOutcome(page: Page, message: string): Promise<void> {
-  await expectShownOnce(page, message);
-  await expectAnnouncedOnce(page, message, 'alert');
-}
-
-const FOCUS_WATCH_KEY = '__notificationFocusWatch';
-
-interface FocusWatch {
-  readonly settled: boolean;
-  readonly kept: boolean;
-}
-
-export async function watchFocusOnAppearance(page: Page, message: string): Promise<void> {
-  await page.evaluate(
-    ({ key, expected }) => {
-      const state = { settled: false, kept: false };
-      Reflect.set(window, key, state);
-      const shownMessage = (): Element | undefined =>
-        [...document.querySelectorAll('span')].find(
-          (element) =>
-            element.textContent === expected &&
-            element.closest('[role="status"], [role="alert"]') === null
-        );
-      const outsideOutcome = (outcome: Element | null): boolean =>
-        outcome === null || !outcome.contains(document.activeElement);
-      const observer = new MutationObserver(() => {
-        const message = shownMessage();
-        if (message === undefined) return;
-        observer.disconnect();
-        const outcome = message.parentElement;
-        const atAppearance = outsideOutcome(outcome);
-        requestAnimationFrame(() =>
-          requestAnimationFrame(() => {
-            state.kept = atAppearance && outsideOutcome(outcome);
-            state.settled = true;
-          })
-        );
-      });
-      observer.observe(document.body, { subtree: true, childList: true, characterData: true });
-    },
-    { key: FOCUS_WATCH_KEY, expected: message }
-  );
-}
-
-export async function expectFocusKeptOnAppearance(page: Page): Promise<void> {
-  const read = (): Promise<FocusWatch> =>
-    page.evaluate((key) => Reflect.get(window, key) as FocusWatch, FOCUS_WATCH_KEY);
-  await expect.poll(async () => (await read()).settled).toBe(true);
-  expect((await read()).kept).toBe(true);
-}
-
-export const unreadDescription = (count: number): string =>
-  t('notification_center.bell.unread_count', { count });
-
-export interface DocumentBox {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-}
-
-export interface SectionEdits {
-  readonly fullName: string;
-  readonly email: string;
-  readonly password: string;
-  readonly newPassword: string;
-}
-
-export const everySectionReplies = (edits: SectionEdits): ProfileReplies => {
-  const saved = replyWithSaved({ initials: edits.fullName, email: edits.email, confirmed: false });
-  return { UpdateUser: [replyWithSaved({ initials: edits.fullName }), saved, saved] };
-};
-
-export async function saveEverySection(page: Page, edits: SectionEdits): Promise<void> {
-  await saveEditedName(page, edits.fullName, edits.password);
-  await expectSuccessOutcome(page, text.saved);
-  await saveEditedEmail(page, edits.email, edits.password);
-  await expectSuccessOutcome(page, text.emailSent);
-  await editPassword(page, edits.password, edits.newPassword);
-  await saveButton(page).click();
-  await expectSuccessOutcome(page, text.passwordChanged);
 }

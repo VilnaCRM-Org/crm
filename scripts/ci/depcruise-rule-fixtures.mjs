@@ -363,13 +363,6 @@ export const FIXTURES = {
       'src/modules/user/features/auth_form/components/helper.ts': leaf('helper'),
     },
   },
-  'notifications-feature-self-contained': {
-    files: {
-      'src/modules/user/features/notifications/x.ts':
-        "import type { Subject } from '../../types/y';\n\nexport type Probe = Subject;\n",
-      'src/modules/user/types/y.ts': 'export interface Subject {\n  readonly value: string;\n}\n',
-    },
-  },
   'type-files-imported-as-type-only': {
     files: {
       'src/services/thing/index.ts': reexport('./types/config'),

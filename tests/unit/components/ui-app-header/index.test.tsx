@@ -6,7 +6,6 @@ import { lazy } from 'react';
 import UIAppHeader from '@/components/ui-app-header';
 import navigationItems from '@/components/ui-app-shell/navigation-items';
 import { buildFullName } from '@tests/builders';
-import findBellWrapper from '@tests/unit/utils/find-bell-wrapper';
 import renderShell from '@tests/unit/utils/render-shell';
 import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 
@@ -82,12 +81,8 @@ describe('UIAppHeader', () => {
     expect(screen.getByRole('button', { name: 'Tasks' })).toHaveAccessibleDescription(
       'Not available yet 8 tasks'
     );
-    expect(
-      findBellWrapper(screen.getByRole('button', { name: 'Notifications' }))
-    ).toHaveTextContent(/^1$/u);
-    expect(findBellWrapper(screen.getByRole('button', { name: 'Tasks' }))).toHaveTextContent(
-      /^8$/u
-    );
+    expect(screen.getByRole('button', { name: 'Notifications' })).toHaveTextContent('1');
+    expect(screen.getByRole('button', { name: 'Tasks' })).toHaveTextContent('8');
   });
 
   it.each([undefined, null, {}, { notifications: null, tasks: null }])(

@@ -266,11 +266,8 @@ script cannot execute, which is the property the CSP exists to protect.
 **How `connect-src` is derived.** It admits the origins RSBuild inlined at build time
 (`REACT_APP_MOCKOON_URL`, `REACT_APP_GRAPHQL_URL`, and the Sentry ingest host from
 `REACT_APP_SENTRY_DSN` when it is set), and the runtime overrides an operator sets at container
-start (`APP_CONFIG_API_BASE_URL`, `APP_CONFIG_GRAPHQL_URL`; issue #145, and
-`APP_CONFIG_NOTIFICATION_EVENTS_URL`; issue #391). The browser talks only to the GraphQL and Sentry
-origins today, and to notification-service where that last setting names it. That service authorizes
-no subscriber, so the CRM takes broadcast events only from it, sends it no token, and shows no text
-an event carries: the REST base URL (`REACT_APP_MOCKOON_URL`,
+start (`APP_CONFIG_API_BASE_URL`, `APP_CONFIG_GRAPHQL_URL`; issue #145). The browser talks only to
+the GraphQL and Sentry origins today: the REST base URL (`REACT_APP_MOCKOON_URL`,
 `APP_CONFIG_API_BASE_URL`) has no client reader since the last REST caller went, and stays
 admitted only until the separate decision on keeping the `apiBaseUrl` setting
 (`src/config/runtime/README.md`) narrows the policy. The generator reads the
@@ -278,11 +275,11 @@ build-time values from the tracked `.env.example` — never from the untracked l
 (issue #142) — so the committed `serve.json` is identical on every machine; the container
 entrypoint renders the served `/app/serve.json` from the immutable baseline the image ships
 (`/app/config/serve.json`) plus the origins of the runtime overrides, after it renders the same
-values into the HTML shell, so a repointed API or a configured notification event stream is
-reachable under the enforced policy and an override that is changed or cleared between restarts
-leaves no stale origin behind. Runtime overrides extend the list rather than replace it, and the
-entrypoint refuses to start on a value that is not an absolute `http(s)` URL. Sentry is a build-time
-value: a DSN set at build time allows its ingest origin, an empty DSN allows nothing extra.
+values into the HTML shell, so a repointed API is reachable under the enforced
+policy and an override that is changed or cleared between restarts leaves no stale origin
+behind. Runtime overrides extend the list rather than replace it, and the entrypoint refuses to
+start on a value that is not an absolute `http(s)` URL. Sentry is a build-time value:
+a DSN set at build time allows its ingest origin, an empty DSN allows nothing extra.
 
 **The build-time origins are the template's.** The committed `serve.json` allows
 `http://localhost:8080` and `http://localhost:4000` because the tracked `.env.example` points the

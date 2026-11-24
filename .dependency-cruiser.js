@@ -602,15 +602,6 @@ module.exports = {
       },
     },
     {
-      name: 'notifications-feature-self-contained',
-      comment:
-        'The notifications feature imports nothing from the rest of the user module, so it can ' +
-        'move to its own module unchanged (owner decision O-1, FR-2).',
-      severity: 'error',
-      from: { path: '^src/modules/user/features/notifications/' },
-      to: { path: '^src/modules/user/(?!features/notifications/)' },
-    },
-    {
       name: 'no-feature-internal-imports',
       comment:
         'Module-level shared layers (store, types, lib, hooks, utils, config) must ' +

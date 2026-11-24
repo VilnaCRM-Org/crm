@@ -1,32 +1,7 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import type { ReactElement } from 'react';
 
 import DrawerHeaderCopies from '@/components/ui-navigation-drawer/drawer-header-copies';
-import { customColors } from '@/styles/colors';
-
-jest.mock('@/assets/icons/shell/bell-01.svg', () => ({
-  ReactComponent: ({
-    className,
-    'aria-hidden': hidden,
-    focusable,
-  }: {
-    className?: string;
-    'aria-hidden'?: 'true';
-    focusable?: 'false';
-  }): ReactElement => (
-    <svg role="img" aria-hidden={hidden} focusable={focusable} className={className} />
-  ),
-}));
-
-const glyphCopies = (): HTMLElement[] => screen.getAllByRole('img', { hidden: true });
-
-const bellCopy = (): HTMLElement => {
-  const [bell] = glyphCopies();
-  if (bell === undefined) throw new Error('expected the drawn bell copy');
-
-  return bell;
-};
 
 const avatarCopy = (): HTMLElement =>
   screen.getAllByRole('generic', { hidden: true }).at(-1) as HTMLElement;
@@ -83,38 +58,5 @@ describe('DrawerHeaderCopies', () => {
     render(<DrawerHeaderCopies avatar={null} />);
 
     expect(avatarCopy()).toContainHTML('data-testid="PersonOutlinedIcon"');
-  });
-
-  it('draws the bell copy in the disabled #D0D4D8 glyph colour without a live bell', () => {
-    render(<DrawerHeaderCopies />);
-
-    expect(bellCopy()).toHaveStyle({ color: customColors.checkbox.main });
-  });
-
-  it('draws the bell copy in the enabled #1A1C1E glyph colour with a live bell', () => {
-    render(<DrawerHeaderCopies liveBell />);
-
-    expect(bellCopy()).toHaveStyle({ color: '#1A1C1E' });
-    expect(bellCopy()).toHaveStyle({ color: customColors.text.dark });
-    expect(bellCopy()).toHaveAttribute('aria-hidden', 'true');
-    expect(bellCopy()).toHaveAttribute('focusable', 'false');
-    expect(bellCopy()).not.toHaveAttribute('tabindex');
-    expect(glyphCopies()[1]).toHaveStyle({ color: customColors.checkbox.main });
-  });
-
-  it('holds no focusable element with a live bell', () => {
-    render(<DrawerHeaderCopies liveBell />);
-
-    expect(screen.queryByRole('button', { hidden: true })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { hidden: true })).not.toBeInTheDocument();
-    expect(screen.queryAllByRole('generic')).toHaveLength(1);
-  });
-
-  it('renders the same markup with liveBell false as without it', () => {
-    const { container: absent } = render(<DrawerHeaderCopies />);
-    const { container: off } = render(<DrawerHeaderCopies liveBell={false} />);
-
-    expect(off).toContainHTML(absent.innerHTML);
-    expect(absent).toContainHTML(off.innerHTML);
   });
 });

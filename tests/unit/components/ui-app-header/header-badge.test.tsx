@@ -36,23 +36,4 @@ describe('HeaderBadge', () => {
 
     expect(container).toBeEmptyDOMElement();
   });
-
-  it('keeps the muted #D0D4D8 fill by default and for the muted tone', () => {
-    render(<HeaderBadge count={3} tone="muted" />);
-
-    expect(screen.getByText('3')).toHaveStyle({ backgroundColor: '#D0D4D8' });
-  });
-
-  it('paints the alert tone #D63333 with white digits, still aria-hidden', () => {
-    render(<HeaderBadge count={3} tone="alert" />);
-
-    expect(screen.getByText('3')).toHaveStyle({ backgroundColor: '#D63333', color: '#FFFFFF' });
-    expect(screen.getByText('3')).toHaveAttribute('aria-hidden', 'true');
-  });
-
-  it('renders nothing for the alert tone without a count', () => {
-    const { container } = render(<HeaderBadge count={0} tone="alert" />);
-
-    expect(container).toBeEmptyDOMElement();
-  });
 });

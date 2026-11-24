@@ -77,10 +77,6 @@ export const currentLanguage: string = process.env.REACT_APP_MAIN_LANGUAGE || 'e
 
 export const timeoutDuration = 3000;
 
-export const SHELL_BADGE_MIN_WIDTH = 768;
-
-export const SEED_UNREAD = 1;
-
 interface PlaceholderFields {
   name: string;
   email: string;

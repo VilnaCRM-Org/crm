@@ -11,17 +11,15 @@ export interface UINavigationDrawerProps {
   readonly onClose: ActivateHandler;
   readonly onNavigate: ActivateHandler;
   readonly avatar?: ReactNode | undefined;
-  readonly liveBell?: boolean | undefined;
-}
-
-export interface DrawerHeaderCopiesProps {
-  readonly avatar?: ReactNode | undefined;
-  readonly liveBell?: boolean | undefined;
 }
 
 export interface DrawerHeaderProps {
   readonly onDismiss: ActivateHandler;
-  readonly copies?: DrawerHeaderCopiesProps | undefined;
+  readonly avatar?: ReactNode | undefined;
+}
+
+export interface DrawerHeaderCopiesProps {
+  readonly avatar?: ReactNode | undefined;
 }
 
 export interface DrawerPanelProps {

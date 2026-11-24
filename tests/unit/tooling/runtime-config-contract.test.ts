@@ -21,7 +21,6 @@ const SCHEMA = 'src/config/runtime/app-config-schema.ts';
 const UNION = 'src/config/runtime/types/feature-flag.ts';
 const RENDERER = 'scripts/render-app-config.js';
 const DOCS = 'docs/feature-flags.md';
-const ENTRY = 'src/index.tsx';
 
 // Both the id AND the JSON type are part of the contract: a block that loses `application/json`
 // would become an executable script, so matching the id alone would let that regression pass.
@@ -162,18 +161,6 @@ describe('runtime configuration contract', () => {
     expect(settings.map((setting) => setting.key).sort()).toEqual(schemaKeys);
   });
 
-  it('creates the root, loads the config in the bootstrap try block, then renders', () => {
-    const source = readFile(ENTRY);
-    const created = source.indexOf('createRoot(');
-    const loaded = source.indexOf('appConfigSource.load()');
-    const rendered = source.indexOf('root.render(');
-
-    expect(created).toBeGreaterThan(-1);
-    expect(loaded).toBeGreaterThan(created);
-    expect(rendered).toBeGreaterThan(loaded);
-    expect(source.slice(source.lastIndexOf('try {', loaded), loaded)).toBe('try {\n  ');
-  });
-
   it('documents every registered feature flag in the feature-flag guide', () => {
     const guide = readFile(DOCS);
 
@@ -185,36 +172,31 @@ describe('runtime configuration contract', () => {
   // If they disagree, a value can pass container start and then blow up in the browser (or the
   // reverse). This pins that they accept exactly the same set — including the single-label Docker
   // hostnames this repo actually deploys with, which `z.httpUrl()` silently rejects.
-  describe.each([
-    ['graphqlUrl', 'APP_CONFIG_GRAPHQL_URL'],
-    ['notificationEventsUrl', 'APP_CONFIG_NOTIFICATION_EVENTS_URL'],
-  ])('%s alone', (setting, variable) => {
-    it.each([
-      ['http://localhost:4000/graphql', true],
-      ['http://prod:3001', true],
-      ['http://mockoon:8080/api', true],
-      ['http://127.0.0.1:8080', true],
-      ['https://api.example.com/graphql', true],
-      ['mailto:someone@example.com', false],
-      ['ftp://files.example/api', false],
-      ['javascript:alert(1)', false],
-      ['not-a-url', false],
-      ['/api', false],
-    ])('accepts %s in the schema and the renderer alike (%s)', (url, accepted) => {
-      const schemaAccepts = AppConfigSchema.safeParse({ [setting]: url }).success;
-      const rendererAccepts = ((): boolean => {
-        try {
-          renderAppConfig(readFile(SHELL), { [variable]: url });
-          return true;
-        } catch {
-          return false;
-        }
-      })();
+  it.each([
+    ['http://localhost:4000/graphql', true],
+    ['http://prod:3001', true],
+    ['http://mockoon:8080/api', true],
+    ['http://127.0.0.1:8080', true],
+    ['https://api.example.com/graphql', true],
+    ['mailto:someone@example.com', false],
+    ['ftp://files.example/api', false],
+    ['javascript:alert(1)', false],
+    ['not-a-url', false],
+    ['/api', false],
+  ])('accepts %s in the schema and the renderer alike (%s)', (url, accepted) => {
+    const schemaAccepts = AppConfigSchema.safeParse({ graphqlUrl: url }).success;
+    const rendererAccepts = ((): boolean => {
+      try {
+        renderAppConfig(readFile(SHELL), { APP_CONFIG_GRAPHQL_URL: url });
+        return true;
+      } catch {
+        return false;
+      }
+    })();
 
-      expect({ schemaAccepts, rendererAccepts }).toEqual({
-        schemaAccepts: accepted,
-        rendererAccepts: accepted,
-      });
+    expect({ schemaAccepts, rendererAccepts }).toEqual({
+      schemaAccepts: accepted,
+      rendererAccepts: accepted,
     });
   });
 

@@ -21,7 +21,6 @@ export interface UIAppHeaderProps {
   readonly navigation?: HeaderNavigation | undefined;
   readonly badgeCounts?: ShellBadgeCounts | null | undefined;
   readonly userMenu?: ReactNode | undefined;
-  readonly notifications?: ReactNode | undefined;
 }
 
 export interface HeaderLogoProps {
@@ -32,40 +31,13 @@ export interface HeaderSearchProps {
   readonly layout: HeaderSearchLayout;
 }
 
-export interface HeaderDisclosure {
-  readonly expanded: boolean;
-  readonly controls: string;
-  readonly describedBy?: string | undefined;
-  readonly onToggle: ActivateHandler;
-  readonly buttonRef?: RefObject<HTMLButtonElement | null> | undefined;
-}
-
-export interface HeaderGlyphProps {
+export interface HeaderIconButtonProps {
   readonly layout: ShellLayout;
   readonly kind: HeaderControlKind;
-}
-
-export interface HeaderIconButtonProps extends HeaderGlyphProps {
   readonly count?: number | null | undefined;
-  readonly disclosure?: HeaderDisclosure | undefined;
-}
-
-export interface DisclosureButtonProps extends HeaderIconButtonProps {
-  readonly disclosure: HeaderDisclosure;
 }
 
 export interface UserSlotFrameProps {
-  readonly layout: ShellLayout;
-  readonly children?: ReactNode | undefined;
-}
-
-export interface HeaderBellProps {
-  readonly layout: ShellLayout;
-  readonly count?: number | null | undefined;
-  readonly children?: ReactNode | undefined;
-}
-
-export interface BellSlotFrameProps {
   readonly layout: ShellLayout;
   readonly children?: ReactNode | undefined;
 }
@@ -86,7 +58,6 @@ export interface MobileNavigationProps {
   readonly items: NavigationItemSet;
   readonly signOut: SignOutHandler;
   readonly avatar?: ReactNode | undefined;
-  readonly liveBell?: boolean | undefined;
 }
 
 export interface DrawerOpenFlags {

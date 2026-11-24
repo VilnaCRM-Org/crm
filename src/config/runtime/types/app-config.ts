@@ -3,11 +3,10 @@ import type { FeatureFlagValues } from './feature-flag';
 export interface AppConfigValues {
   readonly apiBaseUrl?: string | undefined;
   readonly graphqlUrl?: string | undefined;
-  readonly notificationEventsUrl?: string | undefined;
   readonly flags?: FeatureFlagValues | undefined;
 }
 
-export type AppConfigUrlKey = 'apiBaseUrl' | 'graphqlUrl' | 'notificationEventsUrl';
+export type AppConfigUrlKey = 'apiBaseUrl' | 'graphqlUrl';
 
 export type AppConfigParse = (raw: unknown) => AppConfigValues;
 

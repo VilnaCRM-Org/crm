@@ -82,37 +82,4 @@ describe('route validator', () => {
       'Only one route module may declare shell.userMenu (first, second)'
     );
   });
-
-  it('accepts one module per shell slot key', () => {
-    const modules: RouteModule[] = [
-      { id: 'menu', routes: [{ path: '/a', load: page }], shell: { userMenu: slotLoad } },
-      { id: 'bell', routes: [{ path: '/b', load: page }], shell: { notifications: slotLoad } },
-    ];
-
-    expect(() => routeValidator.validate({ items: modules })).not.toThrow();
-  });
-
-  it('accepts one module that declares both shell slots', () => {
-    const modules: RouteModule[] = [
-      {
-        id: 'both',
-        routes: [{ path: '/a', load: page }],
-        shell: { userMenu: slotLoad, notifications: slotLoad },
-      },
-    ];
-
-    expect(() => routeValidator.validate({ items: modules })).not.toThrow();
-  });
-
-  it('rejects two modules that both declare shell.notifications (negative)', () => {
-    const modules: RouteModule[] = [
-      { id: 'one', routes: [{ path: '/a', load: page }], shell: { notifications: slotLoad } },
-      { id: 'two', routes: [{ path: '/b', load: page }], shell: { notifications: slotLoad } },
-      { id: 'three', routes: [{ path: '/c', load: page }], shell: { userMenu: slotLoad } },
-    ];
-
-    expect(() => routeValidator.validate({ items: modules })).toThrow(
-      'Only one route module may declare shell.notifications (one, two)'
-    );
-  });
 });

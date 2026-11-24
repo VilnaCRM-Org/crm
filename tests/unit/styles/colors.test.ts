@@ -10,7 +10,7 @@ describe('paletteColors.error', () => {
   it('keeps error.main for borders and adds error.text for field-error text', async () => {
     const palette = await loadPalette();
 
-    expect(palette.error).toEqual({ main: '#DC3939', text: '#D63333' });
+    expect(palette.error).toEqual({ main: '#DC3939', text: '#D63333', surface: '#FDECEC' });
   });
 
   it('gives error.text AA contrast on white for the field errors and the banner', async () => {
@@ -26,11 +26,29 @@ describe('paletteColors.error', () => {
   });
 });
 
-describe('paletteColors.success', () => {
-  it('pins the success tokens', async () => {
+describe('toast tokens', () => {
+  it('pins the success surface beside the existing success tokens', async () => {
     const { success } = await loadPalette();
 
-    expect(success).toEqual({ main: '#4CAF50', text: '#2E7D32' });
+    expect(success).toEqual({
+      main: '#4CAF50',
+      text: '#2E7D32',
+      surface: '#E8F4EF',
+    });
+  });
+
+  it('gives the dark toast text 15.1:1 and 14.9:1 on the two surfaces', async () => {
+    const { success, error } = await loadPalette();
+
+    expect(contrast('#1A1C1E', success.surface)).toBeGreaterThanOrEqual(15.1);
+    expect(contrast('#1A1C1E', error.surface)).toBeGreaterThanOrEqual(14.9);
+  });
+
+  it('keeps both toast icons at 3:1 or more on their surfaces', async () => {
+    const { success, error } = await loadPalette();
+
+    expect(contrast(success.text, success.surface)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(error.main, error.surface)).toBeGreaterThanOrEqual(3);
   });
 });
 

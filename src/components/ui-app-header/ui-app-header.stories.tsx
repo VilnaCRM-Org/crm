@@ -22,10 +22,7 @@ const meta: Meta<typeof UIAppHeader> = {
           'tablet (1024) and mobile (375) draw none. Search, bell and list are disabled and ' +
           'described as "Not available yet"; the mobile header has no search. The user slot ' +
           "reserves the chip's box. The badge stories pass exactly 1 and 8, which is the " +
-          'artifact for the badge parity rows; the app passes no count. When a route module ' +
-          'declares the `shell.notifications` slot, its content takes the bell position inside ' +
-          'the bell frame and the disabled bell is not rendered; the slot stories pass an ' +
-          'enabled stand-in button.',
+          'artifact for the badge parity rows; the app passes no count.',
       },
       story: { inline: false },
     },
@@ -52,22 +49,4 @@ export const DesktopWithBadges: Story = {
 
 export const TabletWithBadges: Story = {
   args: { layout: 'tablet', badgeCounts: { notifications: 1, tasks: 8 } },
-};
-
-const notificationsStandIn = <button type="button">Сповіщення</button>;
-
-export const DesktopWithNotificationsSlot: Story = {
-  args: { notifications: notificationsStandIn },
-};
-
-export const TabletWithNotificationsSlot: Story = {
-  args: { layout: 'tablet', notifications: notificationsStandIn },
-};
-
-export const MobileWithNotificationsSlot: Story = {
-  args: {
-    layout: 'mobile',
-    navigation: { items: storyItems, signOut: noop },
-    notifications: notificationsStandIn,
-  },
 };

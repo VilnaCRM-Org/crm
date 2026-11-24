@@ -39,6 +39,13 @@ const base: Props = {
     isCurrent: (): boolean => true,
     revision: (): number => 0,
   },
+  toasts: {
+    toasts: { items: [] },
+    announcement: '',
+    alert: '',
+    show: () => undefined,
+    dismiss: () => undefined,
+  },
   saveRef: { current: null },
   headingRef: { current: null },
 };
@@ -56,6 +63,7 @@ describe('profile load states accessibility', () => {
         refocus={state.refocus}
         retry={state.retry}
         adoption={state.adoption}
+        toasts={state.toasts}
         saveRef={state.saveRef}
         headingRef={state.headingRef}
       />,

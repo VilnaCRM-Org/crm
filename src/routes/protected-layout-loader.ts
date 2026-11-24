@@ -7,12 +7,11 @@ import type {
   ProtectedLayoutExport,
   ProtectedLayoutModule,
   ProtectedShell,
-  ShellSlotRequest,
 } from './types/protected-layout';
-import type { ShellChunkFailureHandler, ShellSlot } from './types/shell-slot';
+import type { ShellChunkFailureHandler, ShellSlotLoad, UserMenuSlot } from './types/shell-slot';
 
 class ProtectedLayoutLoader {
-  public create({ userMenu, notifications, report }: ProtectedShell): ProtectedLayout {
+  public create({ userMenu, report }: ProtectedShell): ProtectedLayout {
     const chunk = new ChunkRetryLoader<ProtectedLayoutModule>(
       () => import(/* webpackChunkName: "protected-layout" */ './protected-layout')
     );
@@ -20,19 +19,7 @@ class ProtectedLayoutLoader {
     return {
       ProtectedRoute: this.component(chunk, 'ProtectedRoute'),
       AppLayout: this.component(chunk, 'AppLayout'),
-      ...(userMenu === undefined
-        ? {}
-        : {
-            userMenu: this.slot(chunk, report, { load: userMenu, source: 'app-shell:user-menu' }),
-          }),
-      ...(notifications === undefined
-        ? {}
-        : {
-            notifications: this.slot(chunk, report, {
-              load: notifications,
-              source: 'app-shell:notifications',
-            }),
-          }),
+      ...(userMenu === undefined ? {} : { userMenu: this.userMenu(chunk, userMenu, report) }),
     };
   }
 
@@ -43,15 +30,15 @@ class ProtectedLayoutLoader {
     return lazy(() => chunk.load().then((module) => ({ default: module[name] })));
   }
 
-  private slot(
+  private userMenu(
     chunk: ChunkRetryLoader<ProtectedLayoutModule>,
-    report: ShellChunkFailureHandler,
-    { load, source }: ShellSlotRequest
-  ): ShellSlot {
+    load: ShellSlotLoad,
+    report: ShellChunkFailureHandler
+  ): UserMenuSlot {
     return lazy(() =>
-      chunk.load().then(({ ShellSlotFactory }) => ({
-        default: new ShellSlotFactory(report).create(load, source),
-      }))
+      chunk
+        .load()
+        .then(({ ShellSlotFactory }) => ({ default: new ShellSlotFactory(report).create(load) }))
     );
   }
 }

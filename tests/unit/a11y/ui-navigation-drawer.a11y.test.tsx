@@ -40,22 +40,4 @@ describe('UINavigationDrawer a11y', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     await expectNoA11yViolations(container);
   });
-
-  it('has no violation with the drawer open and a notifications slot', async () => {
-    renderShell(
-      <main>
-        <UIAppHeader
-          layout="mobile"
-          navigation={{ items: navigationItems, signOut: jest.fn() }}
-          notifications={<button type="button">Сповіщення</button>}
-        />
-      </main>,
-      { locale: 'uk' }
-    );
-
-    await userEvent.click(screen.getByRole('button', { name: 'Відкрити меню' }));
-    await screen.findByRole('dialog', { name: 'Основна навігація' });
-
-    await expectNoA11yViolations(document.body);
-  });
 });

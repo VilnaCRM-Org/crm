@@ -50,11 +50,7 @@
     },
     "connectSrcFromEnv": {
       "build": ["REACT_APP_MOCKOON_URL", "REACT_APP_GRAPHQL_URL", "REACT_APP_SENTRY_DSN"],
-      "runtime": [
-        "APP_CONFIG_API_BASE_URL",
-        "APP_CONFIG_GRAPHQL_URL",
-        "APP_CONFIG_NOTIFICATION_EVENTS_URL"
-      ]
+      "runtime": ["APP_CONFIG_API_BASE_URL", "APP_CONFIG_GRAPHQL_URL"]
     }
   },
   "cacheControl": [

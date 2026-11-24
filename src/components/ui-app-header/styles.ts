@@ -10,7 +10,7 @@ const focusRing = {
   outlineOffset: '2px',
 };
 
-export const standaloneFocus = {
+const standaloneFocus = {
   '&:focus-visible': focusRing,
   '&:focus:not(:focus-visible)': { outline: 'none' },
 };
@@ -81,7 +81,7 @@ const magnifier = {
   color: customColors.text.secondary,
 };
 
-export const roundButton = {
+const iconButton = {
   position: 'relative',
   display: 'block',
   flexShrink: 0,
@@ -97,7 +97,7 @@ export const roundButton = {
 
 const iconGlyph = { position: 'absolute', top: '14px', left: '14px' };
 
-export const bareButton = {
+const iconButtonBare = {
   display: 'block',
   flexShrink: 0,
   width: '24px',
@@ -165,9 +165,9 @@ export default {
     drawer: { ...magnifier, width: '20px', height: '20px' },
   },
   iconButton: {
-    desktop: { ...roundButton, width: '48px', height: '48px' },
-    tablet: { ...roundButton, width: '52px', height: '52px' },
-    mobile: bareButton,
+    desktop: { ...iconButton, width: '48px', height: '48px' },
+    tablet: { ...iconButton, width: '52px', height: '52px' },
+    mobile: iconButtonBare,
   },
   iconGlyph: {
     desktop: { ...iconGlyph, width: '20px', height: '20px' },
