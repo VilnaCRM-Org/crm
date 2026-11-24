@@ -198,7 +198,7 @@ describe('NotificationsShellSlot', () => {
       unmount();
     };
 
-    it('shows the seed alone to another session, even one that replaced a live one', async () => {
+    it('shows the seed alone to another session that signed in meanwhile', async () => {
       const repository = new InMemoryNotificationRepository(NOTIFICATION_SEED);
       const token = jest.spyOn(session, 'token').mockReturnValue('first');
       await recordOneAndLeave(repository);

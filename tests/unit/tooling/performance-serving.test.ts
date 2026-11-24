@@ -898,10 +898,14 @@ describe('the notification chunks of the bell (issue #391)', () => {
   );
 
   it.each([
-    ['the registrar of the feature', 'src/modules/user/features/notifications/di.ts'],
-    ['a composition root', 'src/modules/user/config/di.ts'],
-    ['a zod contract', 'src/config/runtime/app-config-schema.ts'],
-  ])('finds the heavy imports of %s', (_label, file) => {
-    expect(heavyEdgesOf(file)).not.toEqual([]);
+    ['tsyringe', 'src/config/dependency-injection-config.ts', / -> tsyringe$/],
+    [
+      'the composition root',
+      'src/providers/di/use-service.ts',
+      / -> .*dependency-injection-config$/,
+    ],
+    ['zod', 'src/config/runtime/app-config-schema.ts', / -> (@\/config\/)?zod$/],
+  ])('finds an import of %s', (_label, file, edge) => {
+    expect(heavyEdgesOf(file)).toContainEqual(expect.stringMatching(edge));
   });
 });

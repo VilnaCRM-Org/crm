@@ -14,7 +14,13 @@ const storiesModule: LayoutStoriesModule = jest.requireActual(
   '@/modules/user/features/notifications/components/bell-notifications.stories'
 );
 
+const noticeStoriesModule: LayoutStoriesModule = jest.requireActual(
+  '@/modules/user/features/notifications/components/bell-outcome-notice.stories'
+);
+
 const composed = composeLayoutStories(storiesModule);
+
+const composedNotices = composeLayoutStories(noticeStoriesModule);
 
 const OPENED = new Set(['HistoryOpen', 'AfterMarkAllRead']);
 
@@ -74,5 +80,26 @@ describe('BellNotifications stories', () => {
     const rows = await screen.findAllByRole('listitem');
 
     expect(rows.filter((row) => within(row).queryByText('Непрочитане') !== null)).toHaveLength(1);
+  });
+});
+
+describe('BellOutcomeNotice stories', () => {
+  beforeEach(() => resetClientStores());
+
+  it.each([
+    ['DesktopOneRow', 'Закрити сповіщення'],
+    ['TransientError', 'Спробувати ще раз'],
+  ])('%s returns focus to Save once its last row leaves', async (name, control) => {
+    const Story = composedNotices[name];
+    if (Story === undefined) throw new Error(`no story ${name}`);
+    render(
+      <I18nextProvider i18n={i18n}>
+        <Story />
+      </I18nextProvider>
+    );
+
+    await userEvent.click(await screen.findByRole('button', { name: control }));
+
+    expect(screen.getByRole('button', { name: 'Зберегти' })).toHaveFocus();
   });
 });

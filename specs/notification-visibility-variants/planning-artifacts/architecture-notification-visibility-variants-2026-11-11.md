@@ -266,9 +266,12 @@ adapter (FR-3).
   - `record` assigns `notification-<n>` ids;
   - `list` returns a copy sorted by `createdAt` descending, stable by insertion;
   - `countUnread` counts `read === false`;
-  - `markAllRead` replaces every entry with `read: true`.
+  - `markAllRead` replaces every entry with `read: true`;
+  - `claim(owner)` restores the seed and the first id when `owner` differs from the last claim, and
+    changes nothing when it is the same; an unclaimed history has the `null` owner, so claiming it for
+    `null` keeps it (PRD item 57).
 
-  All four resolve on a microtask; nothing touches storage or the network.
+  All five resolve on a microtask; nothing touches storage or the network.
 
 - **Seed (P-2, PRD readiness amendment 11):** a named data export
   `export const NOTIFICATION_SEED: NotificationRecordSet` in the **same file**, frozen, with no
@@ -1588,7 +1591,7 @@ CI.
   motion), `ui-inline-status/*` with `use-inline-reveal`, `ui-bell-notice/*` with anchor and
   clearance, `ui-notification-history/*`, `ui-notification-content/*`, `ui-notification-outlet/*`,
   `ui-notification-slot/*`, `ui-app-header/*` (disclosure, badge tone, frame).
-- **Feature:** `modules/user/features/notifications/` repositories (four operations, seed, order, no
+- **Feature:** `modules/user/features/notifications/` repositories (five operations, seed, order, no
   storage), hooks (recorder including rejection → `onChunkFailure`, history refresh, disclosure
   keys, `dismissAll()` under `bell` only, `visited`), components (the bell, badge and description
   under each style, the panel loader not called before the first open, the notice loader never
@@ -1704,7 +1707,7 @@ compose lines, the README rows, the contract-test, renderer-test and bats cases 
 `text()` key type, and the `check-security-headers.sh` assertion. Delete `notification-surfaces.ts` and
 `use-notification-surface.ts` (mount points become unconditional), `useNotificationStyle` and the
 per-style parametrisation in the browser lanes, the comparison stories, frame and viewports, and the
-losers' baselines (the 243 re-recorded shell baselines and the 6 history captures stay, because the
+losers' baselines (the re-recorded shell baselines and the 6 history captures stay, because the
 bell and the badge stay).
 
 **Kept whatever wins (owner decision 2026-11-12).** The enabled bell, the badge and the count
@@ -1713,7 +1716,7 @@ description, the history panel and mark-all-read: `BellNotifications`, `Notifica
 `ui-notification-history/` (host and content), `use-notification-history.ts`,
 `use-bell-disclosure.ts` (its `dismissAll()` branch goes with C if C loses), the `HeaderIconButton`
 disclosure, the `HeaderBadge` tone, `BellSlotFrame`, the drawer copy's enabled glyph, the shell
-slot, the recorder, the adapter with all four operations and the seed, the `notification_center`
+slot, the recorder, the adapter with all five operations and the seed, the `notification_center`
 catalog, the token and registrar, the port, the outlet (regions, lifetime) and the notifications
 feature. The bell never returns to disabled.
 
@@ -1790,7 +1793,7 @@ outlet's A branch) and every C transient item above. Kept, besides the common se
 | K3  | The drop-shadow union outline renders unevenly (WebKit)  | three-engine baselines; K3a  |
 | K4  | `--app-top-overhang` meets Firefox sticky-focus gaps     | clearance e2e at 320 × 256   |
 | K5  | Document-rewrite routing adds flake                      | documents only; `retries: 0` |
-| K6  | 42 new and 243 re-recorded PNGs (285) swamp the review   | K6a; changed-list check      |
+| K6  | 362 changed PNGs (PRD item 58) swamp the review          | K6a; changed-list check      |
 | K7  | Keys break a future server that sends text               | the adapter maps; additive   |
 | K8  | The DI token is unused at runtime                        | concern 3                    |
 | K9  | Untracked local `.env` files fail `check-env-sync`       | §7.5; PR body note           |
@@ -1810,10 +1813,10 @@ the panel; the in-panel key and outside-click handlers and the panel-only string
 conditional catalog entry) move to `notifications-history`; anything weaker needs the owner. The
 measure is every Lighthouse category floor and the `error`-level `resource-summary:script:size`
 and `resource-summary:total:size` assertions on `/`, against the unchanged `lighthouse.*` values of
-`config/performance-budget.json` (readiness R3-09). K6a: the 243 re-recorded baselines are
+`config/performance-budget.json` (readiness R3-09). K6a: the 320 re-recorded baselines are
 expected to differ only inside the header's bell box (and, in the drawer captures, its drawn
 copy); the reviewer reads the CI diff images per spec and engine and stops on any diff outside
-that box, and the changed-PNG list must equal NFR-15's 285 names exactly. K13a: if a focused panel
+that box, and the changed-PNG list must equal the 362 names of PRD item 58 exactly. K13a: if a focused panel
 control is fully covered by the toast stack at 320 × 256, the panel's `max-height` subtracts the
 stack's measured height (the value `useStackClearance` already computes), never a z-index swap
 that hides a toast.
@@ -1849,7 +1852,7 @@ that hides a toast.
 | A-25 | Panel host in the shell chunk; content lazy from the first open; no prefetch              | 6.3, 10  |
 | A-26 | `show()` calls `dismissAll()` only under `bell`; A and B lose nothing on open             | 3.4, 10  |
 | A-27 | One `notification_center` catalog, registered in `notifications-shell`                    | 11.3     |
-| A-28 | 285 changed PNGs: 243 shell baselines re-recorded, 42 new; no header captures             | 13.3     |
+| A-28 | 362 changed PNGs: 320 re-recorded, 24 new, 18 deleted (PRD item 58); no header captures   | 13.3     |
 | A-29 | The drawer's drawn bell copy takes the enabled glyph colour                               | 9.5      |
 | A-30 | Comparison adds `<Style>HistoryOpen` per style: 43 stories                                | 12.2     |
 | A-31 | The lazy notice has its own non-null `Suspense`; nothing above it suspends                | 6.2, 6.3 |

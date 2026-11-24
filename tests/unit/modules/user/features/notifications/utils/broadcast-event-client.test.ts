@@ -39,13 +39,19 @@ describe('BroadcastEventClient', () => {
     ]);
   });
 
-  it('opens the first and every later stream without credentials', () => {
+  it('opens the first and each reconnected stream with no cross-origin credentials', () => {
     const { source } = open();
 
     source().fail(FakeEventSource.CLOSED);
     jest.advanceTimersByTime(30_000);
+    source().fail(FakeEventSource.CLOSED);
+    jest.advanceTimersByTime(30_000);
 
-    expect(FakeEventSource.opened.map(({ init }) => init)).toEqual([undefined, undefined]);
+    expect(FakeEventSource.opened.map(({ init }) => init?.withCredentials ?? false)).toEqual([
+      false,
+      false,
+      false,
+    ]);
   });
 
   it('hands over a valid event and ignores an invalid one', () => {

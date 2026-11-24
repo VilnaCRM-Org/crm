@@ -550,7 +550,7 @@ settings catalog is not touched), `.storybook/preview.tsx` (MODIFY: register the
 `tests/unit/scripts/localization-generator.test.js` (MODIFY: append
 `'modules/user/features/notifications/i18n'` to the pinned list at `:182-190`),
 `tests/unit/tooling/performance-serving.test.ts` (MODIFY: `notification_center` out of the eager
-set), `features/notifications/README.md` (NEW: the contract, the four operations, the seed and its
+set), `features/notifications/README.md` (NEW: the contract, the five operations, the seed and its
 key invariant, the extraction rule and checklist), `tests/builders/notification-record.ts` (NEW:
 `buildNotificationRecord`, `buildNotificationRecordSet`), tests under
 `tests/unit/modules/user/features/notifications/repositories/`, and
@@ -577,7 +577,7 @@ catalog at runtime (Story 2.12); until then the seed keys are data that nothing 
 - Given `config/i18n-catalog-policy.json`, when it is diffed against `main`, then the settings catalog entry and its owners are unchanged and the only additions are the `notifications/i18n` entry and its one owner.
 - Given the localization-generator test, when it runs, then its pinned `lazyCatalogs[].catalog` list holds `modules/user/features/notifications/i18n` in policy order and passes; `performance-serving.test.ts` keeps `notification_center` out of the eager set.
 - Given the feature folder, when `make lint` runs, then the module-shape, kebab-case, type-only-file and class-naming (`*Repository`) gates report zero findings and the barrel exports types only.
-- Given the README, when `make lint-docs` runs, then it passes and names the contract, the four operations, the seed and the "no user-module imports" extraction rule (the token is added by Story 1.6, the port and slot by Story 4.9).
+- Given the README, when `make lint-docs` runs, then it passes and names the contract, the five operations, the seed and the "no user-module imports" extraction rule (the token is added by Story 1.6, the port and slot by Story 4.9).
 - Given the new files, when coverage and Stryker run in CI, then both report 100 % and zero survivors, the seed loaded through `isolated-module.ts`.
 - Not applicable: rendering a11y and visual (no rendering).
 
@@ -1680,7 +1680,7 @@ imports `routes/index` only), `make lint-docs` (the app-shell README), `make che
 - Given the performance workflow in CI, when it audits `/` under the default style, which now paints the enabled bell and the badge, then every Lighthouse category meets its configured `minScore` in `lighthouserc.desktop.js` and `lighthouserc.mobile.js` (unchanged) and the `error`-level `resource-summary:script:size` and `resource-summary:total:size` assertions on `/` pass in both presets against the unchanged `lighthouse.scriptSizeBytes` (265 000) and `lighthouse.totalSizeBytes` (480 000) of `config/performance-budget.json` (NFR-11, NFR-13; readiness R3-09) (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given a Lighthouse regression on `/` caused by `notifications-shell`, when it is measured, then the story applies PRD amendment item 31's fallback: the count read, the enabled bell, `onToggle` and `visited` stay in `notifications-shell`, so the first click still opens the panel; only the in-panel key handler, the outside-click handler and the panel-only `notification_center.history.*` strings move to `notifications-history`, the strings in the one conditional catalog entry the DoD allows; if `/` still regresses, the story stops and reports to the owner; anything weaker (recording only under `bell`, dropping the badge or the enabled bell under `toast` or `inline`) ships only with the owner's acceptance, never by editing a floor (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given the existing shell browser specs listed above in CI, when they run, then they pass with the bell enabled under the default style and the search and the list still inert (verified at QA / finish-PR stage, not in a local Ralph run).
-- Given the CI visual job, when it runs, then the 243 protected-page baselines of PRD amendment item 32 differ, each inside the header's bell box (the enabled glyph, and on desktop and tablet the badge) or, in the mobile drawer captures, inside the drawn bell copy, plus the settings captures' own toast changes of Story 2.3, and every public-page baseline is unchanged; they are re-recorded from the CI artifact in Story 4.6, never locally (readiness R3-11).
+- Given the CI visual job, when it runs, then the protected-page baselines of PRD item 58 differ, each inside the header's bell box (the enabled glyph, and on desktop and tablet the badge) or, in the mobile drawer captures, inside the drawn bell copy, plus the settings captures' own toast changes of Story 2.3, and every public-page baseline is unchanged; they are re-recorded from the CI artifact in Story 4.6, never locally (readiness R3-11).
 - Given the app-shell README, when `make lint-docs` runs, then it passes, and no passage describes the bell as disabled, its count as passed only by stories or its badge as the disabled `#D0D4D8` while the notifications slot is registered (readiness R3-07).
 - Given the changed files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
 - Not applicable: new i18n keys; recording baselines (Story 4.6 records every changed capture).
@@ -1931,7 +1931,7 @@ So that the visual gate guards all three variants and the bell of every style wi
 **Dependencies:** dependent on Story 4.2
 
 **Requirements:** FR-18 (extent), FR-22, FR-23, FR-30, NFR-6 (resting capture), NFR-14, NFR-15
-(as amended 2026-11-12: 285 files) (architecture §13.3, K3, K6, K6a, A-28; PRD amendment item 32).
+(PRD item 58: 362 files) (architecture §13.3, K3, K6, K6a, A-28; PRD amendment item 32).
 
 **Files:** `tests/visual/visual-comparison.settings.spec.ts` (MODIFY: per-style captures with
 `useNotificationStyle`, `freezeClock` before the save, `emulateMedia` for one reduced-motion
@@ -1947,13 +1947,16 @@ app-shell spec's `openShell` (MODIFY: the same wait after the chip's name), the 
 after a save (MODIFY: they wait for the badge's recorded count before the capture; readiness
 R3-08), and the baseline PNGs from the CI artifact:
 
-- 243 re-recorded protected-page baselines, every file in the snapshot folders of
-  `visual-comparison.spec.ts` (39), `visual-comparison.app-shell.spec.ts` (15),
-  `visual-comparison.coming-soon.spec.ts` (72), `visual-comparison.settings.spec.ts` (93, A's 18
-  `uk-settings-{success-toasts,transient-toast}-*` included), `mobile/app-shell.spec.ts` (6),
-  `mobile/coming-soon.spec.ts` (16) and `mobile/settings.spec.ts` (2);
-- 18 new `uk-settings-inline-{success,transient}-*`, 18 new `uk-settings-bell-{success,transient}-*`
-  and 6 new `uk-app-shell-history-open-{desktop,mobile}-*`.
+- 320 re-recorded protected-page baselines against #398 (PRD item 58), every file in the snapshot
+  folders of `visual-comparison.spec.ts` (39), `visual-comparison.app-shell.spec.ts` (15),
+  `visual-comparison.coming-soon.spec.ts` (72), `visual-comparison.settings.spec.ts` (75),
+  `visual-comparison.two-factor.spec.ts` (93), `mobile/app-shell.spec.ts` (6),
+  `mobile/coming-soon.spec.ts` (16), `mobile/settings.spec.ts` (2) and `mobile/two-factor.spec.ts`
+  (2), the new files aside;
+- 24 new: 18 `uk-settings-bell-{success,transient}-*` and 6
+  `uk-app-shell-history-open-{desktop,mobile}-*`;
+- 18 deleted: A's `uk-settings-{success-toasts,transient-toast}-*`. The 18 planned
+  `uk-settings-inline-*` files left with variant B.
 
 **Gates:** CI `visual tests` (`make test-visual`, three engines, and the two mobile projects); the
 changed-PNG list.
@@ -1961,13 +1964,13 @@ changed-PNG list.
 **Acceptance Criteria:**
 
 - Given the PR's changed PNG list, when it is read, then it contains exactly the 362 files of PRD item 58 (320 re-recorded, 24 new, 18 deleted) and no other; in particular none of the 434 public-page baselines (auth, password recovery, error pages, not found, auth skeleton, registration notification, submit loader, mobile auth and mobile error pages) changed (NFR-15 as amended, PRD amendment item 32) (verified at QA / finish-PR stage, not in a local Ralph run).
-- Given each of the 243 re-recorded baselines, when its CI diff image against `main` is read, then the difference lies inside the header's bell box (the enabled glyph and, on desktop and tablet, the badge reading the seed's 1 or the recorded count) or, in the mobile drawer capture, inside the drawn bell copy, plus the settings captures' own toast changes; any other difference stops the story and is reported (architecture K6a) (verified at QA / finish-PR stage, not in a local Ralph run).
+- Given each of the 320 re-recorded baselines, when its CI diff image against `main` is read, then the difference lies inside the header's bell box (the enabled glyph and, on desktop and tablet, the badge reading the seed's 1 or the recorded count) or, in the mobile drawer capture, inside the drawn bell copy, plus the settings captures' own toast changes; any other difference stops the story and is reported (architecture K6a) (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given the settings `success-toasts` and `transient-toast` captures under the default style, when they are taken, then the desktop and tablet badge reads 4 and 2 respectively (seed 1 plus the raised outcomes), never masked.
 - Given any protected-page capture in the seven re-recorded specs, when it is taken, then the shared wait has seen the enabled bell with `aria-expanded="false"` and, on desktop and tablet, the expected badge text (1 at rest, the recorded count after a save) before `toHaveScreenshot` runs, so no baseline records the bell's placeholder frame or a badge still loading and none flakes under `retries: 0` or the nightly flake budget of 0 (readiness R3-08).
 - Given `make test-visual` in CI after the baselines are committed, when it runs, then every capture equals its baseline, including every capture outside the list against `main` (NFR-14) (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given the captures, when they are taken, then timestamps are deterministic through `freezeClock` and the fixed seed, never masked.
 - Given `bell` at 1440 × 900, when the merged shape is captured, then its outer edge is within 2 px of the Figma extent 1087–1366 × 8–125 (FR-18), measured in the spec from the bounding box.
-- Given reduced motion per style, when a capture is taken mid-entrance, then it is compared with `toHaveScreenshot` against the resting capture's baseline name and matches it (NFR-6), so the changed-PNG list stays at 285.
+- Given reduced motion per style, when a capture is taken mid-entrance, then it is compared with `toHaveScreenshot` against the resting capture's baseline name and matches it (NFR-6), so the changed-PNG list stays at the 362 of PRD item 58.
 - Given the baselines, when their origin is checked, then each came from the CI `visual tests` artifact of the branch, never from a local container (verified at QA / finish-PR stage, not in a local Ralph run).
 - Not applicable: unit coverage and mutation (test-only), i18n.
 
@@ -2203,7 +2206,7 @@ the count description, the history panel and mark-all-read (`BellNotifications`,
 `NotificationsShellSlot`, `NotificationHistoryPanel` and its loader, the `notifications-history`
 chunk, `ui-notification-history/`, `use-notification-history.ts`, `use-bell-disclosure.ts`, the
 `HeaderIconButton` disclosure, the `HeaderBadge` tone, `BellSlotFrame`, the drawer copy's enabled
-glyph), the recorder, the adapter with its four operations and the seed, the `notification_center`
+glyph), the recorder, the adapter with its five operations and the seed, the `notification_center`
 catalog, the token and registrar, the port, the outlet (regions, lifetime) and the notifications
 feature.
 
@@ -2330,7 +2333,7 @@ stories).
 - **The count under every style (owner decision 2026-11-12, applied).** The bell, badge, count
   description and history are enabled under `toast`, `inline` and `bell`; the variants differ
   only in the transient surface. The cost: every protected page's header baseline is re-recorded
-  from CI (285 changed PNGs: 243 re-recorded, 42 new; Story 4.6), and the existing shell browser
+  from CI (362 changed PNGs, PRD item 58; Story 4.6), and the existing shell browser
   specs that asserted the disabled bell are rewritten in Story 3.4.
 - **Lighthouse fallback on `/`.** If `/` regresses, Story 3.4 first applies PRD amendment item
   31's fallback (the count read, the bell, `onToggle` and `visited` stay, so the first click

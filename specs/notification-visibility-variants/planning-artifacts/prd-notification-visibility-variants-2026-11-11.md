@@ -498,12 +498,14 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 >     this item replaces it everywhere.
 > 59. **NFR-22, the exemption after the removal.** The `[no-adr]` line no longer rests on a temporary
 >     setting. What stays on an ADR-required surface is the `notificationEventsUrl` runtime setting and
->     the second shell slot. The setting is one optional URL, absent by default, on the existing runtime
->     configuration pattern; its direct connection departs from the API gateway rule by the owner's
->     decision of 2026-11-23 (items 37 to 43), is described in `SECURITY.md` and the runtime-config
->     README, and is provisional until the notification-service team agrees to the contract. The slot
->     repeats the #362 pattern. No new dependency or boundary is introduced, so the decisions stay in those
->     documents and the READMEs; agreeing the stream contract is the moment to write an ADR.
+>     the second shell slot. The slot repeats the #362 pattern. The setting opens a boundary the frontend
+>     did not have, a direct connection to a service that departs from the API gateway rule, by the
+>     owner's decision of 2026-11-23 (items 37 to 43). It ships without an ADR because nothing uses it
+>     yet: it is one optional URL on the existing runtime configuration pattern, absent by default in every
+>     image and lane, and the stream contract is provisional, so an ADR now would record a contract nobody
+>     has agreed to. `SECURITY.md` and the runtime-config README describe the boundary meanwhile. An ADR is
+>     required once the notification-service team agrees to the contract, and before any deployment sets
+>     the variable.
 > 60. **FR-6, the list role.** The card and the history mark their lists with `role="list"` because the
 >     reset list style drops the semantics in WebKit. It announces nothing; "no role" reads "no live region
 >     role".
@@ -803,14 +805,16 @@ transformer or user type), so moving the feature to its own module changes impor
 #### FR-3 — Repository contract
 
 A repository contract exposes, asynchronously, exactly the operations the variants use:
-**record** an outcome, **list** the history (newest first), **count** the unread entries and
-**mark all read**. Transport shapes, if a real adapter ever needs them, are mapped inside the
+**record** an outcome, **list** the history (newest first), **count** the unread entries,
+**mark all read** and **claim** the history for a session (item 57). Transport shapes, if a real adapter ever needs them, are mapped inside the
 repository only; callers see the FR-2 types.
 
 - Given a recorded outcome, when the history is listed, then it is first, unread, with the
   instant it was recorded.
 - Given three unread entries, when mark-all-read resolves, then the unread count is 0 and every
   listed entry reads as read.
+- Given records of one session, when another session claims the history, then it is the seed alone;
+  when the same session claims it again, then nothing changes.
 
 #### FR-4 — In-memory mock adapter with deterministic fixtures
 
@@ -873,7 +877,7 @@ lists the public contract, the token, the repository operations, the mock's fixt
 "no user-module imports" rule; a test or rule pins that the barrel exports no user-module type.
 
 - Given the feature README, when `make lint-docs` runs, then it passes and the README names the
-  contract, the token, the four repository operations and the extraction rule.
+  contract, the token, the five repository operations and the extraction rule.
 - Given the barrel, when the boundary check of FR-2 runs, then no exported type originates outside
   the feature.
 

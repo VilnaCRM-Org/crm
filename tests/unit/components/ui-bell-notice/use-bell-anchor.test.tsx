@@ -9,6 +9,13 @@ const root = document.documentElement;
 
 const MOMENT: BellAnchorMoment = { expanded: false, rows: { items: [] } };
 
+const SHOWN = {
+  id: 1,
+  kind: 'success',
+  messageKey: 'settings.toasts.saved',
+  raisedAt: 0,
+} as const;
+
 const nextFrame = (): Promise<void> =>
   new Promise((resolve) => {
     window.requestAnimationFrame(() => resolve());
@@ -60,7 +67,7 @@ describe('useBellAnchor', () => {
 
   it.each<[string, BellAnchorMoment]>([
     ['the panel opens', { ...MOMENT, expanded: true }],
-    ['the rows change', { ...MOMENT, rows: { items: [] } }],
+    ['the rows change', { ...MOMENT, rows: { items: [SHOWN] } }],
   ])('follows a bell that moved without a resize when %s', (_label, moment) => {
     const ref = bell({ left: 300, width: 24, bottom: 44 });
     const { rerender } = renderHook(({ at }) => useBellAnchor(ref, at), {
