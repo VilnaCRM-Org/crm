@@ -4,9 +4,12 @@ import CLEARED_NOTIFICATION_OUTLET from './cleared-notification-outlet';
 import notificationRaiseBuilder from './notification-raise-builder';
 import type { NotificationDraftSet } from './types/notification-draft';
 import type {
+  NotificationClearPatch,
   NotificationClock,
+  NotificationFocusPatch,
   NotificationFocusReturn,
   NotificationOutletState,
+  NotificationShownPatch,
   NotificationTranslate,
 } from './types/notification-outlet-state';
 
@@ -24,21 +27,24 @@ export default class NotificationOutletActions {
   }
 
   public dismiss(id: number): void {
-    this.store.setState((state: NotificationOutletState): Partial<NotificationOutletState> => ({
+    this.store.setState((state: NotificationOutletState): NotificationShownPatch => ({
       shown: { items: state.shown.items.filter((item) => item.id !== id) },
     }));
   }
 
   public dismissAll(): void {
-    this.store.setState({ shown: CLEARED_NOTIFICATION_OUTLET.shown });
+    const patch: NotificationShownPatch = { shown: CLEARED_NOTIFICATION_OUTLET.shown };
+    this.store.setState(patch);
   }
 
   public publishFocus(focus: NotificationFocusReturn): void {
-    this.store.setState({ focus });
+    const patch: NotificationFocusPatch = { focus };
+    this.store.setState(patch);
   }
 
   public clear(): void {
     const { shown, raised, announcement, focus } = CLEARED_NOTIFICATION_OUTLET;
-    this.store.setState({ shown, raised, announcement, focus });
+    const patch: NotificationClearPatch = { shown, raised, announcement, focus };
+    this.store.setState(patch);
   }
 }

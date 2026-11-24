@@ -8,6 +8,7 @@ import type { NotificationRecordSet } from '@/modules/user/features/notification
 import Panel from '@/modules/user/features/notifications/components/notification-history-panel';
 import { NOTIFICATION_SEED } from '@/modules/user/features/notifications/repositories';
 import createI18n from '@tests/unit/utils/create-notification-center-locale-i18n';
+import findLiveRegions from '@tests/unit/utils/find-live-regions';
 
 const records: NotificationRecordSet = { items: NOTIFICATION_SEED.items };
 
@@ -135,9 +136,8 @@ describe('NotificationHistoryPanel', () => {
   });
 
   it('carries no live region, role other than structure, or time announcement', () => {
-    render(<Host locale="en" />);
+    const { container } = render(<Host locale="en" />);
 
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(findLiveRegions(container)).toEqual([]);
   });
 });

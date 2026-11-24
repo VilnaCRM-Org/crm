@@ -10,6 +10,7 @@ import useNotificationOutletStore from '@/lib/notifications/use-notification-out
 import Notice from '@/modules/user/features/notifications/components/bell-outcome-notice';
 import { inMemoryNotificationRepository } from '@/modules/user/features/notifications/repositories';
 import createI18n from '@tests/unit/utils/create-notification-center-locale-i18n';
+import findLiveRegions from '@tests/unit/utils/find-live-regions';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -99,11 +100,14 @@ describe('BellOutcomeNotice', () => {
 
   it('keeps the time out of every live region', () => {
     const port = portOf();
-    render(<Page />);
+    const { container } = render(<Page />);
 
     act(() => port.raise({ items: [saved] }));
 
-    expect(screen.getByRole('status')).not.toHaveTextContent(/\d{4}/u);
+    const regions = findLiveRegions(container);
+    expect(regions).toEqual([screen.getByRole('status'), screen.getByRole('alert')]);
+    expect(screen.getByRole('listitem')).toHaveTextContent(/\d/u);
+    for (const region of regions) expect(region).not.toHaveTextContent(/\d/u);
     expect(screen.getByRole('alert')).toBeEmptyDOMElement();
   });
 

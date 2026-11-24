@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 
-import type { NotificationOutletState } from '@/lib/notifications/types/notification-outlet-state';
+import type {
+  NotificationOutletState,
+  NotificationRecordedPatch,
+} from '@/lib/notifications/types/notification-outlet-state';
 import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
 import type { ShellChunkFailureHandler } from '@/routes/types/shell-slot';
 
@@ -21,7 +24,8 @@ function draftsOf({ raised }: NotificationOutletState): NotificationRecordDraftS
 function followRaises(record: (drafts: NotificationRecordDraftSet) => void): () => void {
   const follow = (state: NotificationOutletState): void => {
     if (state.revision === state.recorded || state.raised.items.length === 0) return;
-    useNotificationOutletStore.setState({ recorded: state.revision });
+    const patch: NotificationRecordedPatch = { recorded: state.revision };
+    useNotificationOutletStore.setState(patch);
     record(draftsOf(state));
   };
   follow(useNotificationOutletStore.getState());
