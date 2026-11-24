@@ -1,4 +1,5 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, render, renderHook, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter } from 'react-router';
@@ -6,6 +7,7 @@ import { MemoryRouter } from 'react-router';
 import type { NotificationsPort } from '@/hooks/types/notifications-port';
 import useNotifications from '@/hooks/use-notifications';
 import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
+import BellOutcomeNotice from '@/modules/user/features/notifications/components/bell-outcome-notice';
 import useBellDisclosure from '@/modules/user/features/notifications/hooks/use-bell-disclosure';
 import useBellNoticeViews from '@/modules/user/features/notifications/hooks/use-bell-notice-views';
 import createI18n from '@tests/unit/utils/create-notification-center-locale-i18n';
@@ -84,5 +86,24 @@ describe('the bell hooks when the notifications port changes', () => {
     expect(first.dismiss).not.toHaveBeenCalled();
     expect(second.dismiss).toHaveBeenCalledWith(7);
     expect(onActivate).toHaveBeenCalledTimes(1);
+  });
+
+  it('closing a row dismisses it through the latest port', async () => {
+    const first = portOf();
+    const second = portOf();
+    useNotificationOutletStore.setState({
+      shown: {
+        items: [{ id: 7, kind: 'success', messageKey: 'settings.toasts.saved', raisedAt: 0 }],
+      },
+    });
+    usePort.mockReturnValue(first);
+    const { rerender } = render(<BellOutcomeNotice bellRef={NO_BELL} />, { wrapper });
+
+    usePort.mockReturnValue(second);
+    rerender(<BellOutcomeNotice bellRef={NO_BELL} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Close notification' }));
+
+    expect(first.dismiss).not.toHaveBeenCalled();
+    expect(second.dismiss).toHaveBeenCalledWith(7);
   });
 });

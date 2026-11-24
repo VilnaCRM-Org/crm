@@ -2,6 +2,7 @@ import { render } from '@testing-library/react';
 
 import NotificationIcon from '@/components/ui-notification-content/notification-icon';
 import findSvg from '@tests/unit/utils/find-svg';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const CIRCLE =
   'M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12' +
@@ -24,6 +25,21 @@ describe('NotificationIcon', () => {
     expect(markup).toContain('stroke-linecap="round"');
     expect(markup).toContain('stroke-linejoin="round"');
     expect(markup).toContain('viewBox="0 0 24 24"');
+  });
+
+  it('builds the circle of both outcome glyphs when the module loads', async () => {
+    const { library, Icon } = await loadIsolated(async () => ({
+      library: await import('@testing-library/react/pure'),
+      Icon: (await import('@/components/ui-notification-content/notification-icon')).default,
+    }));
+
+    const success = library.render(<Icon kind="success" />);
+    expect(success.container.innerHTML).toContain(`d="M7.5 12L10.5 15L16.5 9${CIRCLE}"`);
+    success.unmount();
+
+    const error = library.render(<Icon kind="error" />);
+    expect(error.container.innerHTML).toContain(`d="M12 8V12M12 16H12.01${CIRCLE}"`);
+    error.unmount();
   });
 
   it.each(['success', 'error', 'close'] as const)(
