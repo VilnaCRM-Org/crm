@@ -24,10 +24,12 @@ import {
   NOTIFICATION_SEED,
 } from '@/modules/user/features/notifications/repositories';
 import ShellSlotFactory from '@/routes/shell-slot-factory';
+import type { ProtectedSession } from '@/routes/types/protected-outlet-context';
 import type { ShellSlotModule } from '@/routes/types/shell-slot';
 import { buildBroadcastEvent } from '@tests/builders/broadcast-event';
 import createBellLocaleI18n from '@tests/unit/utils/create-bell-locale-i18n';
 import FakeEventSource from '@tests/unit/utils/fake-event-source';
+import SessionOutlet from '@tests/unit/utils/session-outlet';
 import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -69,12 +71,16 @@ interface Mounted {
   readonly report: jest.Mock;
 }
 
+const session: ProtectedSession = { token: () => 'session-token', end: () => undefined };
+
 const wrap = (repository: NotificationRepository, children: ReactNode): JSX.Element => (
   <I18nextProvider i18n={createBellLocaleI18n('uk')}>
     <MemoryRouter>
-      <NotificationRepositoryContext.Provider value={repository}>
-        {children}
-      </NotificationRepositoryContext.Provider>
+      <SessionOutlet session={session}>
+        <NotificationRepositoryContext.Provider value={repository}>
+          {children}
+        </NotificationRepositoryContext.Provider>
+      </SessionOutlet>
     </MemoryRouter>
   </I18nextProvider>
 );
@@ -172,6 +178,30 @@ describe('NotificationsShellSlot', () => {
       expect(bell()).toBeEnabled();
     }
   );
+
+  it('keeps no outcome for the next session on the same tab', async () => {
+    const repository = new InMemoryNotificationRepository(NOTIFICATION_SEED);
+    const token = jest.spyOn(session, 'token');
+    const { unmount } = render(
+      wrap(
+        repository,
+        <NotificationsShellSlot
+          layout="desktop"
+          signOut={jest.fn()}
+          onAvatar={jest.fn()}
+          onChunkFailure={jest.fn()}
+        />
+      )
+    );
+    raiseOne();
+    await waitFor(() => expect(badge()).toEqual(['2']));
+
+    token.mockReturnValue(null);
+    unmount();
+
+    expect((await repository.list()).items).toHaveLength(NOTIFICATION_SEED.items.length);
+    expect(await repository.countUnread()).toBe(1);
+  });
 
   it('reports a rejecting record and changes nothing else', async () => {
     const failure = new Error('record failed');

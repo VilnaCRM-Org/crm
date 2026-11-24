@@ -11,6 +11,7 @@ const mockRepository = {
   list: jest.fn(),
   countUnread: jest.fn(),
   markAllRead: jest.fn(),
+  forget: jest.fn(),
 };
 
 jest.mock('@/modules/user/features/notifications/hooks/use-notification-repository', () => ({
@@ -166,6 +167,24 @@ describe('useNotificationRecorder', () => {
     await raise(1);
 
     expect(mockRepository.record).toHaveBeenCalledTimes(2);
+  });
+
+  it('records every batch raised before it mounted, once and in order', async () => {
+    const first = buildNotificationDraft({ messageKey: 'first' });
+    const second = buildNotificationDraft({ messageKey: 'second' });
+    actions.raise({ items: [first] }, identity);
+    actions.raise({ items: [second] }, identity);
+
+    renderHook(() => useRecorder(report));
+    await act(async () => undefined);
+
+    expect(mockRepository.record).toHaveBeenCalledTimes(1);
+    expect(mockRepository.record).toHaveBeenCalledWith({
+      items: [
+        expect.objectContaining({ messageKey: 'first' }),
+        expect.objectContaining({ messageKey: 'second' }),
+      ],
+    });
   });
 
   it('records the batch raised before it mounted, once, and then later raises', async () => {

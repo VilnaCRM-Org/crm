@@ -5,4 +5,5 @@ export interface NotificationRepository {
   list(): Promise<NotificationRecordSet>;
   countUnread(): Promise<number>;
   markAllRead(): Promise<void>;
+  forget(): Promise<void>;
 }

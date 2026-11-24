@@ -190,7 +190,8 @@ src/modules/user/features/notifications/
 │   ├── use-notification-recorder.ts     # outlet store → repository.record
 │   ├── use-notification-history.ts      # list + unread + markAllRead
 │   ├── use-bell-disclosure.ts           # open, close, Escape, outside, route close, visited, opens
-│   └── use-retryable-chunk.ts           # lazy chunk, loaded again on the attempt after a failure
+│   ├── use-retryable-chunk.ts           # lazy chunk, loaded again on the attempt after a failure
+│   └── use-session-history.ts           # forgets the history when the session ends (PRD item 57)
 ├── components/
 │   ├── notifications-shell-slot.tsx     # chunk `notifications-shell`, every style
 │   ├── bell-notifications.tsx           # in `notifications-shell`: bell, badge, panel host
@@ -249,6 +250,7 @@ export interface NotificationRepository {
   list(): Promise<NotificationRecordSet>;
   countUnread(): Promise<number>;
   markAllRead(): Promise<void>;
+  forget(): Promise<void>;
 }
 ```
 

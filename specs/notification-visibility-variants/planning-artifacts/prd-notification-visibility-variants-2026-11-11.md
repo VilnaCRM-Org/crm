@@ -465,7 +465,8 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 >     (`nom_total_file_max`); a closure takes at most 3 arguments (`nargs_closure_max`) and a function or
 >     closure has at most 3 exits (`nexits_max`).
 > 53. **FR-5, the first mount.** The batch raised before the notifications slot mounts is recorded when
->     it mounts, once, and a remount records nothing twice. The store keeps the latest batch only.
+>     it mounts, once, and a remount records nothing twice. The store keeps every batch nobody has
+>     recorded yet, in order, and drops them once they are recorded or the page is left.
 > 54. **FR-5 and FR-24, a failing repository.** A rejected read or mark-all-read is reported as
 >     `app-shell:notifications-list` or `app-shell:notifications-mark-read`; the bell keeps its last
 >     rows and count.
@@ -475,6 +476,10 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 > 56. **FR-5 and FR-24, a chunk that gave up.** The panel or card chunk that failed for good renders
 >     nothing, is reported once, and is loaded again on the next open of the panel, or on the next
 >     recorded outcome or broadcast for the card. A chunk that loaded is never requested again.
+> 57. **FR-4 and NFR-21, the next session.** The history belongs to the signed-in session. When the
+>     session ends the slot unmounts and the mock repository forgets its records and read marks
+>     (`forget()`), so the next user of the tab starts from the seed. "For the life of the document"
+>     reads "until the session ends or the document reloads".
 
 ## 1. Executive summary
 

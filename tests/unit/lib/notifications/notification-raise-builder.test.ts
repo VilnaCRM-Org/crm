@@ -44,6 +44,23 @@ describe('NotificationRaiseBuilder', () => {
     expect(next).toMatchObject({ nextId: 9, revision: 1 });
   });
 
+  it('keeps the batches nobody recorded ahead of the new one, in order', () => {
+    const first = build([buildNotificationDraft(), buildNotificationDraft({ kind: 'error' })]);
+
+    const second = build([buildNotificationDraft()], first);
+
+    expect(second.raised.items.map((item) => item.id)).toEqual([1, 2, 3]);
+    expect(second.raised.items.slice(0, 2)).toEqual(first.raised.items);
+  });
+
+  it('drops the batches that were recorded', () => {
+    const first = build([buildNotificationDraft()]);
+
+    const second = build([buildNotificationDraft()], { ...first, recorded: first.revision });
+
+    expect(second.raised.items.map((item) => item.id)).toEqual([2]);
+  });
+
   it('suffixes the mark only on non-empty texts of a marked raise', () => {
     const success = buildNotificationDraft();
 

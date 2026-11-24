@@ -256,7 +256,8 @@ The outcome grows out of the header bell at the top right, as the designer drew 
 - **Look on desktop (1440 and wider).** A white pill wraps the bell and fuses with a 256 × 62
   card hanging below it (visible extent about 1087–1366 × 8–125). The card shows the message and
   the time of the outcome. The drawn stroke (1.44:1) is replaced by a tone stroke of at least 3:1,
-  and the card carries the existing card shadow (R6).
+  and the card carries the existing card shadow (R6). (2026-11-23: the stroke is the neutral
+  `border.strong`, 3.53:1, for every kind; PRD items 45 and 46.)
 - **Tablet (1024–1439 shell layout).** Figma draws no merged shape here. The fallback is the bell
   dropdown's caret card (`377:18485`): a card with a small caret pointing at the bell, anchored to
   the bell wherever the header places it (mid-header at 1024) (R7).
@@ -272,7 +273,8 @@ The outcome grows out of the header bell at the top right, as the designer drew 
   `377:18485`: the mocked history with read and unread rows and timestamps. The outcomes the
   user just raised appear in it as unread, and the badge counts them.
 - **Success and error.** Green or red tone on stroke and icon; the transient save error shows
-  Retry in the card; each row has a close button that returns focus to Save.
+  Retry in the card; each row has a close button that returns focus to Save. (2026-11-23: the tone
+  is on the icon only; PRD item 45.)
 - **Causes addressed:** 3 and 4, by elevation and motion. It makes cause 2 worse: about 943 px
   from Save at 1440 × 900, the farthest of the three (research §4.3).
 
@@ -287,7 +289,8 @@ The outcome grows out of the header bell at the top right, as the designer drew 
 
 > Assumption: the dropdown follows the menu-button pattern the user menu already uses: the bell
 > exposes its expanded state, opening never happens on its own, Escape and an outside click
-> close it, and focus returns to the bell. The merged card appearing never opens the dropdown.
+> close it, and focus returns to the bell. Tab past its last control closes it and moves on in page
+> order, so focus is never trapped. The merged card appearing never opens the dropdown.
 
 > Assumption: the timestamp is visual only. It is the moment the outcome was shown, formatted
 > through the locale-aware formatter, and it is not part of the announcement.
@@ -417,6 +420,7 @@ A variant that misses one of these is not ready for review.
 | Visible edge in forced-colors mode           | kept                   | unit            |
 | axe violations on `/settings` states         | 0 in three engines     | a11y lanes      |
 | Bell dropdown (C): Escape, focus to bell     | pass                   | keyboard spec   |
+| Bell dropdown (C): Tab out closes, no trap   | pass                   | keyboard spec   |
 | Outcome shown when the mock repository fails | yes, same as success   | unit + e2e      |
 
 The 3:1 edge floor is a **product rule modelled on WCAG 1.4.11**, not a WCAG requirement: a
@@ -555,7 +559,8 @@ Save at 1440 × 900 and three toasts covering Clear on mobile.
    dashboard; the app ships it disabled and grey. Under C it becomes enabled with a mocked unread
    badge. Confirm the enabled look, the badge style and count cap, and that A and B keep it
    disabled.
-5. **C's stroke.** The drawn `#D0D4D8` is 1.44:1; confirm a tone stroke that reaches 3:1.
+5. **C's stroke.** The drawn `#D0D4D8` is 1.44:1; confirm a tone stroke that reaches 3:1. (Settled
+   2026-11-23: a neutral stroke, `#80878A`; PRD items 45 and 46.)
 6. **C's close control and timestamp.** The frame draws no close button; confirm one per row.
    Confirm the timestamp format (time only, or date and time).
 7. **Motion.** Confirm direction and duration of each entrance (A from the edge, B fade, C from
@@ -613,7 +618,7 @@ uses the user-menu pattern.
 - B `inline`: status block in the card below the Save/Clear row (0–16 px from Save); resend
   outcomes at the e-mail row; no close, persists until next submit or Clear; fixes 2, 3, 4.
 - C `bell`: merged pill + card at the bell (≥ 1440, `397:16713`), caret card below 1440; tone
-  stroke ≥ 3:1; close per row; ~943 px from Save; bell enabled with a mocked unread badge and a
+  stroke ≥ 3:1 (neutral since 2026-11-23, PRD item 45); close per row; ~943 px from Save; bell enabled with a mocked unread badge and a
   dropdown of mocked history (`377:18485`) with mark-all-read, no row deletion.
 - One enum runtime setting `notificationStyle` (`toast`, `inline`, `bell`; default `toast`);
   an unknown value fails container start; `[no-adr]`.
