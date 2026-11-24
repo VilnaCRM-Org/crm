@@ -15,6 +15,7 @@ interface Harness {
   provider: SocialSignInProvider;
   initiate: jest.Mock;
   complete: jest.Mock;
+  getState: jest.Mock;
   setState: jest.Mock;
   signedIn: jest.Mock;
   loginFailed: jest.Mock;
@@ -30,19 +31,20 @@ const SIGNED_OUT = {
 const setup = (earlierToken: string | null = null): Harness => {
   const initiate = jest.fn();
   const complete = jest.fn();
+  const getState = jest.fn(() => ({ ...SIGNED_OUT, token: earlierToken }));
   const setState = jest.fn();
   const signedIn = jest.fn();
   const loginFailed = jest.fn();
   const signOut = jest.fn();
   const repository = { initiate, complete } as unknown as GraphQLSocialSignInRepository;
   const deps = {
-    authState: { setState },
+    authState: { getState, setState },
     securitySignals: { signedIn, loginFailed },
     session: { token: () => earlierToken, signOut },
     signedOut: SIGNED_OUT,
   } as unknown as SocialSignInDeps;
   const provider = new SocialSignInProvider(repository, new SocialSignInTransformer(), deps);
-  return { provider, initiate, complete, setState, signedIn, loginFailed, signOut };
+  return { provider, initiate, complete, getState, setState, signedIn, loginFailed, signOut };
 };
 
 const stateExpired = (): ApolloError =>
@@ -140,6 +142,26 @@ describe('SocialSignInProvider', () => {
     expect(signOut.mock.invocationCallOrder[0]).toBeLessThan(
       setState.mock.invocationCallOrder[0] ?? 0
     );
+  });
+
+  it.each([
+    ['signed in', { token: 'newer-token', pendingSessionId: null }],
+    ['reached a 2FA challenge', { token: null, pendingSessionId: 'newer-pending' }],
+  ])('drops a completion the user has %s past', async (_label, newer) => {
+    const { provider, complete, getState, setState, signedIn, loginFailed, signOut } = setup();
+    complete.mockImplementation(() => {
+      getState.mockReturnValue({ ...SIGNED_OUT, ...newer });
+      return Promise.resolve({ twoFactorEnabled: false, accessToken: buildToken() });
+    });
+
+    await expect(
+      provider.complete('google', PARAMS, new AbortController().signal)
+    ).resolves.toEqual({ kind: 'aborted' });
+
+    expect(setState).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+    expect(signedIn).not.toHaveBeenCalled();
+    expect(loginFailed).not.toHaveBeenCalled();
   });
 
   it('reports a refused completion with its reason code and returns its error kind', async () => {

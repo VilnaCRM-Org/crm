@@ -151,7 +151,9 @@ codegen` and `make codegen-check`), fails when that header is missing or no long
   sign-in only as REST (`GET /api/auth/social/{provider}` and its callback);
   `initiateSocialSignInUser` and `completeSocialSignInUser` are declared here in its API Platform
   style, for user-service to add. Failures carry the REST `error_code` values in
-  `extensions.error_code`.
+  `extensions.error_code`. A completion must carry `twoFactorEnabled` `true` or `false`; a missing
+  or `null` flag does not say whether a challenge is due, so it is rejected, never read as
+  `false`.
 - **Mock answers:** `docker/apollo-server/lib/social-sign-in-resolvers.ts` issues a state per
   initiate, consumes it once on complete and checks the provider. `OAUTH_MODE=mock` sends every
   provider to the Mockoon mock consent page; `OAUTH_MODE=provider` sends a provider to its real

@@ -3,6 +3,7 @@ import { inject, injectable } from 'tsyringe';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import type { GraphQLSocialSignInRepository } from '@auth/repositories';
 import type SocialSignInTransformer from '@auth/transformers/social-sign-in-transformer';
+import type { AuthState } from '@auth/types/auth-store';
 import type { SocialProvider } from '@auth/types/social-sign-in/social-provider';
 import type { SocialSignInDeps } from '@auth/types/social-sign-in/social-sign-in-deps';
 import type {
@@ -38,8 +39,10 @@ export default class SocialSignInProvider {
     params: SocialCallbackParams,
     signal: AbortSignal
   ): Promise<SocialSignInOutcome> {
+    const before = this.deps.authState.getState();
     try {
-      return this.settle(await this.repository.complete(provider, params, signal));
+      const completion = await this.repository.complete(provider, params, signal);
+      return this.isSuperseded(before) ? { kind: 'aborted' } : this.settle(completion);
     } catch (caught) {
       return this.failed(caught, signal);
     }
@@ -67,6 +70,11 @@ export default class SocialSignInProvider {
       this.deps.securitySignals.signedIn();
     }
     return this.transformer.toOutcome(completion);
+  }
+
+  private isSuperseded({ token, pendingSessionId }: AuthState): boolean {
+    const now = this.deps.authState.getState();
+    return now.token !== token || now.pendingSessionId !== pendingSessionId;
   }
 
   private endEarlierSession(): void {

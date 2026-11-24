@@ -4,7 +4,7 @@ export interface SocialInitiation {
 }
 
 export interface SocialDirectCompletion {
-  readonly twoFactorEnabled?: false | null | undefined;
+  readonly twoFactorEnabled: false;
   readonly accessToken: string;
 }
 

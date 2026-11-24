@@ -3,7 +3,7 @@ status: 'complete'
 workflowType: 'run-summary'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-20'
+revised: '2026-11-24'
 slug: 'social-sign-in'
 ---
 
@@ -15,7 +15,7 @@ slug: 'social-sign-in'
   the Mockoon consent page and with the requester's own provider keys. The work is tracked under
   issue #150 (the dead-end OAuth buttons); the bundle was seeded from the task description.
 - **Readiness:** PASS ([readiness](readiness-social-sign-in-2026-11-18.md)), readiness
-  iterations 1-12 (iteration 12 is the latest review pass).
+  iterations 1-13 (iteration 13 is the latest review pass).
 
 ## Artifacts
 
@@ -49,12 +49,12 @@ rather than the skill's bare `research.md` names.
 
 ## Validation rounds
 
-One self-review round per artifact, then readiness iterations 1-12 as recorded in the
+One self-review round per artifact, then readiness iterations 1-13 as recorded in the
 [readiness log](readiness-social-sign-in-2026-11-18.md): iteration 1 corrected three findings,
 2 was clean, 3-4 followed the implementation waves, 5 moved the plan to GraphQL only, and 6-10
 corrected stale passages that pull request reviews and the FR/NFR gate found; 11 re-planned
-the 2FA hand-off after #331 merged, and 12 addressed the actionable findings of the gate's
-iterations 5-6. NFR6 / W7 (contrast) and the gate's diff-size limit remain open.
+the 2FA hand-off after #331 merged, 12 addressed the actionable findings of the gate's
+iterations 5-6, and 13 those of its sliced iteration 7. NFR6 / W7 (contrast) remains open.
 
 ## Open questions and warnings
 
@@ -76,4 +76,5 @@ architecture §7). ADR-004 was deleted.
 
 Register the Google client and GitHub OAuth App now (guide §3-§4) — the redirect URIs do not
 depend on implementation — then run `/fe-sdlc-implement` against this bundle, wave 1 first
-(S1.1, S2.1, S2.3, S3.1). S2.2 was withdrawn when wave 1 found every runtime flag retired on `main` (PRD D7).
+(S1.1, S2.3, S3.1). S2.1 was withdrawn with the move to GraphQL only, and S2.2 when wave 1 found
+every runtime flag retired on `main` (PRD D7).

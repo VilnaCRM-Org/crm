@@ -126,6 +126,9 @@ describe('mockoon-social-oauth', () => {
       ['3f2504e0-4f89-41d3-9a0c-0305e82c3301', true],
       ['"><script>alert(1)</script>', false],
       ['3F2504E0-4F89-41D3-9A0C-0305E82C3301', false],
+      ['3f2504e0-4f89-11d3-9a0c-0305e82c3301', false],
+      ['3f2504e0-4f89-41d3-ca0c-0305e82c3301', false],
+      ['3f2504e0-4f89-41d3-7a0c-0305e82c3301', false],
       ['', false],
     ])('accepts %s as a state: %s', (value, expected) => {
       expect(matches(STATE_PATTERN, value)).toBe(expected);

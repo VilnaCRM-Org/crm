@@ -146,6 +146,27 @@ describe('useSocialCallbackRelay', () => {
     await waitFor(() => expect(start).toHaveBeenCalledTimes(2));
   });
 
+  it('leaves a revisited state to user-service, which answers it as expired', async () => {
+    const { loader, complete } = harness();
+    complete
+      .mockResolvedValueOnce({ kind: 'signed-in' })
+      .mockResolvedValueOnce({ kind: 'failed', error: 'expired' });
+    const settle = jest.fn();
+    const run = completeRun(settle);
+
+    const { unmount } = renderHook(() => useSocialCallbackRelay(loader, run));
+    await waitFor(() => expect(settle).toHaveBeenCalledTimes(1));
+    unmount();
+    renderHook(() => useSocialCallbackRelay(loader, run));
+
+    await waitFor(() =>
+      expect(settle).toHaveBeenLastCalledWith(
+        expect.objectContaining({ status: 'failed', error: 'expired' })
+      )
+    );
+    expect(complete).toHaveBeenCalledTimes(2);
+  });
+
   it('does not settle after the hook unmounted', async () => {
     const { loader, start } = harness();
     let finish: (value: unknown) => void = () => undefined;

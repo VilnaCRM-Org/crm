@@ -38,7 +38,7 @@ const PROVIDERS = '(google|github|facebook|twitter)';
 const PROVIDER_PATTERN = `^${PROVIDERS}$`;
 const LOCAL_ORIGIN = 'https?://(localhost|[a-z0-9-]+\\.localhost)(:[0-9]{1,5})?';
 const REDIRECT_URI_PATTERN = `^${LOCAL_ORIGIN}/auth/callback/${PROVIDERS}$`;
-const STATE_PATTERN = '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+const STATE_PATTERN = '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$';
 
 function fail(message) {
   throw new Error(`mockoon-social-oauth: ${message}`);
