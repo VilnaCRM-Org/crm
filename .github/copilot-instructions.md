@@ -92,8 +92,9 @@ make test-mutation    # Stryker; the enforced floor is 100%
 - **No `data-testid`** in `src/`: tests locate elements by role, label, or text.
 - **i18n is per feature**: edit `src/**/i18n/{en,uk}.json` together, then run `make i18n-generate`
   to refresh the committed `src/i18n/localization.json`. The lazy catalogs in
-  `config/i18n-catalog-policy.json` (recovery, password policy, settings, toast, app shell, coming
-  soon, user menu, two-factor challenge, recovery codes notice) are not merged into it; their keys
+  `config/i18n-catalog-policy.json` (recovery, password policy, settings, notification content,
+  app shell, coming soon, user menu, two-factor challenge, recovery codes notice, notification
+  centre) are not merged into it; their keys
   resolve only inside the listed `owners`.
 - **Routes are module-owned**: add a page to the owning feature's `routes/index.ts` contract as
   a lazy `load` with a `webpackChunkName`, and register a new module with one line in

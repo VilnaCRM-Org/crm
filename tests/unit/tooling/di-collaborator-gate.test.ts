@@ -339,6 +339,7 @@ describe('DI collaborator gate — allowlisted barrels expose data only (issue #
   // surface stays data — a barrel that re-exported an injectable implementation would launder it
   // past the gate. This pins the invariant the honest-limitation section relies on.
   const barrelPaths = ['src/modules/user/index.ts', 'src/modules/user/features/auth/index.ts'];
+  const typesOnlyBarrelPaths = ['src/modules/user/features/notifications/index.ts'];
 
   // Collapse the barrel to one statement per line first: a multi-line
   // `export {\n  A,\n} from './x'` would otherwise be invisible to a line-oriented scan and
@@ -363,6 +364,11 @@ describe('DI collaborator gate — allowlisted barrels expose data only (issue #
     });
   });
 
+  it.each(typesOnlyBarrelPaths)('%s re-exports no value at all', (barrel) => {
+    expect(readFile(barrel).trim().length).toBeGreaterThan(0);
+    expect(valueReExports(barrel)).toEqual([]);
+  });
+
   it('covers every barrel the allowlist opens up', () => {
     const allowlisted = walk('src').filter(
       (file) =>
@@ -370,7 +376,7 @@ describe('DI collaborator gate — allowlisted barrels expose data only (issue #
         /^src\/modules\/[^/]+\/features\/[^/]+\/index\.ts$/.test(file)
     );
 
-    expect(allowlisted.sort()).toEqual([...barrelPaths].sort());
+    expect(allowlisted.sort()).toEqual([...barrelPaths, ...typesOnlyBarrelPaths].sort());
   });
 });
 
