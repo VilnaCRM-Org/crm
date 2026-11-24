@@ -3,8 +3,8 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-11-11
-revised: 2026-11-23
-iteration: 8
+revised: 2026-11-24
+iteration: 9
 feature: notification-visibility-variants
 issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'pm, autonomous run'
@@ -479,6 +479,11 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 > 55. **FR-20 and FR-24, the card and the panel.** Opening the bell dismisses the card, and an outcome
 >     raised while the panel is open is listed there and shown as a card only after the panel closes, so
 >     the two never overlap. Retry with no usable page target returns focus to the bell.
+
+> **Amendment (2026-11-24, review and FR/NFR gate of pull request #392).** Corrections and closures
+> from the review of the complete change and the first gate run. The same pass corrected items 44 and
+> 53 and the text of FR-3 and FR-7 in place.
+>
 > 56. **FR-5 and FR-24, a chunk that gave up.** The panel or card chunk that failed for good renders
 >     nothing, is reported once, and is loaded again on the next open of the panel, or on the next
 >     recorded outcome or broadcast for the card. A chunk that loaded is never requested again.

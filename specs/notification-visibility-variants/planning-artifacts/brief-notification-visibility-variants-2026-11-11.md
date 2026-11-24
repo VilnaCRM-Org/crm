@@ -4,8 +4,8 @@ workflowType: product-brief
 stepsCompleted: [1, 2, 3, 4, 5, 6]
 project_name: crm
 date: 2026-11-11
-revised: 2026-11-23
-iteration: 5
+revised: 2026-11-24
+iteration: 6
 feature: notification-visibility-variants
 issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'analyst, autonomous run'

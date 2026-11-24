@@ -3,8 +3,8 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-11-11
-revised: 2026-11-23
-iteration: 9
+revised: 2026-11-24
+iteration: 10
 feature: notification-visibility-variants
 issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'pm + sm, autonomous run'
@@ -1966,7 +1966,7 @@ changed-PNG list.
 - Given the PR's changed PNG list, when it is read, then it contains exactly the 362 files of PRD item 58 (320 re-recorded, 24 new, 18 deleted) and no other; in particular none of the 434 public-page baselines (auth, password recovery, error pages, not found, auth skeleton, registration notification, submit loader, mobile auth and mobile error pages) changed (NFR-15 as amended, PRD amendment item 32) (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given each of the 320 re-recorded baselines, when its CI diff image against `main` is read, then the difference lies inside the header's bell box (the enabled glyph and, on desktop and tablet, the badge reading the seed's 1 or the recorded count) or, in the mobile drawer capture, inside the drawn bell copy, plus the settings captures' own toast changes; any other difference stops the story and is reported (architecture K6a) (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given the settings `success-toasts` and `transient-toast` captures under the default style, when they are taken, then the desktop and tablet badge reads 4 and 2 respectively (seed 1 plus the raised outcomes), never masked.
-- Given any protected-page capture in the seven re-recorded specs, when it is taken, then the shared wait has seen the enabled bell with `aria-expanded="false"` and, on desktop and tablet, the expected badge text (1 at rest, the recorded count after a save) before `toHaveScreenshot` runs, so no baseline records the bell's placeholder frame or a badge still loading and none flakes under `retries: 0` or the nightly flake budget of 0 (readiness R3-08).
+- Given any protected-page capture in the nine re-recorded specs, when it is taken, then the shared wait has seen the enabled bell with `aria-expanded="false"` and, on desktop and tablet, the expected badge text (1 at rest, the recorded count after a save) before `toHaveScreenshot` runs, so no baseline records the bell's placeholder frame or a badge still loading and none flakes under `retries: 0` or the nightly flake budget of 0 (readiness R3-08).
 - Given `make test-visual` in CI after the baselines are committed, when it runs, then every capture equals its baseline, including every capture outside the list against `main` (NFR-14) (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given the captures, when they are taken, then timestamps are deterministic through `freezeClock` and the fixed seed, never masked.
 - Given `bell` at 1440 × 900, when the merged shape is captured, then its outer edge is within 2 px of the Figma extent 1087–1366 × 8–125 (FR-18), measured in the spec from the bounding box.
