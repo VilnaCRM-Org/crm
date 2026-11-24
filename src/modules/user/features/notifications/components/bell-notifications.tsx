@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import HeaderIconButton from '@/components/ui-app-header/header-icon-button';
 import useBellAnchor from '@/components/ui-bell-notice/use-bell-anchor';
 import UINotificationHistoryFrame from '@/components/ui-notification-history/history-frame';
+import useShownNotifications from '@/hooks/use-shown-notifications';
 import i18n from '@/i18n';
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 
@@ -37,7 +38,8 @@ function unreadDescription(t: TFunction, unread: number): string | undefined {
 
 function BellButton({ layout, unread, historyId, disclosure }: BellButtonProps): JSX.Element {
   const { t } = useTranslation();
-  useBellAnchor(disclosure.bell);
+  const rows = useShownNotifications();
+  useBellAnchor(disclosure.bell, { expanded: disclosure.expanded, rows });
 
   return (
     <HeaderIconButton

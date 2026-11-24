@@ -11,7 +11,7 @@ import createContentI18n from '@tests/unit/utils/create-notification-content-loc
 
 const copy: NotificationHistoryCopy = {
   heading: 'Сповіщення',
-  empty: 'Сповіщень ще немає',
+  empty: 'Сповіщень немає',
   markAllRead: 'Позначити всі прочитаними',
   unread: 'Непрочитане',
 };
@@ -125,16 +125,16 @@ describe('UINotificationHistory', () => {
   it('shows the empty state and no list items for an empty row set', () => {
     render(<Panel set={{ items: [] }} unread={new Set()} />);
 
-    expect(screen.getByText('Сповіщень ще немає')).toBeInTheDocument();
+    expect(screen.getByText('Сповіщень немає')).toBeInTheDocument();
     expect(screen.queryByRole('listitem')).not.toBeInTheDocument();
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
-    expect(screen.getByText('Сповіщень ще немає')).toHaveStyle({ color: '#57595B' });
+    expect(screen.getByText('Сповіщень немає')).toHaveStyle({ color: '#57595B' });
   });
 
   it('hides the empty state while rows exist', () => {
     render(<Panel />);
 
-    expect(screen.queryByText('Сповіщень ще немає')).not.toBeInTheDocument();
+    expect(screen.queryByText('Сповіщень немає')).not.toBeInTheDocument();
   });
 
   it('carries no role but its list role, no live region and no close buttons', () => {

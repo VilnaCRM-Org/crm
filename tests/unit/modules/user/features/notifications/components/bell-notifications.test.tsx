@@ -449,6 +449,20 @@ describe('BellNotifications', () => {
     expect(await repository.countUnread()).toBe(4);
   });
 
+  it('measures the bell again when it opens, wherever the header moved it meanwhile', async () => {
+    const rect = jest
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ left: 300, right: 348, width: 48, top: 8, bottom: 56 } as DOMRect);
+    const { style } = document.documentElement;
+    mount();
+    expect(style.getPropertyValue('--bell-centre-x')).toBe('324px');
+
+    rect.mockReturnValue({ left: 250, right: 298, width: 48, top: 8, bottom: 56 } as DOMRect);
+    await openWithEnter();
+
+    expect(style.getPropertyValue('--bell-centre-x')).toBe('274px');
+  });
+
   it('keeps the bell position for the panel once opening it hides the notice', async () => {
     jest
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')

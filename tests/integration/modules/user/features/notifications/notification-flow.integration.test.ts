@@ -172,12 +172,15 @@ describe('notification flow from a raised outcome into the history', () => {
     expect(window.sessionStorage).toHaveLength(0);
   });
 
-  it('forgets what a session recorded and read', async () => {
+  it('keeps what a session recorded and read from the next one', async () => {
     const repository = new InMemoryNotificationRepository(NOTIFICATION_SEED);
+    await repository.claim('first');
     await repository.record({ items: [{ ...saved, createdAt: Date.now() }] });
-    await repository.markAllRead();
+    await repository.claim('first');
+    expect(await repository.countUnread()).toBe(2);
 
-    await repository.forget();
+    await repository.markAllRead();
+    await repository.claim('second');
 
     expect((await repository.list()).items).toHaveLength(NOTIFICATION_SEED.items.length);
     expect(await repository.countUnread()).toBe(1);

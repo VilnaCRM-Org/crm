@@ -874,14 +874,34 @@ describe('the notification chunks of the bell (issue #391)', () => {
     expect(named).toEqual([]);
   });
 
-  it.each(CHUNKS)('keeps tsyringe, the container, Apollo and zod out of %s', (_chunk, file) => {
-    const { files } = eagerGraphOf(`${COMPONENTS}/${file}.tsx`);
+  const heavyEdgesOf = (file: string): string[] => {
+    const { files } = eagerGraphOf(file);
     const edges = [...files].flatMap((source) =>
       staticImportsOf(readFile(source)).map((specifier) => `${source} -> ${specifier}`)
     );
 
-    expect(edges.filter((edge) => HEAVY.test(edge.split(' -> ')[1] ?? ''))).toEqual([]);
-    expect(edges.filter((edge) => /dependency-injection-config|\/di'/.test(edge))).toEqual([]);
-    expect([...files].filter((source) => /\/(di|tokens)\.ts$/.test(source))).toEqual([]);
+    return [
+      ...edges.filter((edge) => HEAVY.test(edge.split(' -> ')[1] ?? '')),
+      ...edges.filter((edge) => /dependency-injection-config/.test(edge)),
+      ...[...files].filter((source) => /\/(di|tokens)\.ts$/.test(source)),
+    ];
+  };
+
+  it.each([
+    ['notifications-shell', 'notifications-shell-slot'],
+    ...CHUNKS.map(([chunk, file]): [string, string] => [chunk, file]),
+  ] as [string, string][])(
+    'keeps tsyringe, the container, Apollo and zod out of %s',
+    (_chunk, file) => {
+      expect(heavyEdgesOf(`${COMPONENTS}/${file}.tsx`)).toEqual([]);
+    }
+  );
+
+  it.each([
+    ['the registrar of the feature', 'src/modules/user/features/notifications/di.ts'],
+    ['a composition root', 'src/modules/user/config/di.ts'],
+    ['a zod contract', 'src/config/runtime/app-config-schema.ts'],
+  ])('finds the heavy imports of %s', (_label, file) => {
+    expect(heavyEdgesOf(file)).not.toEqual([]);
   });
 });

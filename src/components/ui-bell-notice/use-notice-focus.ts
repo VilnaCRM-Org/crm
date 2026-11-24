@@ -48,7 +48,8 @@ function useRelease(
 ): NoticeRelease {
   return useCallback(
     (id: string, node: HTMLButtonElement): void => {
-      if (node.ownerDocument.activeElement === node) {
+      const row = node.closest('li') ?? node;
+      if (row.contains(node.ownerDocument.activeElement)) {
         const targets = { views: shown.current, returnFocusRef, fallbackFocusRef };
         dismissTarget(registry.current, targets, id)?.focus();
       }

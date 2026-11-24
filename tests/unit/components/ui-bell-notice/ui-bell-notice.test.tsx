@@ -239,6 +239,31 @@ describe('UIBellNotice when a focused row leaves without being closed', () => {
     expect(focusedRow()).toContain('Рядок two');
   });
 
+  it('moves focus to the new oldest row when the evicted row held it on its action', () => {
+    const action = { label: 'Повторити', onActivate: jest.fn() };
+    const { rerender } = render(
+      <Host views={set({ ...row('one'), action }, row('two'), row('three'))} />
+    );
+    focus(screen.getByRole('button', { name: 'Повторити' }));
+
+    rerender(
+      <Host views={set({ ...row('one'), action }, row('two'), row('three'), row('four'))} />
+    );
+
+    expect(closeButtons()[0]).toHaveFocus();
+    expect(focusedRow()).toContain('Рядок two');
+  });
+
+  it('leaves focus alone when the evicted row did not hold it', () => {
+    const { rerender } = render(<Host views={set(row('one'), row('two'), row('three'))} />);
+    const save = screen.getByRole('button', { name: 'Зберегти' });
+    focus(save);
+
+    rerender(<Host views={set(row('one'), row('two'), row('three'), row('four'))} />);
+
+    expect(save).toHaveFocus();
+  });
+
   it('moves focus to the next row when a focused middle row expires', () => {
     const { rerender } = render(<Host views={set(row('one'), row('two'), row('three'))} />);
     focus(closeButtons()[1]);

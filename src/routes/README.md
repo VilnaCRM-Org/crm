@@ -141,7 +141,7 @@ declare the same key (`Only one route module may declare shell.<key> (<ids>)`).
   `docs/adr/` (OQ-10), and the pull request carries the `adr:not-required` label (or a `[no-adr]`
   body line). Issue 362 supersedes enterprise-app-shell's prop-less `AppLayout` contract with an
   optional `userMenu` slot, an `onShellFailure` callback and the props type file
-  `src/components/types/layouts/app-layout.ts`.
+  `src/components/types/layouts/app-layout.ts`. Issue 391 adds the optional `notifications` slot.
 
 ## The contract
 
@@ -189,8 +189,8 @@ size-holding placeholders, a header slot and a navigation column), the page's `<
 as a sibling, the shared `UIFooter`, so the footer keeps its `contentinfo` role and never sits
 inside `<main>`. A shell chunk that still fails after its retry resolves to the same placeholders
 and is reported through the `onShellFailure` callback the composer passes beside the optional
-`userMenu` slot (see "Shell slots"). The frame reserves the 64 px sticky header as
-`scroll-margin-top` on the sidebar, `<main>` and footer slots. With the shell's
+`userMenu` and `notifications` slots (see "Shell slots"). The frame reserves the 64 px sticky header
+as `scroll-margin-top` on the sidebar, `<main>` and footer slots. With the shell's
 browser-specific focus clearance (`useStickyFocusClearance`), that keeps a control that receives
 keyboard focus from sitting under the header (WCAG 2.4.11); the shell README lists the Firefox
 cases where a partly visible control stays under it until that follow-up runs.

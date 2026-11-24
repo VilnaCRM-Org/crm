@@ -41,20 +41,22 @@ function DisclosureButton({ layout, kind, count, disclosure }: DisclosureButtonP
 
   return (
     <>
-      <Box
-        component="button"
-        type="button"
-        ref={buttonRef}
-        aria-label={t(`app_shell.${kind}.label`)}
-        aria-expanded={expanded}
-        aria-controls={controls}
-        aria-describedby={describedBy === undefined ? undefined : descriptionId}
-        sx={bellStyles.enabled[layout]}
-        onClick={onToggle}
-      >
-        <HeaderGlyph layout={layout} kind={kind} />
+      <Box sx={bellStyles.slot[layout]}>
+        <Box
+          component="button"
+          type="button"
+          ref={buttonRef}
+          aria-label={t(`app_shell.${kind}.label`)}
+          aria-expanded={expanded}
+          aria-controls={controls}
+          aria-describedby={describedBy === undefined ? undefined : descriptionId}
+          sx={bellStyles.enabled[layout]}
+          onClick={onToggle}
+        >
+          <HeaderGlyph layout={layout} kind={kind} />
+        </Box>
+        {layout !== 'mobile' && <HeaderBadge count={count} tone="alert" />}
       </Box>
-      {layout !== 'mobile' && <HeaderBadge count={count} tone="alert" />}
       {describedBy !== undefined && (
         <HeaderHiddenText id={descriptionId}>{describedBy}</HeaderHiddenText>
       )}

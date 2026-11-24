@@ -191,7 +191,7 @@ src/modules/user/features/notifications/
 │   ├── use-notification-history.ts      # list + unread + markAllRead
 │   ├── use-bell-disclosure.ts           # open, close, Escape, outside, route close, visited, opens
 │   ├── use-retryable-chunk.ts           # lazy chunk, loaded again on the attempt after a failure
-│   └── use-session-history.ts           # forgets the history when the session ends (PRD item 57)
+│   └── use-session-history.ts           # claims the history for the session (PRD item 57)
 ├── components/
 │   ├── notifications-shell-slot.tsx     # chunk `notifications-shell`, every style
 │   ├── bell-notifications.tsx           # in `notifications-shell`: bell, badge, panel host
@@ -250,7 +250,7 @@ export interface NotificationRepository {
   list(): Promise<NotificationRecordSet>;
   countUnread(): Promise<number>;
   markAllRead(): Promise<void>;
-  forget(): Promise<void>;
+  claim(owner: string | null): Promise<void>;
 }
 ```
 
@@ -968,18 +968,20 @@ and the aggregator entry in `src/config/dependency-injection-config.ts`),
 `.dependency-cruiser.js` (isolation rule). The PR body carries:
 
 ```text
-[no-adr] The notificationStyle setting is temporary and is deleted by the removal story once the
-team lead picks a variant (FR-33). The route-composer change adds a second instance of the existing
-#362 shell-slot pattern, the dependency-cruiser rule enforces owner decision O-1, and the
-notifications port/adapter split is recorded in the feature, module, routes and runtime READMEs.
-The one durable DI change is a feature-root registrar (features/notifications/di.ts) with one
-aggregator entry in src/config/dependency-injection-config.ts, the documented #109 pattern; the
-feature-root di.ts is not in DI_COMPOSITION_ROOTS, so the boundary rules, not
-no-di-config-import-outside-composition-root, keep it out of other code.
+[no-adr] The notificationEventsUrl setting is one optional URL, absent by default, on the existing
+runtime configuration pattern; its direct connection to notification-service follows the owner
+decision of 2026-11-23 and is recorded in SECURITY.md, the runtime-config README and PRD items 37 to
+43 and 59. The route-composer change adds a second instance of the existing #362 shell-slot pattern,
+the dependency-cruiser rule enforces owner decision O-1, and the notifications port/adapter split is
+recorded in the feature, module, routes and runtime READMEs. The one durable DI change is a
+feature-root registrar (features/notifications/di.ts) with one aggregator entry in
+src/config/dependency-injection-config.ts, the documented #109 pattern; the feature-root di.ts is not
+in DI_COMPOSITION_ROOTS, so the boundary rules, not no-di-config-import-outside-composition-root,
+keep it out of other code.
 ```
 
 > Assumption: no ADR is written. Since the ADR purge (PR #333) the repository keeps only ADR-001
-> and ADR-002 and records feature decisions in module READMEs; the setting is temporary (R2); and
+> and ADR-002 and records feature decisions in module READMEs; the stream setting is optional and off by default (PRD item 59); and
 > the two durable parts (a second shell slot, an isolation rule) apply decisions already recorded.
 > If a reviewer reads the port/adapter split as a new decision, it is an ADR-003 candidate,
 > "Notifications: shared port, feature adapter".
@@ -1668,7 +1670,8 @@ the outlet regions. Coverage stays 100 % over `src`.
   open panel in three engines, under the default style). `freezeClock` runs before the save, and
   baselines come only from the CI artifact. The reduced-motion capture of each style is compared
   against that style's **resting** baseline name, never a name of its own, so it adds no PNG and
-  "exactly 285 changed files" (243 re-recorded plus 42 new) holds. The 434 public-page baselines
+  "exactly 285 changed files" (243 re-recorded plus 42 new) held for the plan; PRD item 58 gives the
+  final 362. The 434 public-page baselines
   stay unchanged.
 - **Network:** under every style, `/` loads `main`'s chunks plus `notifications-shell`, and
   `notifications-notice` under `bell` only; `notifications-history` is requested only after the
@@ -1769,7 +1772,7 @@ outlet's A branch) and every C transient item above. Kept, besides the common se
 | i18n parity and lazy catalogs              | two new uk/en catalogs; eager set unchanged        |
 | Performance budgets                        | unchanged; eager ≤ 1 kB; auth chunks 0 B           |
 | Lighthouse                                 | default style; `/` gets `notifications-shell` only |
-| Visual regression                          | exactly the 285 files of NFR-15 (A-28), from CI    |
+| Visual regression                          | exactly the 362 files of PRD item 58, from CI      |
 | Chunk scope                                | panel on first open; notice under `bell` only      |
 | Console gate                               | CSS motion; effects settle in `act`                |
 | a11y (jest-axe, Playwright axe)            | per renderer and style; no `A11Y_EXCEPTIONS`       |

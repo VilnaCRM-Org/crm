@@ -36,6 +36,8 @@ export class InMemoryNotificationRepository implements NotificationRepository {
 
   private sequence = 0;
 
+  private owner: string | null = null;
+
   constructor(private readonly seed: NotificationRecordSet) {
     this.entries = seed.items;
   }
@@ -71,9 +73,12 @@ export class InMemoryNotificationRepository implements NotificationRepository {
     return Promise.resolve();
   }
 
-  public forget(): Promise<void> {
-    this.entries = this.seed.items;
-    this.sequence = 0;
+  public claim(owner: string | null): Promise<void> {
+    if (owner !== this.owner) {
+      this.entries = this.seed.items;
+      this.sequence = 0;
+    }
+    this.owner = owner;
 
     return Promise.resolve();
   }

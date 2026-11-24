@@ -179,10 +179,8 @@ describe('NotificationsShellSlot', () => {
     }
   );
 
-  it('keeps no outcome for the next session on the same tab', async () => {
-    const repository = new InMemoryNotificationRepository(NOTIFICATION_SEED);
-    const token = jest.spyOn(session, 'token');
-    const { unmount } = render(
+  describe('when the slot mounts again on the same tab', () => {
+    const slot = (repository: NotificationRepository): JSX.Element =>
       wrap(
         repository,
         <NotificationsShellSlot
@@ -191,16 +189,36 @@ describe('NotificationsShellSlot', () => {
           onAvatar={jest.fn()}
           onChunkFailure={jest.fn()}
         />
-      )
-    );
-    raiseOne();
-    await waitFor(() => expect(badge()).toEqual(['2']));
+      );
 
-    token.mockReturnValue(null);
-    unmount();
+    const recordOneAndLeave = async (repository: NotificationRepository): Promise<void> => {
+      const { unmount } = render(slot(repository));
+      raiseOne();
+      await waitFor(() => expect(badge()).toEqual(['2']));
+      unmount();
+    };
 
-    expect((await repository.list()).items).toHaveLength(NOTIFICATION_SEED.items.length);
-    expect(await repository.countUnread()).toBe(1);
+    it('shows the seed alone to another session, even one that replaced a live one', async () => {
+      const repository = new InMemoryNotificationRepository(NOTIFICATION_SEED);
+      const token = jest.spyOn(session, 'token').mockReturnValue('first');
+      await recordOneAndLeave(repository);
+
+      token.mockReturnValue('second');
+      render(slot(repository));
+      await userEvent.click(bell());
+
+      await waitFor(() => expect(badge()).toEqual(['1']));
+      expect(await screen.findAllByRole('listitem')).toHaveLength(NOTIFICATION_SEED.items.length);
+    });
+
+    it('keeps the history of the same session', async () => {
+      const repository = new InMemoryNotificationRepository(NOTIFICATION_SEED);
+      await recordOneAndLeave(repository);
+
+      render(slot(repository));
+
+      await waitFor(() => expect(badge()).toEqual(['2']));
+    });
   });
 
   it('reports a rejecting record and changes nothing else', async () => {

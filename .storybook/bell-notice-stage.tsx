@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box';
 import type { JSX, ReactNode, RefObject } from 'react';
 
+import type { BellAnchorMoment } from '@/components/types/ui-bell-notice';
 import useBellAnchor from '@/components/ui-bell-notice/use-bell-anchor';
 
 interface StagePageProps {
@@ -35,12 +36,14 @@ const STAGE = {
   heading: { font: 'inherit' },
 } as const;
 
+const STAGE_MOMENT: BellAnchorMoment = { expanded: false, rows: { items: [] } };
+
 export function StagePage({ children }: StagePageProps): JSX.Element {
   return <Box sx={STAGE.page}>{children}</Box>;
 }
 
 export function StageHeader({ bell, children }: StageHeaderProps): JSX.Element {
-  useBellAnchor(bell);
+  useBellAnchor(bell, STAGE_MOMENT);
 
   return (
     <Box component="header" sx={STAGE.header}>

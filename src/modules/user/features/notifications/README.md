@@ -27,7 +27,7 @@ module so that any page can use it:
 
 ## The contract
 
-`NotificationRepository` (`types/notification-repository.ts`) is the whole boundary. It has four
+`NotificationRepository` (`types/notification-repository.ts`) is the whole boundary. It has five
 operations, and each one returns a promise:
 
 | Operation        | Resolves with                               |
@@ -36,7 +36,7 @@ operations, and each one returns a promise:
 | `list()`         | every record, newest first                  |
 | `countUnread()`  | how many records are unread                 |
 | `markAllRead()`  | nothing; every record is read afterwards    |
-| `forget()`       | nothing; only the seed is left afterwards   |
+| `claim(owner)`   | nothing; another owner starts from the seed |
 
 A `NotificationRecord` holds only `id`, `kind`, `messageKey`, `createdAt` (epoch milliseconds) and
 `read`. It stores an i18n key, never translated text, and carries no action, e-mail, name,
@@ -62,8 +62,9 @@ Nothing in this folder may import from the rest of `src/modules/user/`; the depe
 `notifications-feature-self-contained` fails the build on such an import. The feature reaches only
 shared code outside the module: the port (`src/lib/notifications`, the hooks in `src/hooks/`),
 shared components (`ui-app-header`, `ui-bell-notice`, `ui-notification-history`,
-`ui-notification-outlet`), `src/lib/reliability`, `src/lib/locale-catalog`, `@/i18n` and the route
-and registrar types. The public barrel (`index.ts`) exports types only.
+`ui-notification-outlet`), `src/lib/reliability`, `src/lib/locale-catalog`, `@/i18n`, the runtime
+setting reader (`src/config/runtime/app-config-source`) and the route and registrar types. The
+public barrel (`index.ts`) exports types only.
 
 ## The token and the hook seam
 
@@ -101,9 +102,9 @@ All hooks in `hooks/` are container-free and read the repository through
 - `useNotificationRecorder(report)` records every raise of the outlet store once and reports a
   failed write as `app-shell:notifications-record`. The store's `recorded` field holds the revision
   of the last recorded raise, so the batch raised before this lazy slot mounts is recorded on mount
-  and a remount never records a batch twice. The store keeps the latest batch only: of two raises
-  made before the first mount, the earlier one is shown and announced but not recorded, and a batch
-  whose page was left before the mount is not recorded.
+  and a remount never records a batch twice. The store keeps every batch nobody has recorded, in
+  order, and drops them once they are recorded; a batch whose page was left before the mount is not
+  recorded.
 - `useNotificationHistory(revision, report)` returns the records newest first, the unread count,
   `markAllRead` and `refresh`; it reloads on mount, on each revision and after `markAllRead`. A
   rejected `list` or `countUnread` is reported as `app-shell:notifications-list` and keeps the last
@@ -116,8 +117,8 @@ All hooks in `hooks/` are container-free and read the repository through
   route change and a layout change close it. It is built from `useBellOutsideClose`,
   `useBellFocusOut`, `useBellDismissal` and `useBellContextClose`.
 
-- `useSessionHistory()` forgets the history when the slot unmounts because the session ended, so the
-  next user of the tab starts from the seed. A slot that unmounts inside a live session keeps it.
+- `useSessionHistory()` claims the history for the session before anything reads it, so another user
+  of the tab starts from the seed however the earlier session ended. The same session keeps its rows.
 - `useBroadcastEvents(report)` opens the broadcast stream while the `notificationEventsUrl` setting
   names a service, records each event as unread, and returns how many have settled; the slot adds
   it to the recorder's revision, so the bell reloads for either.
@@ -192,4 +193,5 @@ route registry appends it, so the composer mounts the slot on every protected pa
 
 1. Move this folder (and its tests) to `src/modules/notifications/`.
 2. Re-point `src/routes/registry.ts` and the `src/config/dependency-injection-config.ts` entry.
-3. Rename this feature's catalog and owner paths in `config/i18n-catalog-policy.json`.
+3. Rename this feature's catalog and owner paths in `config/i18n-catalog-policy.json`, and the path
+   of `notifications-feature-self-contained` in `.dependency-cruiser.js`.

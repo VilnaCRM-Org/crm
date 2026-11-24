@@ -39,6 +39,15 @@ describe('BroadcastEventClient', () => {
     ]);
   });
 
+  it('opens the first and every later stream without credentials', () => {
+    const { source } = open();
+
+    source().fail(FakeEventSource.CLOSED);
+    jest.advanceTimersByTime(30_000);
+
+    expect(FakeEventSource.opened.map(({ init }) => init)).toEqual([undefined, undefined]);
+  });
+
   it('hands over a valid event and ignores an invalid one', () => {
     const { receive, source } = open();
 

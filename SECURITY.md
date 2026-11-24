@@ -273,7 +273,8 @@ by default. Connecting to the service directly departs from the rule that the fr
 services through the API gateway; it follows the owner's decision of 2026-11-23 to take broadcast
 events only (PRD items 37 to 40), and the setting may name a gateway origin instead without a code
 change. The service authorizes no subscriber, so the CRM takes broadcast events only from it, sends
-it no token, and shows no text an event carries. The REST base URL (`REACT_APP_MOCKOON_URL`,
+it no token, and shows no text an event carries; a stream served from the app's own origin would
+receive that origin's cookies. The REST base URL (`REACT_APP_MOCKOON_URL`,
 `APP_CONFIG_API_BASE_URL`) has no client reader since the last REST caller went, and stays
 admitted only until the separate decision on keeping the `apiBaseUrl` setting
 (`src/config/runtime/README.md`) narrows the policy. The generator reads the

@@ -23,17 +23,13 @@ const repositoryOf = (): jest.Mocked<NotificationRepository> => ({
   list: jest.fn(),
   countUnread: jest.fn(),
   markAllRead: jest.fn(),
-  forget: jest.fn().mockResolvedValue(undefined),
+  claim: jest.fn().mockResolvedValue(undefined),
 });
 
-const sessionOf = (): { token: string | null; readonly session: ProtectedSession } => {
-  const state = {
-    token: 'session-token' as string | null,
-    session: { token: (): string | null => state.token, end: (): void => undefined },
-  };
-
-  return state;
-};
+const sessionOf = (token: string | null): ProtectedSession => ({
+  token: () => token,
+  end: () => undefined,
+});
 
 const page = (repository: NotificationRepository, session: ProtectedSession): JSX.Element => (
   <MemoryRouter>
@@ -46,38 +42,26 @@ const page = (repository: NotificationRepository, session: ProtectedSession): JS
 );
 
 describe('useSessionHistory', () => {
-  it('forgets the history once the slot leaves with its session ended', () => {
+  it('claims the history for its session once, however often the slot renders', () => {
     const repository = repositoryOf();
-    const state = sessionOf();
-    const { unmount } = render(page(repository, state.session));
+    const session = sessionOf('first');
+    const { rerender } = render(page(repository, session));
 
-    state.token = null;
-    expect(repository.forget).not.toHaveBeenCalled();
-    unmount();
+    rerender(page(repository, session));
 
-    expect(repository.forget).toHaveBeenCalledTimes(1);
+    expect(repository.claim).toHaveBeenCalledTimes(1);
+    expect(repository.claim).toHaveBeenCalledWith('first');
   });
 
-  it('keeps the history when the slot leaves while its session goes on', () => {
-    const repository = repositoryOf();
-    const state = sessionOf();
-    const { unmount } = render(page(repository, state.session));
-
-    unmount();
-
-    expect(repository.forget).not.toHaveBeenCalled();
-  });
-
-  it('forgets through the repository and the session of the latest render', () => {
+  it('claims again for the session and the repository of the latest render', () => {
     const [before, after] = [repositoryOf(), repositoryOf()];
-    const [first, second] = [sessionOf(), sessionOf()];
-    const { rerender, unmount } = render(page(before, first.session));
+    const { rerender } = render(page(before, sessionOf('first')));
 
-    rerender(page(after, second.session));
-    second.token = null;
-    unmount();
+    const second = sessionOf('second');
+    rerender(page(before, second));
+    rerender(page(after, second));
 
-    expect(before.forget).not.toHaveBeenCalled();
-    expect(after.forget).toHaveBeenCalledTimes(1);
+    expect(before.claim.mock.calls).toEqual([['first'], ['second']]);
+    expect(after.claim.mock.calls).toEqual([['second']]);
   });
 });

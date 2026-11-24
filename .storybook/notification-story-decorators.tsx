@@ -30,7 +30,7 @@ export function withRaisedNotifications(
   return function RaisedNotificationsDecorator(Story): JSX.Element {
     useEffect(() => {
       const store = useNotificationOutletStore;
-      store.setState(store.getInitialState(), true);
+      store.setState({ ...store.getInitialState(), focus: store.getState().focus }, true);
       const actions = new NotificationOutletActions(store, clock);
       actions.raise(drafts, (key) => i18n.t(key));
 

@@ -20,7 +20,7 @@ const meta: Meta<typeof UINotificationHistory> = {
     unread: new Set(['b']),
     copy: {
       heading: 'Сповіщення',
-      empty: 'Сповіщень ще немає',
+      empty: 'Сповіщень немає',
       markAllRead: 'Позначити всі прочитаними',
       unread: 'Непрочитане',
     },

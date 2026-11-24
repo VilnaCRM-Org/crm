@@ -187,7 +187,7 @@ file at most 10 functions, 6 closures and 120 LLOC; per function at most 10 LLOC
 | NFR-12 | Paint path: auth 0 B, eager ≤ 1 kB, three lazy chunks (amended) |
 | NFR-13 | Lighthouse floors                                               |
 | NFR-14 | Zero unexpected visual diffs; baselines from CI                 |
-| NFR-15 | Intended re-baselines only: 285 files (amended 2026-11-12)      |
+| NFR-15 | Intended re-baselines only: 362 files (PRD item 58)             |
 | NFR-16 | Coverage and mutation 100                                       |
 | NFR-17 | Lint, types, boundaries, duplication and metrics at zero        |
 | NFR-18 | Conventions (no suppression, classes, type files, DI, suffixes) |
@@ -269,8 +269,8 @@ Each story's own criteria add to these; a story is not done until all of them ho
 | FR-5        | 1.1, 1.2, 1.8, 2.13, 3.4                           |
 | FR-6        | 2.9, 3.1, 4.5                                      |
 | FR-7        | 1.5, 1.6, 1.7, 4.9                                 |
-| FR-8        | 1.3, 1.4                                           |
-| FR-9        | 1.3, 4.7                                           |
+| FR-8        | 1.3, 1.4; closed (PRD item 44)                     |
+| FR-9        | 1.3, 4.7; closed (PRD item 44)                     |
 | FR-10       | 1.3                                                |
 | FR-11       | 1.4, 2.11, 2.12, 2.13, 3.4, 4.2, 4.3               |
 | FR-12       | 2.3                                                |
@@ -289,11 +289,11 @@ Each story's own criteria add to these; a story is not done until all of them ho
 | FR-25       | 3.1                                                |
 | FR-26       | 3.1, 3.2                                           |
 | FR-27       | 2.9, 3.1, 3.4                                      |
-| FR-28       | 2.1–2.13 (component stories), 4.1                  |
+| FR-28       | 2.1–2.13, 4.1; closed (PRD item 44)                |
 | FR-29       | 4.1                                                |
-| FR-30       | 4.2, 4.5, 4.6, 4.7                                 |
-| FR-31       | 4.8                                                |
-| FR-32       | Follow-up 5.1                                      |
+| FR-30       | 4.2, 4.5, 4.6, 4.7; bell half (PRD item 44)        |
+| FR-31       | 4.8; closed (PRD item 44)                          |
+| FR-32       | Follow-up 5.1; done in part (PRD item 44)          |
 | FR-33       | Follow-up 5.2                                      |
 | FR-34       | 1.3, 1.5, 3.3, 4.9                                 |
 | NFR-1       | 1.1, 1.2, 2.9, 3.1, 4.2, 4.5                       |
@@ -1054,7 +1054,7 @@ variant `451:26214`; an unreachable MCP reports `BLOCKED`, never skips (readines
 
 - Given no `disclosure`, when the bell renders, then it is natively `disabled`, named "Сповіщення" and described by «Ще недоступно» exactly as on `main` (the state a header with no notifications slot keeps, architecture A-23), and the tasks button is unchanged.
 - Given a `disclosure` with `expanded: false`, when the bell renders, then it is enabled, has `aria-expanded="false"` and `aria-controls` equal to `controls`, keeps the name "Сповіщення", and its accessible description is exactly the `describedBy` text (the unread-count text), rendered in the button's own visually hidden text, on desktop, tablet and mobile; with no `describedBy` it has no description (A-13).
-- Given a `disclosure` with `describedBy` "4 unread notifications" and `count` 4, when the bell renders on desktop and tablet, then exactly one badge exists, inside the button, with the alert tone and reading 4, and exactly one description applies: neither «Ще недоступно» nor the `app_shell.notifications.count` text is rendered or referenced by `aria-describedby`; on mobile no badge is drawn and the same single description applies (readiness R3-03, architecture A-32).
+- Given a `disclosure` with `describedBy` "4 unread notifications" and `count` 4, when the bell renders on desktop and tablet, then exactly one badge exists, in the positioned box of the button, with the alert tone and reading 4, and exactly one description applies: neither «Ще недоступно» nor the `app_shell.notifications.count` text is rendered or referenced by `aria-describedby`; on mobile no badge is drawn and the same single description applies (readiness R3-03, architecture A-32).
 - Given the enabled bell focused, when Enter or Space is pressed, then `onToggle` runs once (native button).
 - Given the enabled bell, when the styles are read, then desktop is 48 px and tablet 52 px round with a white fill, glyph `#1A1C1E` (17.09:1 on white), hover fill `#F4F5F6`, `cursor: pointer`, a 2 px `#1A1C1E` focus ring at offset 2, and on mobile the button itself has `min-width` and `min-height` `2.75rem` with `margin: -0.625rem` around a centred 24 px glyph, so its own box is 44 × 44 while its layout footprint stays 24 × 24 and it ends 6 px short of the tasks button; no `::before` hit area exists (architecture §9.5, A-20, readiness F-04).
 - Given the disabled bell (no `disclosure`) on mobile, when the styles are read, then they equal `main`'s (24 px box, no negative margin), so a header with no notifications slot is unchanged.
@@ -1960,7 +1960,7 @@ changed-PNG list.
 
 **Acceptance Criteria:**
 
-- Given the PR's changed PNG list, when it is read, then it contains exactly the 285 files named above (243 re-recorded, 42 new) and no other; in particular none of the 434 public-page baselines (auth, password recovery, error pages, not found, auth skeleton, registration notification, submit loader, mobile auth and mobile error pages) changed (NFR-15 as amended, PRD amendment item 32) (verified at QA / finish-PR stage, not in a local Ralph run).
+- Given the PR's changed PNG list, when it is read, then it contains exactly the 362 files of PRD item 58 (320 re-recorded, 24 new, 18 deleted) and no other; in particular none of the 434 public-page baselines (auth, password recovery, error pages, not found, auth skeleton, registration notification, submit loader, mobile auth and mobile error pages) changed (NFR-15 as amended, PRD amendment item 32) (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given each of the 243 re-recorded baselines, when its CI diff image against `main` is read, then the difference lies inside the header's bell box (the enabled glyph and, on desktop and tablet, the badge reading the seed's 1 or the recorded count) or, in the mobile drawer capture, inside the drawn bell copy, plus the settings captures' own toast changes; any other difference stops the story and is reported (architecture K6a) (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given the settings `success-toasts` and `transient-toast` captures under the default style, when they are taken, then the desktop and tablet badge reads 4 and 2 respectively (seed 1 plus the raised outcomes), never masked.
 - Given any protected-page capture in the seven re-recorded specs, when it is taken, then the shared wait has seen the enabled bell with `aria-expanded="false"` and, on desktop and tablet, the expected badge text (1 at rest, the recorded count after a save) before `toHaveScreenshot` runs, so no baseline records the bell's placeholder frame or a badge still loading and none flakes under `retries: 0` or the nightly flake budget of 0 (readiness R3-08).

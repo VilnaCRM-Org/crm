@@ -13,7 +13,10 @@ export default class FakeEventSource {
 
   public readonly listeners = new Map<string, Listener>();
 
-  constructor(public readonly url: string) {
+  constructor(
+    public readonly url: string,
+    public readonly init?: EventSourceInit
+  ) {
     FakeEventSource.opened.push(this);
   }
 

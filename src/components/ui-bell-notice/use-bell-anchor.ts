@@ -1,6 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useLayoutEffect } from 'react';
 
-import type { NoticeTargetRef } from '@/components/types/ui-bell-notice';
+import type { BellAnchorMoment, NoticeTargetRef } from '@/components/types/ui-bell-notice';
 
 import useMeasureOnResize from './use-measure-on-resize';
 
@@ -24,7 +24,11 @@ function release(): void {
   style.removeProperty(BOTTOM_PROPERTY);
 }
 
-export default function useBellAnchor(bellRef: NoticeTargetRef): void {
+export default function useBellAnchor(
+  bellRef: NoticeTargetRef,
+  { expanded, rows }: BellAnchorMoment
+): void {
   const measure = useCallback((): void => place(bellRef), [bellRef]);
   useMeasureOnResize(measure, release);
+  useLayoutEffect(measure, [measure, expanded, rows]);
 }

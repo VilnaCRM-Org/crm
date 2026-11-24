@@ -97,6 +97,14 @@ the last REST caller (#331 retired the REST login client and specs/social-sign-i
 sign-in to GraphQL). The setting is still validated, and the container entrypoint still adds its
 origin to the CSP `connect-src`; whether to keep it is a separate decision.
 
+`notificationEventsUrl` is read by the notifications shell slot (`useBroadcastEvents`) and is off
+by default: while it is absent no stream is opened. While it names notification-service, each
+protected page keeps one server-sent-events stream open for broadcast events only. The stream sends
+no token, no user id and no cross-origin credentials, an event carries a code and no text, and
+nothing is stored. The container entrypoint adds its origin to the CSP `connect-src`. It has no
+build-time default, so a malformed value reads as absent in the browser and aborts the container
+start.
+
 `graphqlUrl` falls back to the build-time variable its consumer already read before this module
 existed, so existing deployments behave exactly as before until an `APP_CONFIG_*` value is
 supplied.

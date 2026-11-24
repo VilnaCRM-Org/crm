@@ -1,4 +1,5 @@
-import { act, render, renderHook } from '@testing-library/react';
+import { act, render, renderHook, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { type JSX, type ReactNode, useRef } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
@@ -6,9 +7,18 @@ import UINotificationOutlet from '@/components/ui-notification-outlet';
 import useNotifications from '@/hooks/use-notifications';
 import type { NotificationDraft } from '@/lib/notifications/types/notification-draft';
 import Notice from '@/modules/user/features/notifications/components/bell-outcome-notice';
+import composeLayoutStories, {
+  type LayoutStoriesModule,
+} from '@tests/unit/utils/compose-layout-stories';
 import createI18n from '@tests/unit/utils/create-notification-center-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
+
+const storiesModule: LayoutStoriesModule = jest.requireActual(
+  '@/modules/user/features/notifications/components/bell-outcome-notice.stories'
+);
+
+const composed = composeLayoutStories(storiesModule);
 
 const i18n = createI18n('uk', ['en']);
 
@@ -64,5 +74,26 @@ describe('BellOutcomeNotice accessibility', () => {
     act(() => port.raise({ items }));
 
     await expectNoA11yViolations(container);
+  });
+});
+
+describe('BellOutcomeNotice stories', () => {
+  beforeEach(() => resetClientStores());
+
+  it.each([
+    ['DesktopOneRow', 'Закрити сповіщення'],
+    ['TransientError', 'Спробувати ще раз'],
+  ])('%s returns focus to Save once its last row leaves', async (name, control) => {
+    const Story = composed[name];
+    if (Story === undefined) throw new Error(`no story ${name}`);
+    render(
+      <I18nextProvider i18n={i18n}>
+        <Story />
+      </I18nextProvider>
+    );
+
+    await userEvent.click(await screen.findByRole('button', { name: control }));
+
+    expect(screen.getByRole('button', { name: 'Зберегти' })).toHaveFocus();
   });
 });

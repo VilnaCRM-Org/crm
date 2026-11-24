@@ -224,17 +224,41 @@ describe('InMemoryNotificationRepository', () => {
       expect((await repository.list()).items).toHaveLength(2);
     });
 
-    it('forgets every record and read mark and starts its ids again', async () => {
+    it('starts from the seed and from its first id when another session claims it', async () => {
       const repository = fresh();
+      await repository.claim('first');
       const first = await repository.record(buildNotificationRecordDraftSet(2));
       await repository.markAllRead();
 
-      await repository.forget();
+      await repository.claim('second');
 
       expect((await repository.list()).items).toEqual(SEED_ROWS);
       expect(await repository.countUnread()).toBe(1);
       const again = await repository.record(buildNotificationRecordDraftSet(2));
       expect(again.items.map((item) => item.id)).toEqual(first.items.map((item) => item.id));
+    });
+
+    it('starts from the seed when a session claims what an unclaimed one recorded', async () => {
+      const repository = fresh();
+      await repository.record(buildNotificationRecordDraftSet(1));
+
+      await repository.claim('first');
+
+      expect((await repository.list()).items).toEqual(SEED_ROWS);
+    });
+
+    it('keeps every record and read mark when the same session claims it again', async () => {
+      const repository = fresh();
+      await repository.claim('first');
+      await repository.record(buildNotificationRecordDraftSet(2));
+      await repository.markAllRead();
+
+      await repository.claim('first');
+
+      expect((await repository.list()).items).toHaveLength(SEED_ROWS.length + 2);
+      expect(await repository.countUnread()).toBe(0);
+      const next = await repository.record(buildNotificationRecordDraftSet(1));
+      expect(next.items.map((item) => item.id)).toEqual(['notification-3']);
     });
 
     it('resolves every operation on a microtask', async () => {
@@ -244,7 +268,7 @@ describe('InMemoryNotificationRepository', () => {
       await expectMicrotask(() => repository.list());
       await expectMicrotask(() => repository.countUnread());
       await expectMicrotask(() => repository.markAllRead());
-      await expectMicrotask(() => repository.forget());
+      await expectMicrotask(() => repository.claim('first'));
     });
 
     it('never calls fetch, XMLHttpRequest, localStorage or sessionStorage', async () => {
@@ -263,7 +287,7 @@ describe('InMemoryNotificationRepository', () => {
       await repository.list();
       await repository.countUnread();
       await repository.markAllRead();
-      await repository.forget();
+      await repository.claim('first');
       window.fetch = originalFetch;
       window.XMLHttpRequest = originalXhr;
 

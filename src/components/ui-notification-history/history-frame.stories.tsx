@@ -10,7 +10,7 @@ const Never = lazy(() => new Promise<{ default: () => JSX.Element }>(() => undef
 
 const COPY = {
   heading: 'Сповіщення',
-  empty: 'Сповіщень ще немає',
+  empty: 'Сповіщень немає',
   markAllRead: 'Позначити всі прочитаними',
   unread: 'Непрочитане',
 };

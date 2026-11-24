@@ -13,7 +13,7 @@
       "heading": "Notifications",
       "mark_all_read": "Mark all as read",
       "unread": "Unread",
-      "empty": "No notifications yet"
+      "empty": "No notifications"
     },
     "time": "{{value, datetime}}",
     "bell": {

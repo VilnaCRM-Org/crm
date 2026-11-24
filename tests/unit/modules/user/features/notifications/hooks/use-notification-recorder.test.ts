@@ -11,7 +11,7 @@ const mockRepository = {
   list: jest.fn(),
   countUnread: jest.fn(),
   markAllRead: jest.fn(),
-  forget: jest.fn(),
+  claim: jest.fn(),
 };
 
 jest.mock('@/modules/user/features/notifications/hooks/use-notification-repository', () => ({

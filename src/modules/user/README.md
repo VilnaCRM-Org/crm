@@ -633,8 +633,9 @@ badge and the history panel with mark-all-read on every protected page (owner de
 **Removal plan.** Carried out on 2026-11-23: one follow-up removed the two losing renderers, their
 stories, tests and baselines, the comparison sheet, and the temporary setting with its compose and
 `.env.example` entries and its docs rows. It kept the enabled bell, the badge, the count
-description, the history panel and mark-all-read, the repository's four operations, the seed, the
-notifications shell slot, the broadcast events, the feature, and the merged card with its chunk.
+description, the history panel and mark-all-read, the repository's four operations of that day (a
+fifth, `claim`, follows PRD item 57), the seed, the notifications shell slot, the broadcast events,
+the feature, and the merged card with its chunk.
 
 **Rejected.** A timer (a confirmation could be lost before it is read); a toast per field error
 (the user would fix the wrong place); a toned edge on the card (the owner wants the notice

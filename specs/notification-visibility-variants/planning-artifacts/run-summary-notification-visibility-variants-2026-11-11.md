@@ -291,11 +291,12 @@ where they differ.
 > **Status, 2026-11-23.** The readiness PASS below is iteration 4's. It covers the 2026-11-12 owner
 > decision (iteration 3 re-checked it and failed, iteration 4 passed) and predates the two owner
 > decisions of 2026-11-23: the broadcast-only event feed (PRD items 37–43) and the bell pick with the
-> neutral edge (items 44–49). No readiness iteration has re-checked those two; they are checked on
-> pull request #392. The rest of this section is the iteration 4 record, except the dated scope lines.
+> neutral edge (items 44–49). No readiness iteration has re-checked those two; the review and the FR/NFR
+> gate of pull request #392 replace it (items 50–61). The rest of this section is the iteration 4 record, except the dated scope lines.
 
 Readiness PASS at iteration 4 of 5. The bundle has 4 epics, 36 stories and 2 blocked follow-ups,
-with 285 visual baselines expected to change (243 re-recorded, 42 new), all recorded from CI.
+with 285 visual baselines expected to change (243 re-recorded, 42 new), all recorded from CI. (Final count
+against #398: 362 files, PRD item 58.)
 Issue #391; draft PR #392.
 
 Scope: three transient outcome surfaces, selected by `notificationStyle`:

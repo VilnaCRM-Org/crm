@@ -131,7 +131,7 @@ describe('NotificationHistoryPanel', () => {
   it('shows the empty text and no list item for an empty record set', () => {
     render(<Host locale="en" set={{ items: [] }} />);
 
-    expect(screen.getByText('No notifications yet')).toBeInTheDocument();
+    expect(screen.getByText('No notifications')).toBeInTheDocument();
     expect(screen.queryByRole('listitem')).not.toBeInTheDocument();
   });
 

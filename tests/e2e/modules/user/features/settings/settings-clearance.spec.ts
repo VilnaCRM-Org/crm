@@ -131,6 +131,32 @@ test.describe('Focus clearance (issue #391)', () => {
   }
 });
 
+test.describe('The first outcome is in view once its save settles (SM-3, issue #391)', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test.beforeEach(async ({ page }) => {
+    await signInToSettings(page);
+  });
+
+  for (const size of SIZES.filter(({ height }) => height > 256)) {
+    for (const outcomes of OUTCOME_SETS) {
+      test(`${outcomes.name} at ${sizeName(size)}`, async ({ page }) => {
+        const edits = newEdits();
+        await stubProfile(page, outcomes.replies(edits));
+        await openLoadedSettings(page);
+        await expectShellReady(page);
+        await page.setViewportSize(size);
+
+        await outcomes.show(page, edits);
+
+        const rows = noticeCardOf(page).getByRole('listitem');
+        await expect(rows).toHaveCount(outcomes === ONE_OUTCOME ? 1 : 3);
+        await expect(rows.first()).toBeInViewport({ ratio: 1 });
+      });
+    }
+  }
+});
+
 test.describe('The caret card at 1024 × 1366 (issue #391)', () => {
   const TABLET = { width: 1024, height: 1366 };
 

@@ -5,6 +5,7 @@ import { createRef } from 'react';
 
 import type { HeaderDisclosure } from '@/components/types/ui-app-header';
 import HeaderIconButton from '@/components/ui-app-header/header-icon-button';
+import findBellWrapper from '@tests/unit/utils/find-bell-wrapper';
 import renderShell from '@tests/unit/utils/render-shell';
 
 const disclosure = (overrides: Partial<HeaderDisclosure> = {}): HeaderDisclosure => ({
@@ -31,6 +32,19 @@ describe('HeaderIconButton with a disclosure', () => {
       expect(bell()).toHaveAccessibleDescription('4 unread notifications');
     }
   );
+
+  it.each([
+    ['desktop', '48px'],
+    ['tablet', '52px'],
+  ] as const)('places the badge in the positioned box of its button at %s', (layout, size) => {
+    renderShell(
+      <HeaderIconButton layout={layout} kind="notifications" count={4} disclosure={disclosure()} />
+    );
+
+    const box = findBellWrapper(bell());
+    expect(box).toContainElement(screen.getByText('4'));
+    expect(box).toHaveStyle({ position: 'relative', width: size, height: size });
+  });
 
   it('reports the expanded state', () => {
     renderShell(

@@ -56,11 +56,12 @@ const meta: Meta<typeof NoticeStage> = {
           '1 px drop shadows whatever the rows say; only the row icons keep their status ' +
           'colour. Below 1440 px it is a caret card, ' +
           '`min(313px, 100vw - 32px)` wide, whose 26 by 6 caret points at the bell centre. ' +
-          'Rows show a time and a close button, newest last, at most three. It carries no ' +
-          'role, `aria-live` or `aria-atomic`, so the time is never announced, and it stays ' +
-          'until the person closes it. Closing moves focus to the next close button, then the ' +
-          'previous, then the Save target, then the h1. While shown it sets ' +
-          '`--app-top-overhang` on the root element; the bell that owns it sets ' +
+          'Rows show a time and a close button, newest last, at most three. It carries ' +
+          'no live region role, `aria-live` or `aria-atomic`, so the time is never ' +
+          'announced, and it stays until the person closes it. Closing moves focus to ' +
+          'the next close button, then the previous, then the Save target, then the h1. ' +
+          'While shown it sets `--app-top-overhang` on the root element; the bell that ' +
+          'owns it sets ' +
           '`--bell-centre-x` and `--bell-bottom`.',
       },
       story: { inline: false },

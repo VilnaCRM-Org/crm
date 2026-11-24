@@ -5,8 +5,14 @@ import type {
   NotificationView,
   NotificationViewSet,
 } from '@/lib/notifications/types/notification-view';
+import type { ShownNotificationSet } from '@/lib/notifications/types/shown-notification';
 
 export type NoticeTargetRef = RefObject<HTMLElement | null>;
+
+export interface BellAnchorMoment {
+  readonly expanded: boolean;
+  readonly rows: ShownNotificationSet;
+}
 
 export type NoticeCloseRegistry = RefObject<Map<string, HTMLButtonElement>>;
 

@@ -10,7 +10,7 @@ import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations'
 
 const copy = {
   heading: 'Сповіщення',
-  empty: 'Сповіщень ще немає',
+  empty: 'Сповіщень немає',
   markAllRead: 'Позначити всі прочитаними',
   unread: 'Непрочитане',
 };
