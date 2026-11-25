@@ -3,6 +3,7 @@ import CLEARED_NOTIFICATION_OUTLET from '@/lib/notifications/cleared-notificatio
 import notificationRaiseBuilder from '@/lib/notifications/notification-raise-builder';
 import type { NotificationOutletState } from '@/lib/notifications/types/notification-outlet-state';
 import { buildNotificationDraft } from '@tests/builders/notification-draft';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const RAISED_AT = 1_789_000_000_000;
 const translate = (key: string): string => `text:${key}`;
@@ -73,6 +74,26 @@ describe('NotificationRaiseBuilder', () => {
     });
     expect(unmarked.announcement).toEqual({ polite: `text:${success.messageKey}`, assertive: '' });
     expect(unmarked.marked).toBe(false);
+  });
+
+  it('separates the texts with the space the module declares when it loads', async () => {
+    const isolated = await loadIsolated(
+      async () => (await import('@/lib/notifications/notification-raise-builder')).default
+    );
+
+    const next = isolated.build({
+      state: { ...CLEARED_NOTIFICATION_OUTLET, marked: true },
+      drafts: {
+        items: [
+          buildNotificationDraft({ messageKey: 'first' }),
+          buildNotificationDraft({ messageKey: 'second' }),
+        ],
+      },
+      translate,
+      raisedAt: RAISED_AT,
+    });
+
+    expect(next.announcement.polite).toBe('text:first text:second');
   });
 
   it('joins several texts of one kind with a single space', () => {
