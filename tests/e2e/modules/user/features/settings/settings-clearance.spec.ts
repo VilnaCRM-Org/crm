@@ -129,9 +129,9 @@ test.describe('Focus clearance (issue #391)', () => {
   for (const outcomes of OUTCOME_SETS) {
     test(`leaves the page where it is for the sidebar with ${outcomes.name}`, async ({ page }) => {
       await openWithOutcomes(page, outcomes, { width: 1440, height: 900 });
-      const handle = page.getByRole('button', {
-        name: new RegExp(`^(${shellText.collapse}|${shellText.expand})$`, 'u'),
-      });
+      const handle = page
+        .getByRole('button', { name: shellText.collapse, exact: true })
+        .or(page.getByRole('button', { name: shellText.expand, exact: true }));
       await page.evaluate((top) => window.scrollTo(0, top), SCROLLED_PX);
       await waitForSettledScroll(page);
       expect(await scrollTopOf(page)).toBe(SCROLLED_PX);

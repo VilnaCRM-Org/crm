@@ -41,6 +41,11 @@ PRD's, section references (`§n`) are the architecture's, and `R`, `MA`, `O`, `P
 from the decision record. No story waits for user-service: the only repository implementation is
 the client-side in-memory adapter (MA-5), and #526 and #527 are never called.
 
+> **Amended 2026-11-25 (PRD item 71).** The broadcast stream below, which has no story of its own, adds
+> `utils/broadcast-event-parser.ts` as the third owner of the `features/notifications` catalog entry.
+> This supersedes "one owner" in Story 1.5 (2026-11-11) and "no other catalog gains an owner" in the
+> definition of done for that one entry.
+>
 > **Amended 2026-11-23 (owner decision: broadcast-only events).** The broadcast stream (PRD items 37
 > to 43) was added after these stories, outside their numbering. It is off by default, so each
 > "no network request" criterion below is read with the setting absent.
@@ -208,9 +213,7 @@ Each story's own criteria add to these; a story is not done until all of them ho
   allowed only under PRD amendment item 31's Lighthouse fallback, applied by Story 3.4: a second
   lazy catalog owned by `NotificationHistoryPanel`'s file, which takes the panel-only
   `notification_center.history.*` keys out of the feature catalog into `notifications-history`;
-  if the fallback is not applied, it does not exist. (2026-11-25, PRD item 71: the broadcast strings
-  of items 37 to 43 add `utils/broadcast-event-parser.ts` as the third owner of
-  `features/notifications`.) Each one also updates the pinned list in
+  if the fallback is not applied, it does not exist. Each entry above also updates the pinned list in
   `tests/unit/scripts/localization-generator.test.js:182-190` in the same story. No `eslint-disable`, `@ts-ignore`,
   `@ts-expect-error`, `depcruise-ignore`, `.skip`, `.only`, `.fixme`, `waitForTimeout`,
   conditional `expect`, `A11Y_EXCEPTIONS` entry or `data-testid`; no inline comments beyond a
@@ -546,7 +549,7 @@ readiness R3-04), and `export default new InMemoryNotificationRepository(NOTIFIC
 top-level namespace `notification_center`: `notification_center.seed.password_changed`,
 `notification_center.seed.email_sent` and `notification_center.seed.saved`, whose texts equal the
 shipped `settings.toasts.*` ones, architecture A-17 revised), `config/i18n-catalog-policy.json` (MODIFY:
-one lazy entry `modules/user/features/notifications/i18n` whose one owner is
+one lazy entry `modules/user/features/notifications/i18n` whose one owner (three since 2026-11-25, PRD item 71) is
 `modules/user/features/notifications/repositories/in-memory-notification-repository.ts`; the
 settings catalog is not touched), `.storybook/preview.tsx` (MODIFY: register the catalog),
 `tests/unit/scripts/localization-generator.test.js` (MODIFY: append
@@ -576,7 +579,7 @@ catalog at runtime (Story 2.12); until then the seed keys are data that nothing 
 - Given fake timers advanced ten minutes, when the history is listed, then nothing was marked read or removed (NFR-3).
 - Given `uk` and `en`, when `make lint-i18n` runs, then the three seed literals, which the repository file binds to `messageKey` (so the `*Key` binding rule reads them as key references), resolve against the notifications feature catalog, whose owner entry names that repository file inside the notifications feature folder (Story 1.5 therefore introduces the feature catalog with these three keys; Stories 2.11 and 2.12 add the remaining `notification_center.*` copy to the same catalog); the three keys exist in both lazy catalog files with texts equal to `settings.toasts.password_changed`, `email_sent` and `saved` («Ви успішно змінили пароль» / "You have changed your password", «Ми надіслали посилання для підтвердження на нову адресу» / "We sent a confirmation link to the new address", «Зміни збережено» / "Changes saved"), the adapter file resolves them as an owner, no `[lazy-key-scope]` or `[undefined-key]` finding is reported, and the eager `localization.json` key set equals `main`'s.
 - Given the notifications feature catalog and the settings catalog (`settings.toasts.*`) imported side by side, when `seed-copy.test.ts` runs, then for each of `notification_center.seed.password_changed`, `.email_sent` and `.saved` the `uk` text equals `settings.toasts.password_changed`, `email_sent` and `saved` respectively in `uk`, and the `en` text equals the `en` counterpart, so a later copy change in the settings catalog turns the test red until the seed follows (`make lint-i18n` does not compare texts; readiness R2-09).
-- Given `config/i18n-catalog-policy.json`, when it is diffed against `main`, then the settings catalog entry and its owners are unchanged and the only additions are the `notifications/i18n` entry and its one owner.
+- Given `config/i18n-catalog-policy.json`, when it is diffed against `main`, then the settings catalog entry and its owners are unchanged and the only additions are the `notifications/i18n` entry and its one owner (three since 2026-11-25, PRD item 71).
 - Given the localization-generator test, when it runs, then its pinned `lazyCatalogs[].catalog` list holds `modules/user/features/notifications/i18n` in policy order and passes; `performance-serving.test.ts` keeps `notification_center` out of the eager set.
 - Given the feature folder, when `make lint` runs, then the module-shape, kebab-case, type-only-file and class-naming (`*Repository`) gates report zero findings and the barrel exports types only.
 - Given the README, when `make lint-docs` runs, then it passes and names the contract, the five operations, the seed and the "no user-module imports" extraction rule (the token is added by Story 1.6, the port and slot by Story 4.9).
