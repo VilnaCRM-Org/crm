@@ -4,7 +4,7 @@ workflowType: 'research'
 bmadCommand: 'analyst'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-24'
+revised: '2026-11-25'
 slug: 'social-sign-in'
 inputDocuments:
   - 'src/modules/user/features/auth/components/form-section/components/auth-provider-buttons/index.tsx'
@@ -104,7 +104,8 @@ true` (a `*` origin is rejected by browsers for credentialed requests).
 - **F-R6 — provider-side denial never reaches the backend.** If the user clicks "Cancel" on
   the consent screen, the provider redirects to `redirect_uri?error=access_denied&state=…`. The
   SPA callback route must handle `error` itself.
-- **F-R7 — 2FA.** The callback can return `pending_session_id`. The 2FA bundle
+- **F-R7 — 2FA.** _Superseded 2026-11-20: #331 merged and the hand-off is built (PRD D6); nothing
+  degrades._ The callback can return `pending_session_id`. The 2FA bundle
   (`crm-worktrees/331-two-factor`, PR #377, route `twoFactorChallenge: '/sign-in/two-factor'`)
   deferred "social sign-in combined with 2FA" as Follow-up 5.3. This plan consumes that route
   when it exists and degrades honestly when it does not.
@@ -146,7 +147,8 @@ Consequence: the redirect URIs to register are **frontend** URLs on `http://loca
 
 ## 6. Security surface
 
-- CSP (`config/security-headers.json`): top-level navigation to the API origin is not governed
+- _Superseded 2026-11-19 with F-R4: both mutations go to the GraphQL URL `connect-src` already lists;
+  no relay `fetch` exists._ CSP (`config/security-headers.json`): top-level navigation to the API origin is not governed
   by `connect-src`; the relay `fetch` already falls under `connect-src 'self'` + API origins.
   `form-action 'self'` is irrelevant (no form post). No CSP change expected — to be confirmed by
   `make check-security-headers`.
@@ -156,7 +158,7 @@ Consequence: the redirect URIs to register are **frontend** URLs on `http://loca
   `piiScrubber` must cover `code`, `state`, `pending_session_id`).
 - `code`/`state` are single-use (backend `validateAndConsume`), so React 19 StrictMode's
   double-invoked effects would burn the code on the second call — the relay must be idempotent
-  per `state` within the page lifetime.
+  within the page lifetime. _(2026-11-19)_ It is keyed by the history entry (PRD FR9).
 
 ## 7. Risks
 
@@ -164,7 +166,7 @@ Consequence: the redirect URIs to register are **frontend** URLs on `http://loca
 | ---------------------------------------------------------- | ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------- |
 | Contract pin cannot move to a released tag                 | High       | Medium | Pending contract fragment until a release declares the mutations _(revised 2026-11-24, PRD D3)_                                    |
 | Mobile Lighthouse regression on `/sign-in`                 | Medium     | High   | Callback code in its own lazy chunk; button module change ≤ 1 kB                                                                   |
-| Double callback under StrictMode                           | High       | Medium | Single-flight relay keyed by `state`                                                                                               |
+| Double callback under StrictMode                           | High       | Medium | Single-flight relay keyed by the history entry _(2026-11-19, PRD FR9)_                                                             |
 | `code`/`state` leak through history, logs, Sentry          | Medium     | High   | `replaceState` first; scrubber keys; unit tests                                                                                    |
 | 2FA route not merged when this lands                       | Medium     | Low    | Degrade to a localized "complete sign-in with password" notice _(resolved 2026-11-20: #331 merged; the hand-off is built, PRD D6)_ |
 | Developer confusion between Mockoon and real-provider mode | Medium     | Medium | One `make` switch + a local verification guide                                                                                     |

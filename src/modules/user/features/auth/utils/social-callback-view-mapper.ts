@@ -24,7 +24,7 @@ const PROVIDER_LABELS: SocialProviderLabels = {
 
 // What the social callback page shows, decided from how it was opened (a start from the
 // provider buttons, or a provider redirect back) and from each relay's outcome
-// (specs/social-sign-in, FR5-FR14).
+// (specs/social-sign-in, FR5-FR13).
 class SocialCallbackViewMapper {
   public readQuery(): SocialCallbackQuery {
     const params = new URLSearchParams(window.location.search);
