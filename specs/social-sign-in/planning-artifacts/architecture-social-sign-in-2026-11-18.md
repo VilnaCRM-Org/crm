@@ -4,8 +4,8 @@ workflowType: 'architecture'
 bmadCommand: 'create-architecture'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-24'
-iteration: 10
+revised: '2026-11-25'
+iteration: 12
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR'
   - '2026-11-19 review: stale REST passages corrected'
@@ -16,6 +16,8 @@ revisionPasses:
   - '2026-11-24 FR/NFR gate iteration 8: spent start marker'
   - '2026-11-24 FR/NFR gate iteration 9: §6 navigator and E2E rows, start abort'
   - '2026-11-24 FR/NFR gate iteration 10: §6 consent-page merge and repository rows'
+  - '2026-11-25 bundle review: fit statement, scope of the history note, §6 outside edits'
+  - '2026-11-25 review: §6 names every file outside the feature'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'
@@ -32,8 +34,8 @@ Predecessors: [research](research-social-sign-in-2026-11-18.md) ·
 
 **Fit statement (from `.claude/react-sdlc.yml`):** React 19 + TypeScript + MUI v9 (Emotion) SPA,
 client state in the zustand `useAuthStore` (the auth token included), tsyringe DI with per-area composition roots, React Router v7 route
-registry, RSBuild, react-i18next. All new code slots into the existing `user` module's `auth`
-feature on the Apollo GraphQL data layer (§7), plus `services/observability` and `docker/` — no new
+registry, RSBuild, react-i18next. The feature slots into the existing `user` module's `auth`
+feature on the Apollo GraphQL data layer (§7); the edits outside it are listed in §6. No new
 top-level directory.
 
 > **Revision 2026-11-19 — GraphQL only, no ADR.** The SPA talks to user-service over GraphQL
@@ -46,8 +48,9 @@ top-level directory.
 > _(2026-11-19)_ supersede the earlier text.
 >
 > **§7 is the current design.** §§1-5 are kept as the history of the superseded REST relay
-> (cookie-bound state, credentialed `fetch`, Mockoon social routes); none of it is built, and where
-> they disagree with §7, §7 wins.
+> (cookie-bound state, credentialed `fetch`, Mockoon social routes), none of which is built. The kit
+> check and component of §2, the route, the 2FA text of §3.4 and the `[no-adr]` line of §4 still hold;
+> where §§1-5 disagree with §7, §7 wins.
 
 ## 1. End-to-end flow (historical: superseded REST relay, see §7)
 
@@ -258,6 +261,31 @@ What changed against this design while building it on the `main` of the day, and
 | E2E against Mockoon                                                            | E2E stubs both mutations with `page.route`                                                                                                                | The suite stays deterministic (NFR12); the mock and its consent page have their own Apollo and Jest suites |
 | Visual baselines for the callback states (S4.1)                                | recorded 2026-11-19 in CI (W5 closed)                                                                                                                     | They were first deferred: baselines come from the production stack, which this laptop's rules keep CI-only |
 | No new axe exception (superseded, readiness W7)                                | `#social-sign-in-actions > .MuiButton-contained` (issue #276)                                                                                             | The primary action reuses the design-owned `#1EAEFF` button, like the recovery in-card links               |
+
+Every file this feature changes outside `src/modules/user/features/auth`, its tests and this bundle:
+
+- `src/routes/{route-paths,types/navigation-state}.ts`: the `socialCallback` path and the
+  `socialStart` marker of the navigation state.
+- `src/modules/user/config/{di,tokens}.ts`: the social tokens and registrations; the settings
+  registrations moved unchanged to `src/modules/user/features/settings/di.ts`, which it composes.
+- `src/services/observability/{pii-text-scrubber,social-callback-text-scrubber}.ts`: the callback
+  scrubber (NFR7).
+- `src/api/contracts/pending/social-sign-in.graphql`, `src/api/generated/graphql.ts`: the pending
+  contract and its generated operations (D3).
+- `src/i18n/localization.json`: the merged catalog, regenerated with the `auth.social.*` copy.
+- `src/utils/url-builder.ts` is removed, and with it the `mockoonUrl()` reader of
+  `src/config/env/raw-env.ts` (S4.3).
+- `docker/apollo-server/lib/{resolvers,social-sign-in-resolvers}.ts`, `Mockoon.Dockerfile`,
+  `scripts/mockoon-social-oauth.js`, `scripts/docker/mockoon-entrypoint.sh`, `Makefile`,
+  `.env.example`: the local back end (S1.1, S1.2).
+- `scripts/local-stack/start.sh`: a separate developer fix for the local stack's user-service e-mail
+  workers, carried by this pull request; no requirement depends on it.
+- `config/di-collaborator-policy.js` and `.claude/skills/AI-AGENT-GUIDE.md`: the policy entries of the
+  render-path singletons.
+- Documentation (S1.3, S3.2, S4.2, S4.3): `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`,
+  `docs/social-sign-in-local.md`, `docs/accessibility/acceptance-standard.md`, `specs/README.md`, and
+  the READMEs of `src/api/contracts`, `src/config/env`, `src/config/runtime`, `src/modules/user` and
+  `src/routes`.
 
 ## 7. GraphQL design (2026-11-19)
 
