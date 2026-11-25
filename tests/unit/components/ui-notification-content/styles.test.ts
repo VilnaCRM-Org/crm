@@ -54,6 +54,16 @@ describe('notification content styles', () => {
     expect(Reflect.get(styles.action, SM)).toMatchObject({ margin: 0, minHeight: '1.5rem' });
   });
 
+  it('sizes the action with the message at every width', async () => {
+    const styles = await loadStyles();
+
+    for (const { fontSize, ...rest } of [styles.action, styles.message]) {
+      expect(fontSize).toBe('0.875rem');
+      expect(Reflect.get(rest, SM)).toMatchObject({ fontSize: '1rem' });
+      expect(Reflect.get(rest, DESKTOP)).toMatchObject({ fontSize: '0.875rem' });
+    }
+  });
+
   it('draws a 2 px dark focus ring at offset 2 on both controls', async () => {
     const styles = await loadStyles();
     const ring = { outline: '2px solid #1A1C1E', outlineOffset: '2px' };
