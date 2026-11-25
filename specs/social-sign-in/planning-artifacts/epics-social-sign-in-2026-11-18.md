@@ -5,7 +5,7 @@ bmadCommand: 'create-epics-stories'
 project_name: 'crm'
 date: '2026-11-18'
 revised: '2026-11-25'
-iteration: 9
+iteration: 10
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR; stories rewritten to the landed flow'
   - '2026-11-24 FR/NFR gate iteration 7: S2.4 transport answers and scrubber, S4.2 status, waves'
@@ -15,6 +15,7 @@ revisionPasses:
   - '2026-11-24 FR/NFR gate iteration 10: S3.1 contrast, S4.1 dependency'
   - '2026-11-24 FR/NFR gate iteration 11: S3.1 keys, S3.2 pending view, S4.1 after S3.3, waves'
   - '2026-11-25 FR/NFR gate iteration 12: story order, graph and waves derived again'
+  - '2026-11-25 bundle review: S2.4, S3.1, S3.2, S4.3, matrix'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/prd-social-sign-in-2026-11-18.md'
@@ -158,6 +159,9 @@ _(2026-11-19)_ A pending GraphQL contract with two mutations plus zod schemas fo
   percent-encoded, from every event and breadcrumb that saw the earlier URL; its own tests and
   `pii-scrubber.social-callback.test.ts` pin both forms. `pendingSessionId` never enters a URL and
   no path logs it (NFR7).
+- A completion during which the user signed in, signed out or reached a 2FA challenge another way
+  changes no session, even when that newer session has ended again; its page, if still mounted,
+  shows `expired`. One user-service refused meanwhile shows and reports its own error (NFR8).
 - Integration suite covers every FR12 response through msw GraphQL handlers, HTTP error statuses,
   an unparsable body and the deadline included.
 - Tokens in `modules/user/config/tokens.ts`, registered by the feature registrar; DI gates green.
@@ -203,8 +207,8 @@ Component story (feature-local; no kit component is missing — architecture §2
   language); `make storybook-build` and `make check-storybook-static` green.
 - jest-axe clean; 44 px targets; keyboard: Tab reaches both actions, Enter and Space activate
   the button, Enter the link.
-- Palette tokens only (assumption A4); contrast AA, checked in S4.1's browser lane, except the
-  contained action's accepted gap (PRD NFR6, readiness W7).
+- Palette tokens only (assumption A4); contrast AA, checked by the axe scans of S3.2 and S4.1, except
+  the contained action's accepted gap (PRD NFR6, readiness W7).
 
 ### S3.2 Callback page and relay — **dependent on S2.4, S3.1**
 
@@ -219,6 +223,9 @@ what went wrong and how to recover.
   authorization URL (FR1, FR15) — unit-tested.
 - On mount the query string is removed before first paint of content (FR6); S4.1's E2E checks
   `page.url()` for `code` and `state`.
+- The scan needs one `A11Y_EXCEPTIONS` entry, `#social-sign-in-actions > .MuiButton-contained`, for
+  W7; it and its `docs/accessibility/acceptance-standard.md` text land here.
+- An unknown provider segment → `unsupported_provider`, no request (FR5).
 - `error` param with this tab's `state` → `cancelled` view, no request (FR7); an `error` with a
   missing state → `missing_parameters`, with a foreign state → `expired`; missing params → `missing_parameters`,
   no request (FR8).
@@ -233,6 +240,7 @@ what went wrong and how to recover.
   StrictMode's remount keeps it (NFR8); an answer that arrives after unmount is ignored, with no
   view or auth-store update (no `act()` warnings — the console gate is the proof).
 - Lazy `social-callback` chunk; `performance-serving` golden test green.
+- CSP unchanged; `make check-security-headers` green (NFR11).
 
 ### S3.3 2FA hand-off — **dependent on S3.2**
 
@@ -294,7 +302,7 @@ The #331 merge removed both consumers of `src/utils/url-builder.ts` (main delete
 `APP_CONFIG_API_BASE_URL` any more.
 
 - Delete `src/utils/url-builder.ts`, its unit and integration tests and its
-  `config/di-collaborator-policy.js` entry.
+  `config/di-collaborator-policy.js` entry, and the `rawEnv.mockoonUrl()` reader only it called.
 - `CLAUDE.md`, `AGENTS.md`, `src/config/runtime/README.md` and `src/config/env/README.md` say the
   setting has no client reader today and only widens the CSP `connect-src`; whether to keep the
   setting is left to a separate decision.
@@ -305,7 +313,8 @@ The #331 merge removed both consumers of `src/utils/url-builder.ts` (main delete
 | ---------------- | ------------------------------------ |
 | FR1, FR2         | S2.5, S3.2                           |
 | FR3, FR4         | S2.5                                 |
-| FR5-FR10, FR14   | S3.2                                 |
+| FR5-FR9, FR14    | S3.2                                 |
+| FR10             | S2.4, S3.2, S3.3                     |
 | FR11             | S3.3                                 |
 | FR12, FR13, FR15 | S2.4, S3.1, S3.2                     |
 | FR16-FR18        | S1.1, S1.2                           |
@@ -314,7 +323,8 @@ The #331 merge removed both consumers of `src/utils/url-builder.ts` (main delete
 | NFR4             | S2.5, S3.2                           |
 | NFR5             | S2.5, S4.1                           |
 | NFR6             | S3.1, S3.2, S4.1                     |
-| NFR7, NFR8       | S2.4, S3.2                           |
+| NFR7             | S2.4, S3.2, S3.3                     |
+| NFR8             | S2.4, S3.2                           |
 | NFR10            | S2.4                                 |
 | NFR11            | S3.2 (`make check-security-headers`) |
 | NFR12            | S4.1                                 |

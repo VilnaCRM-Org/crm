@@ -1265,8 +1265,8 @@ planning in `specs/social-sign-in/`).
   never retried; "Try again" starts a new round trip and replaces the failed attempt's entry. The
   start marker is spent when the page reads it, so Back to a failed start never starts again.
 - **Leaving.** The relay counts the pages that share a request and aborts it once none is left. A
-  completion whose page is gone, or that another sign-in, sign-out or 2FA challenge overtook,
-  changes no session; it reports only a refusal, never a sign-in.
+  completion whose page is gone changes no session and reports nothing. One that another sign-in,
+  sign-out or 2FA challenge overtook changes no session either, and reports only a refusal.
 - **Destination.** The page a protected route sent the user from survives the round trip in
   `sessionStorage` and is validated by `loginRedirectTarget` when saved and when read.
 - **2FA.** A `pendingSessionId` answer stores `{ ...CLEARED_AUTH_STATE, pendingSessionId }`, never a

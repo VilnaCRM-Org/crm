@@ -109,7 +109,8 @@ true` (a `*` origin is rejected by browsers for credentialed requests).
   (`crm-worktrees/331-two-factor`, PR #377, route `twoFactorChallenge: '/sign-in/two-factor'`)
   deferred "social sign-in combined with 2FA" as Follow-up 5.3. This plan consumes that route
   when it exists and degrades honestly when it does not.
-- **F-R8 — the pinned contract lacks the endpoints.** crm pins `OPENAPI_SPEC_VERSION=v2.8.0`;
+- **F-R8 — the pinned contract lacks the endpoints.** _Revised 2026-11-19: what is missing is the two
+  GraphQL mutations, declared as a pending contract (PRD D3); Mockoon serves only the consent page._ crm pins `OPENAPI_SPEC_VERSION=v2.8.0`;
   the newest user-service tag is still `v2.8.0`, and the social endpoints exist only on `main`.
   Mockoon is built from that pinned spec (`Mockoon.Dockerfile`, sha256-checked), so today it
   cannot serve social routes at all.
@@ -128,7 +129,8 @@ true` (a `*` origin is rejected by browsers for credentialed requests).
   (`{{queryParam 'state'}}`, `{{urlParam 'provider'}}`, `{{faker 'string.uuid'}}`,
   `{{getEnvVar 'MOCKOON_…'}}` — environment variables are read only with the `MOCKOON_` prefix
   by default).
-- Rules compare a request field against a constant or regex; they cannot compare two request
+- _Superseded 2026-11-19 with F-R4: the state is bound to the tab in `sessionStorage`, not to a
+  cookie, and the Apollo mock checks it._ Rules compare a request field against a constant or regex; they cannot compare two request
   fields (state vs cookie). Exact state/cookie binding stays a user-service concern covered by
   its own Behat suite (`features/oauth_social.feature`).
 
@@ -155,7 +157,8 @@ Consequence: the redirect URIs to register are **frontend** URLs on `http://loca
 - `Referrer-Policy: strict-origin` (from `config/security-headers.json`) keeps `code`/`state` out of `Referer` to
   third parties; the SPA must still strip them from the address bar (`history.replaceState`)
   before rendering anything that could leak them, and never log them (observability
-  `piiScrubber` must cover `code`, `state`, `pending_session_id`).
+  `piiScrubber` must cover `code` and `state`; _(2026-11-19)_ the GraphQL `pendingSessionId` never
+  enters a URL or a log).
 - `code`/`state` are single-use (backend `validateAndConsume`), so React 19 StrictMode's
   double-invoked effects would burn the code on the second call — the relay must be idempotent
   within the page lifetime. _(2026-11-19)_ It is keyed by the history entry (PRD FR9).
@@ -169,4 +172,4 @@ Consequence: the redirect URIs to register are **frontend** URLs on `http://loca
 | Double callback under StrictMode                           | High       | Medium | Single-flight relay keyed by the history entry _(2026-11-19, PRD FR9)_                                                             |
 | `code`/`state` leak through history, logs, Sentry          | Medium     | High   | `replaceState` first; scrubber keys; unit tests                                                                                    |
 | 2FA route not merged when this lands                       | Medium     | Low    | Degrade to a localized "complete sign-in with password" notice _(resolved 2026-11-20: #331 merged; the hand-off is built, PRD D6)_ |
-| Developer confusion between Mockoon and real-provider mode | Medium     | Medium | One `make` switch + a local verification guide                                                                                     |
+| Developer confusion between Mockoon and real-provider mode | Medium     | Medium | An `.env` edit plus `make apollo-restart` (FR18), and a local verification guide _(2026-11-19)_                                    |
