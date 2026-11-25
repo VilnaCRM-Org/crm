@@ -98,15 +98,16 @@ rather than closed by widening that list.
 
 ## Hooks
 
-All hooks in `hooks/` are container-free and read the repository through
-`useNotificationRepository()`.
+All hooks in `hooks/` are container-free. The ones that read or write the history reach the
+repository through `useNotificationRepository()`.
 
 - `useNotificationRecorder(report)` records every raise of the outlet store once and reports a
   failed write as `app-shell:notifications-record`. The store's `recorded` field holds the revision
   of the last recorded raise, so the batch raised before this lazy slot mounts is recorded on mount
   and a remount never records a batch twice. The store keeps every batch nobody has recorded, in
   order, and drops them once they are recorded; a batch whose page was left before the mount is not
-  recorded.
+  recorded. A batch counts as recorded when its write starts, so a rejected write is reported and not
+  tried again, on a remount either; the outcome stays shown and announced.
 - `useNotificationHistory(revision, report)` returns the records newest first, the unread count,
   `markAllRead` and `refresh`; it reloads on mount, on each revision and after `markAllRead`. A
   rejected `list` or `countUnread` is reported as `app-shell:notifications-list` and keeps the last

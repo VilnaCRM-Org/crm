@@ -8,7 +8,7 @@ export interface NotificationFootprint {
 }
 
 const STORAGE_WRITES_KEY = '__notificationStorageWrites';
-const NOTIFICATION_PATTERN = /notification|\/api\/events\//i;
+const NOTIFICATION_PATTERN = /notification|settings\.toasts|\/api\/events\//i;
 const DATA_REQUEST_TYPES = new Set(['fetch', 'xhr', 'eventsource', 'websocket']);
 
 const chunkNameOf = (url: string): string =>
@@ -20,7 +20,7 @@ async function recordStorageWrites(page: Page): Promise<void> {
     Object.defineProperty(window, key, { value: writes });
     const setItem = Storage.prototype.setItem;
     Storage.prototype.setItem = function recordSetItem(name: string, value: string): void {
-      writes.push(`storage:${name}`);
+      writes.push(`storage:${name}=${value}`);
       setItem.call(this, name, value);
     };
     const { removeItem } = Storage.prototype;
@@ -28,19 +28,19 @@ async function recordStorageWrites(page: Page): Promise<void> {
       writes.push(`storage:${name}`);
       removeItem.call(this, name);
     };
-    const stored = (store: IDBObjectStore): string =>
-      `indexeddb:${store.transaction.db.name}/${store.name}`;
+    const stored = (store: IDBObjectStore, value: unknown): string =>
+      `indexeddb:${store.transaction.db.name}/${store.name}=${JSON.stringify(value)}`;
     const { add, put } = IDBObjectStore.prototype;
     IDBObjectStore.prototype.add = function recordAdd(
       ...args: Parameters<IDBObjectStore['add']>
     ): IDBRequest<IDBValidKey> {
-      writes.push(stored(this));
+      writes.push(stored(this, args[0]));
       return add.apply(this, args);
     };
     IDBObjectStore.prototype.put = function recordPut(
       ...args: Parameters<IDBObjectStore['put']>
     ): IDBRequest<IDBValidKey> {
-      writes.push(stored(this));
+      writes.push(stored(this, args[0]));
       return put.apply(this, args);
     };
     const cookie = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
@@ -48,7 +48,7 @@ async function recordStorageWrites(page: Page): Promise<void> {
       configurable: true,
       get: (): string | undefined => cookie?.get?.call(document),
       set: (value: string): void => {
-        writes.push(`cookie:${value.split('=')[0] ?? ''}`);
+        writes.push(`cookie:${value}`);
         cookie?.set?.call(document, value);
       },
     });
@@ -75,7 +75,7 @@ export async function watchNotificationFootprint(page: Page): Promise<Notificati
         (key: string) => [
           ...(Reflect.get(window, key) as string[]),
           ...[window.localStorage, window.sessionStorage].flatMap((storage) =>
-            Object.keys(storage).map((name) => `storage:${name}`)
+            Object.entries(storage).map(([name, value]) => `storage:${name}=${String(value)}`)
           ),
         ],
         STORAGE_WRITES_KEY

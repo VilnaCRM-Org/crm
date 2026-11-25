@@ -13,5 +13,13 @@ export default async function recordNoticeAnimations(page: Page): Promise<() => 
   }, RECORD_KEY);
 
   return (): Promise<number> =>
-    page.evaluate((key) => (Reflect.get(window, key) as string[]).length, RECORD_KEY);
+    page.evaluate(
+      (key) =>
+        new Promise<number>((resolve) => {
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => resolve((Reflect.get(window, key) as string[]).length))
+          );
+        }),
+      RECORD_KEY
+    );
 }
