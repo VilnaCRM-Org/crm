@@ -1,5 +1,6 @@
 import Parser from '@/modules/user/features/notifications/utils/broadcast-event-parser';
 import { buildBroadcastEvent } from '@tests/builders/broadcast-event';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const parser = new Parser();
 
@@ -10,10 +11,14 @@ describe('BroadcastEventParser', () => {
   it.each([
     ['maintenance_planned', 'notification_center.broadcast.maintenance_planned'],
     ['new_version', 'notification_center.broadcast.new_version'],
-  ])('turns the code %s into our own message key', (code, messageKey) => {
+  ])('turns the code %s into our own message key', async (code, messageKey) => {
     const event = buildBroadcastEvent({ data: { code } });
+    const IsolatedParser = await loadIsolated(
+      async () =>
+        (await import('@/modules/user/features/notifications/utils/broadcast-event-parser')).default
+    );
 
-    expect(parser.parse(JSON.stringify(event))).toEqual({
+    expect(new IsolatedParser().parse(JSON.stringify(event))).toEqual({
       id: event.id,
       draft: { kind: 'success', messageKey, createdAt: Date.parse('2026-11-23T12:00:00Z') },
     });

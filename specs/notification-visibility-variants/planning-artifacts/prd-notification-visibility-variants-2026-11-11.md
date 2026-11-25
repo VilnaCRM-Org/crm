@@ -544,8 +544,9 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 >     `397:18095`): message 14/18, time Inter 500 12/18, no gap, so one success is 62 px tall and the shape
 >     ends at 125. The status icon and the close button, which the design does not draw, stay 24 px and are
 >     centred on the first line. The extent is measured on one success, two-sided on all four edges. The Retry
->     link takes the size of the message at every width. The six desktop outcome captures and the three
->     mobile error captures of item 58 are re-recorded.
+>     link takes the size of the message at every width. Nine of item
+>     58's new captures, the six desktop outcome ones and the three mobile error ones, are recorded again;
+>     they stay new files against #398, so the counts of item 58 do not change.
 > 68. **NFR-9, J15.** The browser test reaches "mark all read" with Tab from the open bell, activates it
 >     with Enter, and leaves the panel with Tab, which closes it.
 
