@@ -139,7 +139,7 @@ describe('useNotificationFocusReturn', () => {
     expect(outside).toHaveFocus();
   });
 
-  it('keeps the same function until the published focus changes', () => {
+  it('keeps the same function while the published focus stays the same', () => {
     const { result, rerender } = renderHook(() => useNotificationFocusReturn(nowhere));
     const first = result.current;
 

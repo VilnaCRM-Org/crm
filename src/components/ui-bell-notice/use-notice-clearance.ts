@@ -13,15 +13,31 @@ function release(): void {
   document.documentElement.style.removeProperty(layoutStyles.overhangProperty);
 }
 
+function startsUnderCard({ top, left, right }: DOMRect, area: DOMRect): boolean {
+  const beside = right <= area.left || left >= area.right;
+
+  return !beside && top >= HEADER_HEIGHT && top < area.bottom;
+}
+
+function endsUnderCard({ bottom, left, right }: DOMRect, area: DOMRect): boolean {
+  const within = left >= area.left && right <= area.right;
+
+  return within && bottom > HEADER_HEIGHT && bottom <= area.bottom;
+}
+
+function heldByKeyboardOnPage(element: HTMLElement): boolean {
+  return element.matches(':focus-visible') && element.matches('main *, footer *');
+}
+
 function revealCovered(area: DOMRect, card: HTMLElement): void {
   const { activeElement } = document;
   if (!(activeElement instanceof HTMLElement) || card.contains(activeElement)) {
     return;
   }
-  const { top, left, right } = activeElement.getBoundingClientRect();
-  if (right <= area.left || left >= area.right) return;
-  if (top >= HEADER_HEIGHT && top < area.bottom) {
-    window.scrollBy({ top: -Math.ceil(area.bottom - top) });
+  const held = activeElement.getBoundingClientRect();
+  const hidden = endsUnderCard(held, area) && heldByKeyboardOnPage(activeElement);
+  if (hidden || startsUnderCard(held, area)) {
+    window.scrollBy({ top: -Math.ceil(area.bottom - held.top) });
   }
 }
 

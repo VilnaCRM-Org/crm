@@ -113,12 +113,17 @@ All hooks in `hooks/` are container-free and read the repository through
 - `useBellDisclosure(layout)` owns the bell's open state, `visited` and `opens`, the number of
   times the panel was opened. Opening dismisses the
   merged card; an outcome raised while the panel is open is listed there, and its card waits until
-  the panel closes. Escape, a pointerdown or focus leaving the bell wrapper, a
-  route change and a layout change close it. It is built from `useBellOutsideClose`,
+  the panel closes. A pointerdown outside, focus leaving the bell wrapper or arriving elsewhere, a
+  route change and a layout change close it. Escape closes it and focuses the bell when the key lands
+  on the panel or when nothing holds focus, never when another control takes it. It is built from
+  `useBellEscape`, `useBellOutsideClose`,
   `useBellFocusOut`, `useBellDismissal` and `useBellContextClose`.
 
-- `useSessionHistory()` claims the history for the session before anything reads it, so another user
-  of the tab starts from the seed however the earlier session ended. The same session keeps its rows.
+- `useSessionRepository()` wraps the adapter in a `SessionNotificationRepository`, which claims the
+  history for the session before the first read or write, so another user of the tab starts from the
+  seed however the earlier session ended and the same session keeps its rows. The slot provides it to
+  everything below. A claim that rejects fails the waiting operation, which its caller reports, and
+  the next operation claims again; nothing is read or written before a claim succeeds.
 - `useBroadcastEvents(report)` opens the broadcast stream while the `notificationEventsUrl` setting
   names a service, records each event as unread, and returns how many have settled; the slot adds
   it to the recorder's revision, so the bell reloads for either.

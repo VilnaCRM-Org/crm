@@ -221,6 +221,26 @@ test.describe('Bell history (issue #391)', () => {
     await expectClosed(page, history);
   });
 
+  test('closes on Escape after a mouse open and after a click on the panel text', async ({
+    page,
+  }) => {
+    await stubProfile(page);
+    await openLoadedSettings(page);
+
+    await bellOf(page).click();
+    const history = await historyOf(page);
+    await expect(history).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expectClosed(page, history);
+    await expect(bellOf(page)).toBeFocused();
+
+    await bellOf(page).click();
+    await history.getByRole('heading', { level: 2 }).click();
+    await page.keyboard.press('Escape');
+    await expectClosed(page, history);
+    await expect(bellOf(page)).toBeFocused();
+  });
+
   test('shows the seed again with a badge of one after a reload', async ({ page }) => {
     await stubProfile(page);
     await openLoadedSettings(page);

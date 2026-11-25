@@ -26,7 +26,7 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
 - **The user slot is a prop.** Nothing under `src/components/` imports `src/modules/`. The settings
   route contract declares `shell.userMenu`, a loader for `UserMenuSlot`; the composer hands
   `AppLayout` the slot `protectedLayoutLoader.create` builds from it, so `AppLayout` receives only a
-  component that takes `signOut` and `onAvatar`. `UIAppShell` keeps the avatar copy the slot
+  component that takes `layout`, `signOut` and `onAvatar`. `UIAppShell` keeps the avatar copy the slot
   publishes through `onAvatar` in state and hands it to the mobile drawer header (`avatar` on
   `HeaderNavigation`). The slot keeps one menu mounted while the `current-user` chunk loads, so
   the chip keeps focus and an open menu when the name arrives. See "Shell slots" in
@@ -143,10 +143,11 @@ Two choices record what Figma leaves open:
 - The disabled bell variant `451:26214` draws its badge `#D0D4D8`, not `#1EAEFF`. The disabled
   header buttons follow the disabled variant. The owner approved this on 2026-11-06 ("use all from
   Figma"); see DV-14. The enabled bell draws the alert badge `#D63333` instead.
-- The round buttons' rest, hover and open states and the search field's rest, hover and active
+- The tasks button's rest, hover and open states and the search field's rest, hover and active
   states are not drawn in the app while those controls ship disabled, so the owner dropped them as
   required Storybook state rows on 2026-11-06 (UX §10.2). The requirement returns when the controls
-  are enabled.
+  are enabled. It has returned for the bell: `BellEnabled` is its rest row and `BellExpanded` its open
+  row, and `bell-styles.test.ts` pins its hover.
 
 ## Sidebar
 

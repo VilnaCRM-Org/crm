@@ -23,6 +23,7 @@ describe('paletteColors.error', () => {
     const { error } = await loadPalette();
 
     expect(contrast(error.main, '#FFFFFF')).toBeGreaterThanOrEqual(3);
+    expect(contrast(error.main, '#FFFFFF')).toBeLessThan(4.5);
   });
 });
 

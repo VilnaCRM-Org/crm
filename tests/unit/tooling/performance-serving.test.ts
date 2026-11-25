@@ -904,6 +904,7 @@ describe('the notification chunks of the bell (issue #391)', () => {
       'src/providers/di/use-service.ts',
       / -> .*dependency-injection-config$/,
     ],
+    ['Apollo', 'src/services/observability/apollo-link-factory.ts', / -> @apollo\//],
     ['zod', 'src/config/runtime/app-config-schema.ts', / -> (@\/config\/)?zod$/],
   ])('finds an import of %s', (_label, file, edge) => {
     expect(heavyEdgesOf(file)).toContainEqual(expect.stringMatching(edge));

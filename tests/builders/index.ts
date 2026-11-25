@@ -8,3 +8,4 @@ export * from './profile';
 export * from './two-factor';
 export * from './notification-draft';
 export * from './notification-record';
+export * from './broadcast-event';

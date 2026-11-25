@@ -11,6 +11,7 @@ import {
   inMemoryNotificationRepository,
   InMemoryNotificationRepository,
   NOTIFICATION_SEED,
+  SessionNotificationRepository,
 } from '@/modules/user/features/notifications/repositories';
 import { buildEmail } from '@tests/builders';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
@@ -184,6 +185,23 @@ describe('notification flow from a raised outcome into the history', () => {
 
     expect((await repository.list()).items).toHaveLength(NOTIFICATION_SEED.items.length);
     expect(await repository.countUnread()).toBe(1);
+  });
+
+  it('reads and writes for a session only once it claimed the history', async () => {
+    const repository = new InMemoryNotificationRepository(NOTIFICATION_SEED);
+    const claim = jest.spyOn(repository, 'claim').mockRejectedValueOnce(new Error('claim failed'));
+    const session = new SessionNotificationRepository(repository, 'first');
+
+    await expect(session.list()).rejects.toThrow('claim failed');
+    await session.record({ items: [{ ...saved, createdAt: Date.now() }] });
+    expect(await session.countUnread()).toBe(2);
+    await session.markAllRead();
+
+    expect((await session.list()).items).toHaveLength(NOTIFICATION_SEED.items.length + 1);
+    expect(await session.countUnread()).toBe(0);
+    expect(claim).toHaveBeenCalledTimes(2);
+    const next = new SessionNotificationRepository(repository, 'second');
+    expect(await next.countUnread()).toBe(1);
   });
 
   it('starts a fresh document from the seed alone', async () => {

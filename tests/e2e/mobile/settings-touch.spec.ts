@@ -315,3 +315,32 @@ test.describe('The bell caret card at 320 px (issue #391)', () => {
     await expectNoHorizontalOverflow(page);
   });
 });
+
+test.describe('The history panel at 320 px (NFR-10, issue #391)', () => {
+  test.beforeEach(async ({ page }) => {
+    await signInToSettings(page);
+  });
+
+  for (const size of [NARROW_VIEWPORT, REFLOW_VIEWPORT]) {
+    test(`fits ${size.width} × ${size.height} with every control reachable`, async ({ page }) => {
+      await stubProfile(page);
+      await openByTap(page);
+      await page.setViewportSize(size);
+      await bellOf(page).tap();
+      const panel = page.locator(`[id="${await bellOf(page).getAttribute('aria-controls')}"]`);
+      await expect(panel).toBeVisible();
+      await expect(markAllOf(page)).toBeVisible();
+
+      const box = await panel.boundingBox();
+      await markAllOf(page).focus();
+
+      expect(box).not.toBeNull();
+      expect(box?.x ?? -Infinity).toBeGreaterThanOrEqual(CARD_GUTTER_PX - 0.5);
+      expect((box?.x ?? 0) + (box?.width ?? Infinity)).toBeLessThanOrEqual(
+        size.width - CARD_GUTTER_PX + 0.5
+      );
+      await expect(markAllOf(page)).toBeInViewport({ ratio: 1 });
+      await expectNoHorizontalOverflow(page);
+    });
+  }
+});

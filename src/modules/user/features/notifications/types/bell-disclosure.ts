@@ -1,4 +1,4 @@
-import type { FocusEventHandler, KeyboardEventHandler, RefObject } from 'react';
+import type { FocusEventHandler, RefObject } from 'react';
 
 import type { ShellLayout } from '@/components/types/ui-app-shell';
 
@@ -9,7 +9,6 @@ export interface BellDisclosureControls {
 }
 
 export interface BellDismissal {
-  readonly keyDown: KeyboardEventHandler<HTMLElement>;
   readonly focusOut: FocusEventHandler<HTMLElement>;
 }
 
@@ -42,4 +41,11 @@ export interface BellDismissalOptions {
 export interface BellContextCloseOptions {
   readonly layout: ShellLayout;
   readonly close: () => void;
+}
+
+export interface DocumentEventOptions<TType extends keyof DocumentEventMap> {
+  readonly active: boolean;
+  readonly type: TType;
+  readonly listener: (event: DocumentEventMap[TType]) => void;
+  readonly capture: boolean;
 }

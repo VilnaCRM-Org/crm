@@ -51,7 +51,7 @@ export default class BroadcastEventClient {
   }
 
   private accept(frame: MessageEvent<string>): void {
-    this.cursor = frame.lastEventId;
+    this.cursor = frame.lastEventId || null;
     const event = this.options.parser.parse(frame.data);
     if (event === null || this.seen.has(event.id)) return;
     this.remember(event.id);

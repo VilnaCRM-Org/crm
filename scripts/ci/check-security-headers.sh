@@ -4,7 +4,7 @@
 #
 # Two container starts, both against the deployable `production` image the Makefile just built:
 #   1. the committed baseline, exactly as serve.json ships it;
-#   2. the same image with APP_CONFIG_* API overrides, which must surface in connect-src — the
+#   2. the same image with APP_CONFIG_* URL overrides, which must surface in connect-src — the
 #      positive control proving the entrypoint really extends the CSP at start-up.
 # The container is always removed, whichever step fails.
 
@@ -15,6 +15,7 @@ PORT="${SECURITY_HEADERS_PROBE_PORT:-3011}"
 GATE="${SECURITY_HEADERS_GATE_SCRIPT:-scripts/ci/check-security-headers.mjs}"
 API_ORIGIN="${SECURITY_HEADERS_PROBE_API_ORIGIN:-https://api.security-headers-probe.example}"
 GRAPHQL_ORIGIN="${SECURITY_HEADERS_PROBE_GRAPHQL_ORIGIN:-https://graphql.security-headers-probe.example}"
+EVENTS_ORIGIN="${SECURITY_HEADERS_PROBE_EVENTS_ORIGIN:-https://events.security-headers-probe.example}"
 READY_ATTEMPTS="${SECURITY_HEADERS_READY_ATTEMPTS:-30}"
 CONTAINER="${SECURITY_HEADERS_PROBE_CONTAINER:-crm-security-headers-probe}"
 BASE_URL="http://127.0.0.1:${PORT}"
@@ -52,5 +53,7 @@ node "$GATE" --url "$BASE_URL"
 printf '🔒 [2/2] runtime API overrides must extend connect-src at container start\n'
 start_probe \
   -e "APP_CONFIG_API_BASE_URL=${API_ORIGIN}/api" \
-  -e "APP_CONFIG_GRAPHQL_URL=${GRAPHQL_ORIGIN}/graphql"
-node "$GATE" --url "$BASE_URL" --expect-connect "$API_ORIGIN" --expect-connect "$GRAPHQL_ORIGIN"
+  -e "APP_CONFIG_GRAPHQL_URL=${GRAPHQL_ORIGIN}/graphql" \
+  -e "APP_CONFIG_NOTIFICATION_EVENTS_URL=${EVENTS_ORIGIN}"
+node "$GATE" --url "$BASE_URL" --expect-connect "$API_ORIGIN" \
+  --expect-connect "$GRAPHQL_ORIGIN" --expect-connect "$EVENTS_ORIGIN"

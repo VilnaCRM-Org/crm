@@ -1,5 +1,5 @@
-import { render } from '@testing-library/react';
-import type { JSX } from 'react';
+import { render, screen } from '@testing-library/react';
+import { type JSX, lazy } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
 import UINotificationHistory from '@/components/ui-notification-history';
@@ -7,6 +7,8 @@ import UINotificationHistoryFrame from '@/components/ui-notification-history/his
 import type { NotificationViewSet } from '@/lib/notifications/types/notification-view';
 import createContentI18n from '@tests/unit/utils/create-notification-content-locale-i18n';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
+
+const Never = lazy(() => new Promise<{ default: () => JSX.Element }>(() => undefined));
 
 const copy = {
   heading: 'Сповіщення',
@@ -58,6 +60,17 @@ describe('UINotificationHistory accessibility', () => {
         />
       </Stage>
     );
+
+    await expectNoA11yViolations(container);
+  });
+
+  it('has no axe violations while the open panel loads', async () => {
+    const { container } = render(
+      <Stage open>
+        <Never />
+      </Stage>
+    );
+    expect(await screen.findByText('Завантаження сторінки')).toBeInTheDocument();
 
     await expectNoA11yViolations(container);
   });

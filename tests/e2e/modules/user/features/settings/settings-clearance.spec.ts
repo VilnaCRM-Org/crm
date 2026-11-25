@@ -76,13 +76,13 @@ const OUTCOME_SETS: readonly OutcomeSet[] = [ONE_OUTCOME, THREE_OUTCOMES];
 
 const sizeName = (size: ViewportSize): string => `${size.width} × ${size.height}`;
 
-async function tabThroughEveryControl(page: Page): Promise<TabReport> {
+async function tabThroughEveryControl(page: Page, key = 'Tab'): Promise<TabReport> {
   await resetSeen(page);
   const covered: string[] = [];
   let visited = 0;
   let bodies = 0;
   for (let step = 0; step < MAX_TAB_STOPS; step += 1) {
-    await page.keyboard.press('Tab');
+    await page.keyboard.press(key);
     const result = await probeFocused(page);
     if (result === 'repeat') break;
     if (result === 'body') {
@@ -127,6 +127,15 @@ test.describe('Focus clearance (issue #391)', () => {
         expect(report.visited).toBeGreaterThanOrEqual(MIN_TAB_STOPS);
         expect(report.covered).toEqual([]);
       });
+
+      test(`${title} at ${sizeName(size)}, backwards`, async ({ page }) => {
+        await openWithOutcomes(page, outcomes, size);
+
+        const report = await tabThroughEveryControl(page, 'Shift+Tab');
+
+        expect(report.visited).toBeGreaterThanOrEqual(MIN_TAB_STOPS);
+        expect(report.covered).toEqual([]);
+      });
     }
   }
 });
@@ -155,6 +164,36 @@ test.describe('The first outcome is in view once its save settles (SM-3, issue #
       });
     }
   }
+});
+
+test.describe('The merged shape at 1920 × 1080 (FR-18, issue #391)', () => {
+  const WIDE = { width: 1920, height: 1080 };
+
+  test.beforeEach(async ({ page }) => {
+    await signInToSettings(page);
+  });
+
+  test('stays attached to the bell', async ({ page }) => {
+    await openWithOutcomes(page, ONE_OUTCOME, WIDE);
+    const shape = noticeCardOf(page).locator('xpath=..');
+    await expect(shape).toBeVisible();
+    const offsetFromBell = async (): Promise<number> => {
+      const bell = await bellOf(page).boundingBox();
+      const corner = await shape.evaluate((root) => {
+        const rects = [...root.children].map((child) => child.getBoundingClientRect());
+        return {
+          x: Math.min(...rects.map((rect) => rect.left)),
+          y: Math.min(...rects.map((rect) => rect.top)),
+        };
+      });
+      return Math.max(
+        Math.abs(corner.x - (bell?.x ?? Infinity)),
+        Math.abs(corner.y - (bell?.y ?? Infinity))
+      );
+    };
+
+    await expect.poll(offsetFromBell).toBeLessThanOrEqual(CARET_TOLERANCE_PX);
+  });
 });
 
 test.describe('The caret card at 1024 × 1366 (issue #391)', () => {

@@ -1,28 +1,13 @@
-import { type KeyboardEvent, useCallback } from 'react';
-
 import type { BellDismissal, BellDismissalOptions } from '../types/bell-disclosure';
 
+import useBellEscape from './use-bell-escape';
 import useBellFocusOut from './use-bell-focus-out';
 import useBellOutsideClose from './use-bell-outside-close';
 
-export default function useBellDismissal({
-  expanded,
-  close,
-  bell,
-  wrapper,
-}: BellDismissalOptions): BellDismissal {
-  useBellOutsideClose({ expanded, close, wrapper });
-  const focusOut = useBellFocusOut({ close, wrapper });
+export default function useBellDismissal(options: BellDismissalOptions): BellDismissal {
+  useBellEscape(options);
+  useBellOutsideClose(options);
+  const focusOut = useBellFocusOut(options);
 
-  const keyDown = useCallback(
-    (event: KeyboardEvent<HTMLElement>) => {
-      if (expanded && event.key === 'Escape') {
-        close();
-        bell.current?.focus();
-      }
-    },
-    [expanded, close, bell]
-  );
-
-  return { keyDown, focusOut };
+  return { focusOut };
 }

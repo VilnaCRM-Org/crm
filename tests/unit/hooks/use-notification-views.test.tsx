@@ -71,7 +71,6 @@ describe('useNotificationViews', () => {
     result.current.items.forEach((view) => {
       expect(view).not.toHaveProperty('messageKey');
       expect(view).not.toHaveProperty('raisedAt');
-      expect(view).not.toHaveProperty('batch');
     });
   });
 

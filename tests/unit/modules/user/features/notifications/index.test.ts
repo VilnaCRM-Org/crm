@@ -5,12 +5,13 @@ describe('notifications feature barrels', () => {
     expect(Object.keys(barrel)).toEqual([]);
   });
 
-  it('exports the class, seed and default instance from the repositories barrel', async () => {
+  it('exports the classes, seed and default instance from the repositories barrel', async () => {
     const barrel = await import('@/modules/user/features/notifications/repositories');
 
     expect(Object.keys(barrel).sort()).toEqual([
       'InMemoryNotificationRepository',
       'NOTIFICATION_SEED',
+      'SessionNotificationRepository',
       'inMemoryNotificationRepository',
     ]);
     expect(barrel.inMemoryNotificationRepository).toBeInstanceOf(

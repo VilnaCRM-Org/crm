@@ -136,7 +136,7 @@ file at most 10 functions, 6 closures and 120 LLOC; per function at most 10 LLOC
 | ----- | --------------------------------------------------------------------- |
 | FR-1  | Feature placement; callers through the shared port and the shell slot |
 | FR-2  | Domain-only contract, no user-module imports                          |
-| FR-3  | Repository contract: record, list, count unread, mark all read        |
+| FR-3  | Repository contract: record, list, count unread, mark all read, claim |
 | FR-4  | In-memory mock adapter with deterministic seed, no network            |
 | FR-5  | Raise: show, announce, record under every style (fallback amended)    |
 | FR-6  | One variant-neutral live-region host                                  |
@@ -1324,7 +1324,7 @@ Suspense-fallback ESLint gate (both boundaries have a non-null fallback).
 
 **Acceptance Criteria:**
 
-- Given each of `toast`, `inline` and `bell` with the seeded adapter, when `BellNotifications` renders, then the bell is enabled with `aria-expanded="false"`, its `aria-controls` names the present and `hidden` history host, on desktop and tablet exactly one badge exists, inside the button, reading 1, and on every layout the bell has exactly one description, «1 непрочитане сповіщення» ("1 unread notification"), with neither «Ще недоступно» nor an `app_shell.notifications.count` text in the tree (readiness R3-03).
+- Given each of `toast`, `inline` and `bell` with the seeded adapter, when `BellNotifications` renders, then the bell is enabled with `aria-expanded="false"`, its `aria-controls` names the present and `hidden` history host, on desktop and tablet exactly one badge exists, in the positioned box of the button, reading 1, and on every layout the bell has exactly one description, «1 непрочитане сповіщення» ("1 unread notification"), with neither «Ще недоступно» nor an `app_shell.notifications.count` text in the tree (readiness R3-03).
 - Given each style, when a recorded raise of three successes refreshes the history, then the badge goes from 1 to 4 and the description is «4 непрочитані сповіщення» (`uk` few) / "4 unread notifications"; with 5 unread it is «5 непрочитаних сповіщень» (`uk` many) (FR-23 as amended).
 - Given each style and the badge at 4, when mark-all-read resolves, then the badge is gone and the bell has no count description (A-13).
 - Given each style before the first open, when the component renders and outcomes are raised, then the panel loader has not been called; when the bell is opened with Enter, then it is called once, the host shows the deferred `RouteFallback` until the panel resolves, and closing and reopening calls it no more (architecture A-25); under `toast` and `inline` the notice loader is never called and no `UIBellNotice` exists in the tree (FR-11 as amended).
@@ -2103,7 +2103,7 @@ toast-era design and are corrected here (readiness M-10; line numbers on `main` 
 
 **Acceptance Criteria:**
 
-- Given the feature README, when `make lint-docs` runs, then it passes and names the port (`src/lib/notifications`, `src/hooks/use-notifications`), the token, the four repository operations, the seed, the shell slot, the isolation rule and the three-line extraction checklist (FR-7).
+- Given the feature README, when `make lint-docs` runs, then it passes and names the port (`src/lib/notifications`, `src/hooks/use-notifications`), the token, the five repository operations, the seed, the shell slot, the isolation rule and the three-line extraction checklist (FR-7).
 - Given the module README, when it is read, then the toast section is replaced by the notifications decision, with the measured 1.09:1 defect, the 3:1 edge floor, the three variants of the transient surface, the bell, badge and history common to every style, the `notificationStyle` switch and the removal plan that keeps the bell, badge and history, and `make lint-docs` passes (FR-34).
 - Given every documented `make` command and relative link in the changed READMEs, when `make lint-docs` runs, then each resolves.
 - Given `CLAUDE.md`, `AGENTS.md` and `.github/copilot-instructions.md`, when they are searched for `useToastQueue`, `ui_toast`, `ToastDraft`, `51 rules`, `disabled bell` and `Seven lazy catalogs` / `seven catalogs`, then nothing matches, the DI-root list names the notifications registrar, and `make lint-md` and `make lint-docs` pass (readiness M-10).
@@ -2198,8 +2198,8 @@ the contract-test, renderer-test and bats cases (the two `start-prod-clean` styl
 docker stub's variable log included), the `check-security-headers.sh` assertion,
 `lib/notifications/notification-surfaces.ts` and `src/hooks/use-notification-surface.ts` (mount
 points become unconditional), `tests/e2e/utils/notification-style.ts` and the per-style
-parametrisation, the comparison stories, frame and viewports, and the losers' baselines (the 243
-re-recorded shell baselines and the 6 `uk-app-shell-history-open-*` captures stay).
+parametrisation, the comparison stories, frame and viewports, and the losers' baselines (the
+re-recorded shell baselines of PRD item 58 and the 6 `uk-app-shell-history-open-*` captures stay).
 
 **Kept whatever wins (owner decision 2026-11-12, architecture §14):** the enabled bell, the badge,
 the count description, the history panel and mark-all-read (`BellNotifications`,

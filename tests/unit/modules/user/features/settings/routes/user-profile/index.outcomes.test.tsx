@@ -74,6 +74,8 @@ describe('UserProfile outcomes', () => {
     ['uk', 'settings.toasts.password_changed', 'Ви успішно змінили пароль'],
     ['uk', 'settings.toasts.resent', 'Посилання для підтвердження надіслано повторно'],
     ['en', 'settings.toasts.saved', 'Changes saved'],
+    ['en', 'settings.toasts.email_sent', 'We sent a confirmation link to the new address'],
+    ['en', 'settings.toasts.resent', 'The confirmation link has been sent again'],
     ['en', 'settings.toasts.password_changed', 'You have changed your password'],
   ] as const)(
     'announces a %s %s success once in the status region and draws nothing',
@@ -104,6 +106,12 @@ describe('UserProfile outcomes', () => {
       'The changes could not be saved. Please try again later.',
     ],
     ['en', 'settings.toasts.rate_limited', 'Too many attempts. Please try again later.'],
+    [
+      'en',
+      'settings.toasts.save_failed_transient',
+      'The changes could not be saved. Check your connection and try again.',
+    ],
+    ['en', 'settings.toasts.resend_failed', 'The link could not be sent. Try again.'],
   ] as const)(
     'announces a %s %s failure once in the alert region and draws nothing',
     (locale, messageKey, text) => {

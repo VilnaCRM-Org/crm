@@ -247,6 +247,17 @@ describe('InMemoryNotificationRepository', () => {
       expect((await repository.list()).items).toEqual(SEED_ROWS);
     });
 
+    it('keeps an unclaimed history when a session without a token claims it', async () => {
+      const repository = fresh();
+      await repository.record(buildNotificationRecordDraftSet(1));
+
+      await repository.claim(null);
+
+      expect((await repository.list()).items).toHaveLength(SEED_ROWS.length + 1);
+      const next = await repository.record(buildNotificationRecordDraftSet(1));
+      expect(next.items.map((item) => item.id)).toEqual(['notification-2']);
+    });
+
     it('keeps every record and read mark when the same session claims it again', async () => {
       const repository = fresh();
       await repository.claim('first');

@@ -124,12 +124,11 @@ describe('useBellDisclosure', () => {
     expect(result.current.disclosure.visited).toBe(true);
   });
 
-  it('hands out the refs and dismissal handlers the wrapper needs', () => {
+  it('hands out the refs and the dismissal handler the wrapper needs', () => {
     const { result } = setup();
 
     expect(result.current.disclosure.bell.current).toBeNull();
     expect(result.current.disclosure.wrapper.current).toBeNull();
-    expect(result.current.disclosure.keyDown).toEqual(expect.any(Function));
     expect(result.current.disclosure.focusOut).toEqual(expect.any(Function));
   });
 

@@ -5,13 +5,15 @@ import path from 'path';
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentType, Context, JSX, ReactNode } from 'react';
-import { lazy } from 'react';
+import { lazy, useRef } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter } from 'react-router';
 
 import type { ShellLayout } from '@/components/types/ui-app-shell';
 import BellSlotFrame from '@/components/ui-app-header/bell-slot-frame';
+import UINotificationOutlet from '@/components/ui-notification-outlet';
 import useNotifications from '@/hooks/use-notifications';
+import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
 import type {
   BellOutcomeNoticeModule,
   NotificationChunkReporter,
@@ -85,20 +87,36 @@ const wrap = (repository: NotificationRepository, children: ReactNode): JSX.Elem
   </I18nextProvider>
 );
 
-const mount = (layout: ShellLayout = 'desktop'): Mounted => {
+function Page(): JSX.Element {
+  const save = useRef<HTMLButtonElement>(null);
+
+  return (
+    <>
+      <button type="button" ref={save}>
+        Зберегти
+      </button>
+      <UINotificationOutlet returnFocusRef={save} />
+    </>
+  );
+}
+
+const mount = (layout: ShellLayout = 'desktop', page: ReactNode = null): Mounted => {
   const repository = new InMemoryNotificationRepository(NOTIFICATION_SEED);
   const report = jest.fn();
   render(
     wrap(
       repository,
-      <BellSlotFrame layout={layout}>
-        <NotificationsShellSlot
-          layout={layout}
-          signOut={jest.fn()}
-          onAvatar={jest.fn()}
-          onChunkFailure={report}
-        />
-      </BellSlotFrame>
+      <>
+        <BellSlotFrame layout={layout}>
+          <NotificationsShellSlot
+            layout={layout}
+            signOut={jest.fn()}
+            onAvatar={jest.fn()}
+            onChunkFailure={report}
+          />
+        </BellSlotFrame>
+        {page}
+      </>
     )
   );
 
@@ -136,13 +154,19 @@ describe('NotificationsShellSlot', () => {
     afterEach(() => Reflect.deleteProperty(window, 'EventSource'));
 
     it('counts a broadcast event on the badge and shows no notice for it', async () => {
-      mount();
+      mount('desktop', <Page />);
       await waitFor(() => expect(badge()).toEqual(['1']));
+      const save = screen.getByRole('button', { name: 'Зберегти' });
+      act(() => save.focus());
 
       act(broadcast);
 
       await waitFor(() => expect(badge()).toEqual(['2']));
       expect(screen.queryByText('Доступна нова версія CRM')).not.toBeInTheDocument();
+      expect(save).toHaveFocus();
+      expect(screen.getByRole('status')).toBeEmptyDOMElement();
+      expect(screen.getByRole('alert')).toBeEmptyDOMElement();
+      expect(useNotificationOutletStore.getState().shown.items).toEqual([]);
     });
 
     it('counts an outcome and a broadcast that settle together', async () => {
@@ -209,6 +233,32 @@ describe('NotificationsShellSlot', () => {
 
       await waitFor(() => expect(badge()).toEqual(['1']));
       expect(await screen.findAllByRole('listitem')).toHaveLength(NOTIFICATION_SEED.items.length);
+    });
+
+    it('reports a history it could not claim and shows none of it', async () => {
+      const repository = new InMemoryNotificationRepository(NOTIFICATION_SEED);
+      const failure = new Error('claim failed');
+      jest.spyOn(repository, 'claim').mockRejectedValue(failure);
+      const list = jest.spyOn(repository, 'list');
+      const report = jest.fn();
+      render(
+        wrap(
+          repository,
+          <NotificationsShellSlot
+            layout="desktop"
+            signOut={jest.fn()}
+            onAvatar={jest.fn()}
+            onChunkFailure={report}
+          />
+        )
+      );
+
+      await waitFor(() =>
+        expect(report).toHaveBeenCalledWith('app-shell:notifications-list', failure)
+      );
+      expect(badge()).toEqual([]);
+      expect(bell()).toBeEnabled();
+      expect(list).not.toHaveBeenCalled();
     });
 
     it('keeps the history of the same session', async () => {

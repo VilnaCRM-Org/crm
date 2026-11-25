@@ -172,7 +172,7 @@ Only `config/module-shape.json` feature folders are used (`components`, `hooks`,
 
 ```text
 src/modules/user/features/notifications/
-├── README.md                     # contract, token, 4 operations, seed, extraction rule
+├── README.md                     # contract, token, 5 operations, seed, extraction rule
 ├── index.ts                      # public barrel: types only
 ├── tokens.ts                     # NOTIFICATION_TOKENS
 ├── di.ts                         # NotificationsRegistrar (ModuleRegistrar)
@@ -191,7 +191,7 @@ src/modules/user/features/notifications/
 │   ├── use-notification-history.ts      # list + unread + markAllRead
 │   ├── use-bell-disclosure.ts           # open, close, Escape, outside, route close, visited, opens
 │   ├── use-retryable-chunk.ts           # lazy chunk, loaded again on the attempt after a failure
-│   └── use-session-history.ts           # claims the history for the session (PRD item 57)
+│   └── use-session-repository.ts        # the adapter, claimed for the session (PRD item 57)
 ├── components/
 │   ├── notifications-shell-slot.tsx     # chunk `notifications-shell`, every style
 │   ├── bell-notifications.tsx           # in `notifications-shell`: bell, badge, panel host
@@ -361,7 +361,7 @@ previous.revision`), never against a revision the hook remembers, and `clear()` 
 
 `index.ts` exports types only: `NotificationRepository`, `NotificationRecord`,
 `NotificationRecordSet`. No caller imports it today (callers use the port); it is the ready surface
-of the future `@/modules/notifications` barrel. The README lists the port, the token, the four
+of the future `@/modules/notifications` barrel. The README lists the port, the token, the five
 operations, the seed and the isolation rule.
 
 **Extraction checklist (a move):**
@@ -1365,7 +1365,8 @@ exist (A-32, readiness R3-03). Behaviour, in
 - the first open sets `visited`, which mounts the lazy panel content; while it loads the host shows
   the deferred `RouteFallback` (nothing for 150 ms, then a spinner and a polite "loading" line),
   and focus stays on the bell;
-- Escape, on the bell or inside the panel, closes it and focuses the bell;
+- Escape, on the bell, inside the panel or while nothing holds focus, closes it and focuses the bell;
+  a control elsewhere that takes the key keeps it (PRD item 62);
 - an outside click closes it through a document-level `pointerdown` listener (capture phase,
   added while open and removed on close) whose target is outside the bell wrapper. **No overlay or
   backdrop** is drawn, unlike the user menu (`user-menu/index.tsx:23`, `styles.ts:86`), so the

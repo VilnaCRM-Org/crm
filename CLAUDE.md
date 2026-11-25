@@ -2100,7 +2100,7 @@ shift that cost ~0.03 of the mobile Lighthouse budget), then shows a spinner and
 via a polite live region. `RouteFallback` takes optional `minHeight` and `message` props, so an
 in-page Suspense boundary (the registration form's result chunk) reuses it instead of shipping
 `fallback={null}`. The MUI theme engine is not on the eager path either: `RouteMapper`, the footer
-loader, the app-shell loader and the user-menu shell slot (`ShellSlotFactory`) wrap each lazy
+loader, the app-shell loader and the two shell slots (`ShellSlotFactory`) wrap each lazy
 surface in a `ThemedChunkLoader` that fetches the `mui-theme` chunk in parallel with it, and the
 paint-path components style themselves with `@emotion/styled`, never `Box` or another
 `@mui/material` import. The protected branch is off the eager path as well: `ProtectedRoute` and
@@ -2805,8 +2805,9 @@ wiring — it contains no route-array literal and no feature/module page imports
 
 - **Contract types** — `src/routes/types/{app-route,route-module,shell-slot}.ts` (`AppRouteObject`:
   `path`/`index`, lazy `load`, declarative `guard`, `meta`; `RouteModule`: `id` + `routes` + an
-  optional `shell.userMenu` lazy slot loader). Type-only files (issue #88). The composer hands the
-  one declared `shell.userMenu` (`routeValidator` rejects a second) to
+  optional `shell.userMenu` and an optional `shell.notifications` lazy slot loader). Type-only files
+  (issue #88). The composer hands the one declared loader of each slot (`routeValidator` rejects a
+  second) to
   `protectedLayoutLoader.create`, which wraps it through `ShellSlotFactory`, and passes the slot
   plus a chunk-failure reporter to `AppLayout`, which lazy-loads `UIAppShell` (header, sidebar,
   mobile drawer) around the page outlet (issue #362). `ProtectedRoute`, `AppLayout` and
@@ -2845,26 +2846,27 @@ Deep-importing a feature page from the shell fails
 
 **Notifications (issues #330, #391)** — a page raises outcomes through one port, never through a
 renderer: `useNotifications()` (`src/hooks/use-notifications.ts`, typed by `NotificationsPort` in
-`src/hooks/types/notifications-port.ts`) returns `raise`, `dismiss`, `dismissAll`,
-`publishFocus` and `clear`, bound to the container-free Zustand outlet store
-(`useNotificationOutletStore` in `src/lib/notifications/`); the read hooks beside it are
-`useShownNotifications`, `useNotificationViews`, `useNotificationFocus` and
-`useNotificationAnnouncement`. The page mounts `UINotificationOutlet`
-(`src/components/ui-notification-outlet/`), which publishes its `returnFocusRef` and
-`fallbackFocusRef` (the settings `<h1 tabindex="-1">`), clears the store on unmount, and holds the
-two always-mounted `UILiveStatus` regions, a polite one for success texts and an assertive one
-(`politeness="assertive"`) for error texts, both with the alternating mark so an identical repeat
-is spoken again. No outcome has a timer, and at most three are shown. The outlet draws nothing:
-the shell's notifications slot (`src/modules/user/features/notifications/`, chunk
-`notifications-shell`) records each outcome, shows the enabled bell, its unread badge and the history
-panel, and draws the outcomes as `UIBellNotice` (chunk `notifications-notice`), the merged card under
-the bell at desktop and the caret card below it. Its edge is the neutral `border.strong` for every
-kind, at 3:1 or more on the page; only the status icon keeps its colour. Opening the bell hides the
-card. Closing a row moves focus to the next close button, then the previous one, then the published
-`returnFocusRef` while it is connected and enabled, then `fallbackFocusRef`. The card sets
-`--app-top-overhang`, so a focused control is never hidden under it, and scrolls a control that
-already has focus into view when it measures itself over it. The bell won a comparison of three
-variants (owner decision 2026-11-23; see the user module README's notifications decision).
+`src/hooks/types/notifications-port.ts`) returns `raise`, `dismiss`, `dismissAll`, `publishFocus`
+and `clear`, bound to the container-free Zustand outlet store (`useNotificationOutletStore` in
+`src/lib/notifications/`); the read hooks beside it are `useShownNotifications`,
+`useNotificationViews`, `useRetiringNotificationViews`, `useNotificationFocus`,
+`useNotificationFocusReturn` and `useNotificationAnnouncement`. The page mounts
+`UINotificationOutlet` (`src/components/ui-notification-outlet/`), which publishes its
+`returnFocusRef` and `fallbackFocusRef` (the settings `<h1 tabindex="-1">`), clears the store on
+unmount, and holds the two always-mounted `UILiveStatus` regions, a polite one for success texts
+and an assertive one (`politeness="assertive"`) for error texts, both with the alternating mark so
+an identical repeat is spoken again. No outcome has a timer, and at most three are shown. The
+outlet draws nothing: the shell's notifications slot (`src/modules/user/features/notifications/`,
+chunk `notifications-shell`) records each outcome, shows the enabled bell, its unread badge and the
+history panel, and draws the outcomes as `UIBellNotice` (chunk `notifications-notice`), the merged
+card under the bell at desktop and the caret card below it. Its edge is the neutral `border.strong`
+for every kind, at 3:1 or more on the page; only the status icon keeps its colour. Opening the bell
+hides the card. Closing a row moves focus to the next close button, then the previous one, then the
+published `returnFocusRef` while it is connected and enabled, then `fallbackFocusRef`, then the
+bell. The card sets `--app-top-overhang`, so a focused control is never hidden under it, and
+scrolls a control that already has focus into view when it measures itself over it. The bell won a
+comparison of three variants (owner decision 2026-11-23; see the user module README's notifications
+decision).
 
 ### GraphQL Setup
 
@@ -3574,18 +3576,19 @@ true` (no caller opts in today; a token issue would be the one safe case). **Nev
     Chunk recovery: `ChunkRetryLoader` (`src/lib/reliability/`) memoizes one dynamic `import()`,
     forgets a failure, and re-imports once when `chunkLoadErrorDetector` recognises it; it wraps
     every page loader in `RouteMapper`, the footer loader, the app-shell loader
-    (`app-shell-loader.ts`), the user-menu shell slot (`ShellSlotFactory`) and its current-user
-    loader, the `mui-theme` shell loader, the registration-notification loader, and
-    `DeferredAuthActions.load()`. A shell chunk that still fails is never rethrown to a route
-    `errorElement`: it renders the shell placeholders, an empty user-menu slot or the identity-less
-    menu, and is captured through `observabilityCore.captureError` with source `app-shell:load`,
-    `app-shell:user-menu` or `app-shell:current-user`. `ReloadingChunkLoader` — **public routes
-    only** — then asks `ReloadOnceGuard` (a per-key `sessionStorage` flag, refusing when storage
-    throws) and calls `pageReloadNavigator.reload()` once, leaving React suspended on the fallback;
-    a second miss in the session, and every miss on a protected route, is rethrown to the route
-    `errorElement` (strategy `reload`, user-initiated). `tests/unit/routes/route-mapper.test.tsx`
-    pins the guard-dependent choice, `tests/unit/tooling/performance-serving.test.ts` pins that the
-    mapper still wraps `route.load` through `React.lazy`.
+    (`app-shell-loader.ts`), the user-menu and notifications shell slots (`ShellSlotFactory`), the
+    current-user, notice and history loaders, the `mui-theme` shell loader, the
+    registration-notification loader, and `DeferredAuthActions.load()`. A shell chunk that still
+    fails is never rethrown to a route `errorElement`: it renders the shell placeholders, an empty
+    user-menu slot or the identity-less menu, and is captured through
+    `observabilityCore.captureError` with its `ShellChunkSource`
+    (`src/routes/types/shell-slot.ts`). `ReloadingChunkLoader` — **public routes only** — then asks
+    `ReloadOnceGuard` (a per-key `sessionStorage` flag, refusing when storage throws) and calls
+    `pageReloadNavigator.reload()` once, leaving React suspended on the fallback; a second miss in
+    the session, and every miss on a protected route, is rethrown to the route `errorElement`
+    (strategy `reload`, user-initiated). `tests/unit/routes/route-mapper.test.tsx` pins the
+    guard-dependent choice, `tests/unit/tooling/performance-serving.test.ts` pins that the mapper
+    still wraps `route.load` through `React.lazy`.
 
     Post-load warm-up (issue #309): `PostLoadPrefetcher` (`src/lib/reliability/`),
     attached once from `src/index.tsx` after `root.render`, loads `errorPageLoader` and the

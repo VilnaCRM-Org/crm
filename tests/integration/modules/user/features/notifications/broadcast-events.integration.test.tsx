@@ -60,9 +60,11 @@ describe('broadcast events into the notification history', () => {
     source.onopen?.();
 
     const repeated = frame();
-    [repeated, repeated, 'garbage', frame({ id: '' }), frame({ data: { code: 'other' } })].forEach(
+    const foreign = JSON.stringify({ ...buildBroadcastEvent(), type: 'other' });
+    [repeated, repeated, 'garbage', foreign, frame({ id: '' }), frame({ data: null })].forEach(
       (text, index) => source.send(text, String(index))
     );
+    source.send(foreign, '');
     Array.from({ length: 500 }, () => frame()).forEach((text) => source.send(text, '900'));
     expect(receive).toHaveBeenCalledTimes(501);
 

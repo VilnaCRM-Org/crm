@@ -487,11 +487,13 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 > 56. **FR-5 and FR-24, a chunk that gave up.** The panel or card chunk that failed for good renders
 >     nothing, is reported once, and is loaded again on the next open of the panel, or on the next
 >     recorded outcome or broadcast for the card. A chunk that loaded is never requested again.
-> 57. **FR-4 and NFR-21, the next session.** The history belongs to the signed-in session. Before it
->     reads anything, the slot claims the mock repository for the session's token (`claim(owner)`); a
->     different owner starts from the seed, however the earlier session ended, and the same owner keeps
->     its records. The token is held in memory beside the records, never in one. "For the life of the
->     document" reads "until another session signs in or the document reloads". FR-3 and FR-7 therefore read "five
+> 57. **FR-4 and NFR-21, the next session.** The history belongs to the signed-in session. The slot reads
+>     and writes through a session repository, which claims the adapter for the session's token
+>     (`claim(owner)`) before its first operation; a different owner starts from the seed, however the
+>     earlier session ended, and the same owner keeps its records. A claim that fails is reported through
+>     the operation that waited for it, the history stays empty, and the next operation claims again. The
+>     token is held in memory beside the records, never in one. "For the life of the document" reads
+>     "until another session signs in or the document reloads". FR-3 and FR-7 therefore read "five
 >     operations".
 > 58. **NFR-15, the final baseline set.** Measured against the pull request's base, #398, the changed PNG
 >     list is 362 files: 320 re-recorded, 24 new and 18 deleted. The new ones are C's 18
@@ -516,6 +518,19 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 >     role".
 > 61. **FR-19 and FR-24, the anchor.** The bell's position is measured on mount, on resize, whenever the
 >     rows change and whenever the panel opens, so a header that reflows without a resize moves the caret.
+> 62. **FR-24 and NFR-9, Escape and focus arriving.** Escape closes the panel wherever the key lands on
+>     it or on nothing (a mouse open in Safari, or a click on panel text, leaves focus on the document);
+>     another control that takes the key keeps it. Focus that arrives outside from nowhere closes the
+>     panel and is not moved.
+> 63. **FR-21 and NFR-4, header and card together.** A page control a keyboard user holds that starts
+>     above the 64 px line and ends under the card, inside its width, is scrolled clear. A control that
+>     shows beside or below the card, one the header alone hides, and one outside the page are left
+>     alone.
+> 64. **FR-24, the history rows.** A row of the history draws no icon (architecture §9.5, owner decision
+>     2026-11-20): its message, time and unread state are text.
+> 65. **FR-5 and J4, one save per section.** `/settings` saves each section on its own (user-settings
+>     owner decision, 2026-11-05), so a combined three-success save no longer exists there: three saves
+>     raise three outcomes in turn. A raise of three stays in the port's contract and in its tests.
 
 ## 1. Executive summary
 

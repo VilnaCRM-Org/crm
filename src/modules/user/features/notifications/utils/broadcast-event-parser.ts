@@ -7,6 +7,8 @@ const MESSAGE_KEYS = new Map<unknown, NotificationMessageKey>([
   ['new_version', 'notification_center.broadcast.new_version'],
 ]);
 
+const EVENT_TYPE = 'crm.broadcast';
+
 export default class BroadcastEventParser implements BroadcastEventReader {
   public parse(text: string): BroadcastEvent | null {
     try {
@@ -17,9 +19,10 @@ export default class BroadcastEventParser implements BroadcastEventReader {
   }
 
   private eventOf(value: unknown): BroadcastEvent | null {
-    const { id, occurredAt, data } = Object(value) as Record<string, unknown>;
+    const { id, type, occurredAt, data } = Object(value) as Record<string, unknown>;
     const messageKey = MESSAGE_KEYS.get(Object(data).code);
-    const createdAt = Date.parse(String(occurredAt));
+    if (type !== EVENT_TYPE || typeof occurredAt !== 'string') return null;
+    const createdAt = Date.parse(occurredAt);
     if (typeof id !== 'string' || id === '') return null;
     return messageKey === undefined || Number.isNaN(createdAt)
       ? null

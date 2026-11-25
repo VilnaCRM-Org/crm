@@ -106,12 +106,7 @@ export default function BellNotifications({
   const disclosure = useBellDisclosure(layout);
 
   return (
-    <Box
-      ref={disclosure.wrapper}
-      onKeyDown={disclosure.keyDown}
-      onBlur={disclosure.focusOut}
-      sx={STYLES.wrapper}
-    >
+    <Box ref={disclosure.wrapper} onBlur={disclosure.focusOut} sx={STYLES.wrapper}>
       <BellButton layout={layout} unread={unread} historyId={historyId} disclosure={disclosure} />
       <BellHistory
         id={historyId}

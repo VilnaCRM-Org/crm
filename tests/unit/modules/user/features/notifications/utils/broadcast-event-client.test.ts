@@ -54,6 +54,16 @@ describe('BroadcastEventClient', () => {
     ]);
   });
 
+  it('reopens without a cursor while the service sends no id', () => {
+    const { source } = open();
+
+    source().send(frame(), '');
+    source().fail(FakeEventSource.CLOSED);
+    jest.advanceTimersByTime(30_000);
+
+    expect(source().url).toBe('https://events.example/api/events/stream?types=crm.broadcast');
+  });
+
   it('hands over a valid event and ignores an invalid one', () => {
     const { receive, source } = open();
 

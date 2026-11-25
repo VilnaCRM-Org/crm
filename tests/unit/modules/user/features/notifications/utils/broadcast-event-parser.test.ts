@@ -33,6 +33,10 @@ describe('BroadcastEventParser', () => {
     ['no id', { id: undefined as unknown as string }],
     ['an empty id', { id: '' }],
     ['an unreadable time', { occurredAt: 'yesterday' }],
+    ['a time that is a number', { occurredAt: 2026 as unknown as string }],
+    ['a time that is a list', { occurredAt: ['2026-11-23'] as unknown as string }],
+    ['a foreign type', { type: 'crm.personal' }],
+    ['no type', { type: undefined as unknown as string }],
     ['no time', { occurredAt: undefined as unknown as string }],
   ])('drops an event with %s', (_name, overrides) => {
     expect(parse(overrides)).toBeNull();

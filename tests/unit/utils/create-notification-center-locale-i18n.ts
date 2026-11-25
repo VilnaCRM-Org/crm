@@ -6,12 +6,12 @@ import uk from '@/modules/user/features/notifications/i18n/uk.json';
 import settingsEn from '@/modules/user/features/settings/i18n/en.json';
 import settingsUk from '@/modules/user/features/settings/i18n/uk.json';
 
-import createLocaleI18n from './create-locale-i18n';
+import createContentI18n from './create-notification-content-locale-i18n';
 
 const createNotificationCenterLocaleI18n = (
-  ...args: Parameters<typeof createLocaleI18n>
+  ...args: Parameters<typeof createContentI18n>
 ): I18nType => {
-  const instance = createLocaleI18n(...args);
+  const instance = createContentI18n(...args);
   lazyCatalogLoader.register(instance, { en, uk });
   lazyCatalogLoader.register(instance, { en: settingsEn, uk: settingsUk });
 

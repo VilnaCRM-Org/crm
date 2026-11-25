@@ -73,11 +73,19 @@ const liesInside = (inner: EdgeReading, outer: EdgeReading): boolean =>
 const hidesFocus = ({ area, focused, holdsFocus }: CoverReading): boolean =>
   !holdsFocus && [area, focused].every(hasArea) && liesInside(focused, area);
 
+const joined = (header: CoverReading, card: CoverReading): CoverReading => ({
+  ...card,
+  area: { ...card.area, top: header.area.top },
+  holdsFocus: header.holdsFocus || card.holdsFocus,
+});
+
 async function coverHiding(page: Page): Promise<string | undefined> {
   const header = await page.locator('header').first().evaluateAll(readCovers);
   if (header.some(hidesFocus)) return 'header';
   const card = await noticeCardOf(page).evaluateAll(readCovers);
-  return card.some(hidesFocus) ? 'bell notice card' : undefined;
+  if (card.some(hidesFocus)) return 'bell notice card';
+  const both = header.flatMap((top) => card.map((reading) => joined(top, reading)));
+  return both.some(hidesFocus) ? 'header and the bell notice card together' : undefined;
 }
 
 export async function probeFocused(page: Page): Promise<string> {

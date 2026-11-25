@@ -8,7 +8,7 @@ export interface NotificationFootprint {
 }
 
 const STORAGE_WRITES_KEY = '__notificationStorageWrites';
-const NOTIFICATION_PATTERN = /notification/i;
+const NOTIFICATION_PATTERN = /notification|\/api\/events\//i;
 const DATA_REQUEST_TYPES = new Set(['fetch', 'xhr', 'eventsource', 'websocket']);
 
 const chunkNameOf = (url: string): string =>

@@ -66,3 +66,5 @@ export interface BellHistoryProps extends NotificationHistoryPanelProps {
 }
 
 export type NotificationsShellSlotProps = ShellSlotProps;
+
+export type SessionNotificationsProps = Pick<ShellSlotProps, 'layout' | 'onChunkFailure'>;

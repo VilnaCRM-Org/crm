@@ -199,12 +199,95 @@ describe('useNoticeClearance', () => {
       expect(scrollBy).toHaveBeenCalledWith({ top: -61 });
     });
 
-    it('is left alone when it is a header control above the 64 px line', () => {
+    it('is left alone when it is outside the page and starts above the 64 px line', () => {
       focusAt(63);
 
       renderHook(() => useNoticeClearance(card(125), rows()));
 
       expect(scrollBy).not.toHaveBeenCalled();
+    });
+
+    describe('that starts above the 64 px line', () => {
+      const CARD = { bottom: 125, left: 100, right: 300 } as DOMRect;
+
+      interface Held {
+        readonly host?: string;
+        readonly keyboard?: boolean;
+        readonly rect: Partial<DOMRect>;
+      }
+
+      const hold = ({ host = 'main', keyboard = true, rect }: Held): void => {
+        const parent = document.createElement(host);
+        const control = document.createElement('button');
+        control.getBoundingClientRect = (): DOMRect =>
+          ({ left: 100, right: 300, ...rect }) as DOMRect;
+        const matches = control.matches.bind(control);
+        jest
+          .spyOn(control, 'matches')
+          .mockImplementation((selector) =>
+            selector === ':focus-visible' ? keyboard : matches(selector)
+          );
+        parent.appendChild(control);
+        document.body.appendChild(parent);
+        control.focus();
+      };
+
+      const measure = (): void => {
+        const ref = card(125);
+        (ref.current as HTMLElement).getBoundingClientRect = (): DOMRect => CARD;
+        renderHook(() => useNoticeClearance(ref, rows()));
+      };
+
+      it.each([
+        ['one pixel shows below the header', { top: 40, bottom: 65 }, -85],
+        ['it ends exactly at the card bottom', { top: 40, bottom: 125 }, -85],
+        ['it starts one pixel above the line', { top: 63, bottom: 100 }, -62],
+      ])('is scrolled back when %s', (_name, rect, top) => {
+        hold({ rect });
+
+        measure();
+
+        expect(scrollBy).toHaveBeenCalledTimes(1);
+        expect(scrollBy).toHaveBeenCalledWith({ top });
+      });
+
+      it('is scrolled back in the footer too', () => {
+        hold({ host: 'footer', rect: { top: 40, bottom: 100 } });
+
+        measure();
+
+        expect(scrollBy).toHaveBeenCalledWith({ top: -85 });
+      });
+
+      it.each<[string, Held]>([
+        ['the header alone hides it', { rect: { top: 40, bottom: 64 } }],
+        ['it shows below the card', { rect: { top: 40, bottom: 126 } }],
+        ['it shows left of the card', { rect: { top: 40, bottom: 100, left: 99 } }],
+        ['it shows right of the card', { rect: { top: 40, bottom: 100, right: 301 } }],
+        ['it is a header control', { host: 'header', rect: { top: 40, bottom: 100 } }],
+        ['it is in a portal', { host: 'div', rect: { top: 40, bottom: 100 } }],
+        ['a pointer focused it', { keyboard: false, rect: { top: 40, bottom: 100 } }],
+      ])('is left alone when %s', (_name, held) => {
+        hold(held);
+
+        measure();
+
+        expect(scrollBy).not.toHaveBeenCalled();
+      });
+
+      it('is left alone when it is the main landmark itself', () => {
+        const main = document.createElement('main');
+        main.tabIndex = -1;
+        main.getBoundingClientRect = (): DOMRect =>
+          ({ top: 40, bottom: 100, left: 100, right: 300 }) as DOMRect;
+        jest.spyOn(main, 'matches').mockImplementation((selector) => selector === ':focus-visible');
+        document.body.appendChild(main);
+        main.focus();
+
+        measure();
+
+        expect(scrollBy).not.toHaveBeenCalled();
+      });
     });
 
     it('is left alone when it is the card itself that holds focus', () => {
