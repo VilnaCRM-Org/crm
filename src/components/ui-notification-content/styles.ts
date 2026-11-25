@@ -99,7 +99,7 @@ export default {
     gridColumn: 2,
     justifySelf: 'start',
     [fromSm]: { margin: 0, minHeight: '1.5rem' },
-    [fromDesktop]: { marginTop: '0.25rem' },
+    [fromDesktop]: { marginTop: '0.25rem', fontSize: '0.875rem' },
     ...systemControl,
   },
   close: {

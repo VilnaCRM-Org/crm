@@ -131,7 +131,10 @@ describe('notification content styles', () => {
       lineHeight: '1.125rem',
     });
     expect(Reflect.get(styles.close, DESKTOP)).toEqual({ margin: '-0.1875rem 0' });
-    expect(Reflect.get(styles.action, DESKTOP)).toEqual({ marginTop: '0.25rem' });
+    expect(Reflect.get(styles.action, DESKTOP)).toEqual({
+      marginTop: '0.25rem',
+      fontSize: '0.875rem',
+    });
   });
 
   it('uses system colours and keeps the focus ring visible in forced colors', async () => {
