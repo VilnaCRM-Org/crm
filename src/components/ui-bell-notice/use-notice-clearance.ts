@@ -4,6 +4,7 @@ import layoutStyles from '@/components/layouts/app-layout.styles';
 import type { NoticeTargetRef } from '@/components/types/ui-bell-notice';
 import type { NotificationViewSet } from '@/lib/notifications/types/notification-view';
 
+import useContentShift from './use-content-shift';
 import useFrameFollow from './use-frame-follow';
 import useMeasureOnResize from './use-measure-on-resize';
 
@@ -59,6 +60,7 @@ export default function useNoticeClearance(
   const measure = useCallback((): void => measureOverhang(cardRef.current), [cardRef]);
   useMeasureOnResize(measure, release, rows);
   useFrameFollow('focusin', measure);
+  useContentShift(measure);
 
   return measure;
 }

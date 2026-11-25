@@ -3,6 +3,7 @@ import type { RefObject } from 'react';
 
 import useNoticeClearance from '@/components/ui-bell-notice/use-notice-clearance';
 import type { NotificationViewSet } from '@/lib/notifications/types/notification-view';
+import stubResizeObserver, { removeResizeObserver } from '@tests/unit/utils/stub-resize-observer';
 
 const root = document.documentElement;
 
@@ -48,6 +49,19 @@ describe('useNoticeClearance', () => {
     renderHook(() => useNoticeClearance(card(40), rows()));
 
     expect(overhang()).toBe('0px');
+  });
+
+  it('measures again when the content above the focused control changes height', () => {
+    const { fire } = stubResizeObserver();
+    const ref = card(125);
+    renderHook(() => useNoticeClearance(ref, rows()));
+    (ref.current as HTMLElement).getBoundingClientRect = (): DOMRect =>
+      ({ bottom: 150 }) as DOMRect;
+
+    fire();
+    removeResizeObserver();
+
+    expect(overhang()).toBe('86px');
   });
 
   it('removes the overhang when the card unmounts', () => {

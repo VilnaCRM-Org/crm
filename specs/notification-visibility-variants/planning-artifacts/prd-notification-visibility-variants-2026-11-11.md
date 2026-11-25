@@ -525,7 +525,8 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 > 63. **FR-21 and NFR-4, header and card together.** A page control a keyboard user holds that starts
 >     above the 64 px line and ends under the card, inside its width, is scrolled clear. A control that
 >     shows beside or below the card, one the header alone hides, and one outside the page are left
->     alone.
+>     alone. The card measures again when the page changes height, because a section that collapses
+>     above the focused control moves it without a scroll, and Safari does not compensate.
 > 64. **FR-24, the history rows.** A row of the history draws no icon (architecture §9.5, owner decision
 >     2026-11-20): its message, time and unread state are text.
 > 65. **FR-5 and J4, one save per section.** `/settings` saves each section on its own (user-settings

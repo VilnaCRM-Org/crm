@@ -1,5 +1,7 @@
 import type { Page } from '@playwright/test';
 
+import waitForSettledScroll from '@tests/e2e/utils/wait-for-settled-scroll';
+
 import { noticeCardOf } from './settings-page';
 
 interface EdgeReading {
@@ -88,10 +90,15 @@ async function coverHiding(page: Page): Promise<string | undefined> {
   return both.some(hidesFocus) ? 'header and the bell notice card together' : undefined;
 }
 
+async function coverOnceSettled(page: Page): Promise<string | undefined> {
+  await waitForSettledScroll(page);
+  return coverHiding(page);
+}
+
 export async function probeFocused(page: Page): Promise<string> {
   await nextPaint(page);
   const { state, name } = await page.evaluate(visitFocused, SEEN_KEY);
   if (state !== 'fresh') return state;
-  const cover = await coverHiding(page);
+  const cover = (await coverHiding(page)) && (await coverOnceSettled(page));
   return cover === undefined ? 'clear' : `${name} under the ${cover}`;
 }

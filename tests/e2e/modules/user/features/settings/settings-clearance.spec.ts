@@ -17,8 +17,10 @@ import {
   everySectionReplies,
   expectErrorOutcome,
   namePasswordField,
+  newPasswordField,
   noticeCardOf,
   openLoadedSettings,
+  saveButton,
   saveEverySection,
   saveNameButton,
   type SectionEdits,
@@ -51,6 +53,7 @@ const SIZES: readonly ViewportSize[] = [
 const MAX_TAB_STOPS = 300;
 const MIN_TAB_STOPS = 10;
 const CARET_TOLERANCE_PX = 2;
+const NEW_PASSWORD_RULES_ID = 'new-password-rules';
 
 const newEdits = (): SectionEdits => ({
   fullName: buildFullName(),
@@ -142,6 +145,29 @@ test.describe('Focus clearance (issue #391)', () => {
       });
     }
   }
+});
+
+test.describe('A section that collapses above the focused control (NFR-4, issue #391)', () => {
+  test.beforeEach(async ({ page }) => {
+    await signInToSettings(page);
+  });
+
+  test('leaves the control uncovered at 320 × 256', async ({ page }) => {
+    await openWithOutcomes(page, ONE_OUTCOME, { width: 320, height: 256 });
+    await newPasswordField(page).focus();
+    await waitForSettledScroll(page);
+    const rules = page.locator(`#${NEW_PASSWORD_RULES_ID}`);
+    const heightOfRules = async (): Promise<number> => (await rules.boundingBox())?.height ?? 0;
+    expect(await heightOfRules()).toBeGreaterThan(1);
+
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await expect(saveButton(page)).toBeFocused();
+    await expect.poll(heightOfRules).toBeLessThanOrEqual(1);
+    await waitForSettledScroll(page);
+
+    expect(await probeFocused(page)).toBe('clear');
+  });
 });
 
 test.describe('The first outcome is in view once its save settles (SM-3, issue #391)', () => {
