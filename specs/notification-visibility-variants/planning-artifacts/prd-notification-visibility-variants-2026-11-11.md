@@ -3,8 +3,8 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-11-11
-revised: 2026-11-24
-iteration: 9
+revised: 2026-11-25
+iteration: 10
 feature: notification-visibility-variants
 issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'pm, autonomous run'
@@ -532,6 +532,10 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 > 65. **FR-5 and J4, one save per section.** `/settings` saves each section on its own (user-settings
 >     owner decision, 2026-11-05), so a combined three-success save no longer exists there: three saves
 >     raise three outcomes in turn. A raise of three stays in the port's contract and in its tests.
+>
+> **Amendment (2026-11-25, FR/NFR gate attempt 3 of pull request #392).** Closures of its findings; item
+> 63 above is reworded by the same pass.
+>
 > 66. **Story 3.4, the composed test.** The flow over the composed shell (guard, layout, header, slot,
 >     outlet, real adapter) is a unit-suite test, `notification-shell.composed.test.tsx`, because the
 >     integration suite requires 100 % coverage of every file it loads and the shell's own units are

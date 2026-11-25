@@ -262,7 +262,7 @@ test.describe('Bell history (issue #391)', () => {
 
     await page.goForward();
     await expect(page).toHaveURL(ROUTE_PATHS.settings);
-    await expect(nameField(page)).toHaveValue(/.+/);
+    await expect(nameField(page)).toHaveValue(PROFILE_NODE.initials);
     await expect(noticeClose(page)).toHaveCount(0);
     await expect(badgeOf(page)).toHaveText('2');
   });

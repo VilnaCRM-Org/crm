@@ -46,7 +46,8 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
   `AppLayoutFrame` calls, once, the `onShellFailure` prop `AppLayout` forwards (the composer binds
   it to `routeMapper.chunkFailureReporter('app-shell:load')`) and keeps the placeholders; the slot
   frame stays empty and size-stable for `app-shell:user-menu` and `app-shell:notifications`; a
-  protected route never reloads the document. Nothing under `src/components/layouts/` imports from `src/services/`.
+  protected route never reloads the document. Nothing under `src/components/layouts/` imports
+  from `src/services/`.
 - **The auth pages share one more vendor chunk (owner decision, 2026-11-06).** The shell's lazy
   chunks had split the `node_modules` code that both the `sign-in` and `sign-up` page chunks contain
   into pieces that compress worse, and `/sign-in` reached 265,997 bytes against the 265,000

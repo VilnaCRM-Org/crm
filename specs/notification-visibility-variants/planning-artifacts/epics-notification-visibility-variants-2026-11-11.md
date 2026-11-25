@@ -3,8 +3,8 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-11-11
-revised: 2026-11-24
-iteration: 10
+revised: 2026-11-25
+iteration: 11
 feature: notification-visibility-variants
 issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'pm + sm, autonomous run'

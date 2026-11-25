@@ -4,8 +4,8 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-11-11
-revised: 2026-11-24
-iteration: 10
+revised: 2026-11-25
+iteration: 11
 feature: notification-visibility-variants
 issue: https://github.com/VilnaCRM-Org/crm/issues/391
 author: 'architect, autonomous run'
@@ -1254,7 +1254,7 @@ C only (`bell`). The **enabled bell, the badge and the history panel** are commo
   (Inter 500 12/18, `#57595B`) and a 24 × 24 close at the row end; rows divided by 1 px `#E1E7EA`,
   gap 12; at most three rows, newest last. The 24 px status icon and close button overhang the 18 px
   first line by 3 px on each side, so the row stays 36 px. Below the desktop shell the row keeps the
-  14/20 and, from `sm`, 16/24 message with the 13/20 time (PRD item 67).
+  14/20 and, from `sm`, 16/24 message with the 13/20 time of Story 2.2.
 - **Tablet (1024–1439) and mobile (< 1024) shell, caret card** (`377:18485` language, R7). Width
   `min(313px, 100vw - 32px)`. The caret is 26 × 6 (a `clip-path` triangle in tone with a 1 px-inset
   white triangle), its tip 4 px below the bell box and on the bell's centre. The card's left edge is
