@@ -190,6 +190,10 @@ describe('the composed shell around a raised outcome', () => {
 
     await user.click(screen.getByRole('button', { name: 'save three' }));
     await waitFor(() => expect(badge()).toBe('4'));
+    expect(noticeRows()).toHaveLength(3);
+    for (const message of Object.values(MESSAGES)) {
+      expect(announcedIn('status', message)).toHaveLength(1);
+    }
     await openHistory(user);
     await user.click(screen.getByRole('button', { name: 'Позначити всі прочитаними' }));
 

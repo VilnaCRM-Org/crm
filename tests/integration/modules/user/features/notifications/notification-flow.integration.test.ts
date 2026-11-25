@@ -27,7 +27,10 @@ interface Flow {
 }
 
 const saved: NotificationDraft = { kind: 'success', messageKey: 'settings.toasts.saved' };
-const failed: NotificationDraft = { kind: 'error', messageKey: 'settings.toasts.transient' };
+const failed: NotificationDraft = {
+  kind: 'error',
+  messageKey: 'settings.toasts.save_failed_transient',
+};
 
 const mount = (report = jest.fn()): { current: Flow } =>
   renderHook((): Flow => {

@@ -1968,9 +1968,10 @@ feature's `data-providers/`, `repositories/` and `transformers/` load in the con
 own no settings key. The notification content catalog
 (`ui_notification.*`) is owned by `components/ui-notification-content`, the only module that
 renders it, so the close label stays off `/sign-in`. The notification-centre catalog
-(`notification_center.*`, issue #391) is owned by `notifications/components` and by the adapter
+(`notification_center.*`, issue #391) is owned by `notifications/components`, by the adapter
 file `notifications/repositories/in-memory-notification-repository.ts`, whose seed rows name its
-keys. The three catalogs of the app shell
+keys, and by `notifications/utils/broadcast-event-parser.ts`, which names the broadcast keys. The
+three catalogs of the app shell
 (issue #362) are owned the same way: the shell copy (`app_shell.*`) by its five component
 folders `components/ui-app-shell`, `ui-app-header`, `ui-sidebar`, `ui-navigation-list` and
 `ui-navigation-drawer`; the coming-soon

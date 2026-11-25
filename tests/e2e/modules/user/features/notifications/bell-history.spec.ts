@@ -168,6 +168,12 @@ test.describe('Bell history (issue #391)', () => {
     await expect(rowsOf(history)).toHaveCount(SAVED_FIRST.length + SEED_ROWS.length);
     for (const [index, message] of SAVED_FIRST.entries()) {
       await expect(rowsOf(history).nth(index)).toContainText(message);
+      await expect(unreadLabelsOf(rowsOf(history).nth(index))).toHaveCount(1);
+    }
+    for (const [index, seed] of SEED_ROWS.entries()) {
+      const row = rowsOf(history).nth(SAVED_FIRST.length + index);
+      await expect(row).toContainText(seed.time);
+      await expect(unreadLabelsOf(row)).toHaveCount(seed.unread ? 1 : 0);
     }
     await expect(unreadLabelsOf(history)).toHaveCount(4);
     await expect(noticeClose(page)).toHaveCount(0);

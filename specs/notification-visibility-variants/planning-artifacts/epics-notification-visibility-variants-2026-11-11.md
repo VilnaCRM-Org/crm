@@ -208,7 +208,9 @@ Each story's own criteria add to these; a story is not done until all of them ho
   allowed only under PRD amendment item 31's Lighthouse fallback, applied by Story 3.4: a second
   lazy catalog owned by `NotificationHistoryPanel`'s file, which takes the panel-only
   `notification_center.history.*` keys out of the feature catalog into `notifications-history`;
-  if the fallback is not applied, it does not exist. Each one also updates the pinned list in
+  if the fallback is not applied, it does not exist. (2026-11-25, PRD item 71: the broadcast strings
+  of items 37 to 43 add `utils/broadcast-event-parser.ts` as the third owner of
+  `features/notifications`.) Each one also updates the pinned list in
   `tests/unit/scripts/localization-generator.test.js:182-190` in the same story. No `eslint-disable`, `@ts-ignore`,
   `@ts-expect-error`, `depcruise-ignore`, `.skip`, `.only`, `.fixme`, `waitForTimeout`,
   conditional `expect`, `A11Y_EXCEPTIONS` entry or `data-testid`; no inline comments beyond a
@@ -271,14 +273,14 @@ Each story's own criteria add to these; a story is not done until all of them ho
 | FR-7        | 1.5, 1.6, 1.7, 4.9                                 |
 | FR-8        | 1.3, 1.4; closed (PRD item 44)                     |
 | FR-9        | 1.3, 4.7; closed (PRD item 44)                     |
-| FR-10       | 1.3                                                |
+| FR-10       | 1.3; closed (PRD item 44)                          |
 | FR-11       | 1.4, 2.11, 2.12, 2.13, 3.4, 4.2, 4.3               |
-| FR-12       | 2.3                                                |
-| FR-13       | 2.3, 3.1, 4.4                                      |
-| FR-14       | 2.3                                                |
-| FR-15       | 2.4, 2.10, 3.2, 4.2                                |
-| FR-16       | 1.1, 2.4, 2.10, 3.2                                |
-| FR-17       | 2.4, 3.2                                           |
+| FR-12       | 2.3; closed (PRD item 44)                          |
+| FR-13       | 2.3, 3.1, 4.4; closed (PRD item 44)                |
+| FR-14       | 2.3; closed (PRD item 44)                          |
+| FR-15       | 2.4, 2.10, 3.2, 4.2; closed (PRD item 44)          |
+| FR-16       | 1.1, 2.4, 2.10, 3.2; closed (PRD item 44)          |
+| FR-17       | 2.4, 3.2; closed (PRD item 44)                     |
 | FR-18       | 2.5, 2.11, 4.6                                     |
 | FR-19       | 2.5, 2.11, 4.4                                     |
 | FR-20       | 2.2, 2.5, 2.11, 2.12                               |
@@ -928,9 +930,8 @@ height cap `max(4rem, calc(50dvh - 4rem))`, motion, forced-colors), `use-bell-an
 `--bell-centre-x` in a layout effect and on `resize`), `use-notice-clearance.ts` (NEW: sets and
 removes `--app-top-overhang` on `document.documentElement`, scrolls back a just-covered focused
 control), `src/components/types/ui-bell-notice/index.ts` (NEW),
-`src/components/layouts/app-layout.styles.ts` (MODIFY: `HEADER_CLEARANCE` uses
-`calc(64px + var(--app-top-overhang, 0px))`), `src/components/ui-app-shell/use-sticky-focus-clearance.ts`
-(MODIFY: adds the overhang), `ui-bell-notice.stories.tsx` (NEW: `DesktopOne`, `DesktopThree`,
+`src/components/layouts/app-layout.styles.ts` (MODIFY: `main` and the footer use
+`calc(64px + var(--app-top-overhang, 0px))`; the sidebar keeps 64 px, PRD item 69), `ui-bell-notice.stories.tsx` (NEW: `DesktopOne`, `DesktopThree`,
 `CaretTablet`, `CaretMobile`, `Error`, `ReducedMotion`), tests and
 `tests/unit/a11y/ui-bell-notice.a11y.test.tsx`.
 
@@ -941,11 +942,11 @@ reports `BLOCKED`, never skips).
 **Acceptance Criteria:**
 
 - Given the Figma design gate, when it reads `397:18093`, then the merged shape follows a 48 × 67 tab at 0,0 (radius 24 24 0 0) fused with a 279-wide, ≥ 62 px tall card at 0,55 (radius 0 12 12 12), and the drawn `#D0D4D8` stroke (1.44:1) is replaced by the neutral `#80878A` stroke (R6, PRD item 45). Amended 2026-11-23, architecture §9.5: this supersedes the 48 × 117 pill with a 256-wide card at 23,55 and the tone stroke.
-- Given a success and an error row at the desktop layout, when the style objects are read, then the union outline is four 1 px `drop-shadow`s in `#2E7D32` / `#DC3939` followed by `drop-shadow(0 8px 27px rgba(49, 59, 67, 0.05))`; the edge contrast is 4.95:1 / 4.33:1 on `#FBFBFB`, and 5.13:1 / 4.48:1 on the white tablet and mobile header.
+- Given a success and an error row at the desktop layout, when the style objects are read (the tone is superseded by the neutral edge of PRD item 45), then the union outline is four 1 px `drop-shadow`s in `#2E7D32` / `#DC3939` followed by `drop-shadow(0 8px 27px rgba(49, 59, 67, 0.05))`; the edge contrast is 4.95:1 / 4.33:1 on `#FBFBFB`, and 5.13:1 / 4.48:1 on the white tablet and mobile header.
 - Given a row, when contrast is computed, then the message `#1A1C1E` on white is 17.09:1, the time `#57595B` on white is 7.03:1 (the rejected `#969B9D` is 2.81:1), and the error icon on white 4.48:1.
-- Given the tablet and mobile layouts, when the card renders with `--bell-centre-x` set, then it is `min(313px, 100vw - 32px)` wide with radius 8, a 1 px tone border, `popoverShadow`, a 26 × 6 caret whose tip is on the bell's centre, and its left edge clamped to 16 px gutters (FR-19).
+- Given the tablet and mobile layouts, when the card renders with `--bell-centre-x` set, then it is `min(313px, 100vw - 32px)` wide with radius 8, a 1 px border in the neutral edge (PRD item 45), `popoverShadow`, a 26 × 6 caret whose tip is on the bell's centre, and its left edge clamped to 16 px gutters (FR-19).
 - Given `useBellAnchor` with a stubbed bell rect, when it mounts and on `resize`, then `--bell-centre-x` equals the bell's centre; it is removed on unmount.
-- Given `useNoticeClearance` with a stubbed card bottom of 125 px, when rows are shown, then `--app-top-overhang` is `61px` on the root element; when the card hides or unmounts, then the property is removed; and `HEADER_CLEARANCE` and `use-sticky-focus-clearance.ts` read it with a `0px` default.
+- Given `useNoticeClearance` with a stubbed card bottom of 125 px, when rows are shown, then `--app-top-overhang` is `61px` on the root element; when the card hides or unmounts, then the property is removed; and the clearance of `main` and the footer reads it with a `0px` default (PRD item 69).
 - Given three rows, when the user closes the middle one with the keyboard, then the caller's dismiss runs for that id and focus moves to the next row's close button, then the previous, then the caller's Save target, then the `h1` (FR-20, today's rule).
 - Given a time, when the row renders, then the time is visible and the card has no `role`, `aria-live` or `aria-atomic`, so the time is never announced.
 - Given motion allowed, when the keyframes are read, then the card enters with `translateY(-8px)` and opacity over 180 ms `cubic-bezier(0.2, 0, 0, 1)`, `transform-origin` at the bell; under reduced motion `animation` is `none`.
@@ -1690,8 +1691,8 @@ imports `routes/index` only), `make lint-docs` (the app-shell README), `make che
 > `protectedLayoutLoader` in place of the registry): the test composes the real `ProtectedRoute`,
 > `AppLayout`, `UIAppShell`, header and `NotificationsShellSlot` over a fresh adapter, with probe
 > pages for `/` and `/settings` (the real settings page needs the DI container and the GraphQL
-> profile and two-factor answers); the `/settings` probe registers the settings catalog as
-> `UserProfile` does. A rejected record reaches `routeMapper.slotFailureReporter()` and is asserted
+> profile and two-factor answers); the test registers the settings catalog for the
+> document, as `UserProfile` does. A rejected record reaches `routeMapper.slotFailureReporter()` and is asserted
 > through `observabilityCore.captureError` with source `app-shell:notifications-record`. The shell
 > writes `crm.sidebar.collapsed` to local storage, so NFR-21 is checked as "no storage entry holds
 > the address or notification data". The collapsed-rail keyboard walk's forward Tab now starts at
@@ -1949,8 +1950,8 @@ app-shell spec's `openShell` (MODIFY: the same wait after the chip's name), the 
 after a save (MODIFY: they wait for the badge's recorded count before the capture; readiness
 R3-08), and the baseline PNGs from the CI artifact:
 
-- 320 re-recorded protected-page baselines against #398 (PRD item 58), every file in the snapshot
-  folders of `visual-comparison.spec.ts` (39), `visual-comparison.app-shell.spec.ts` (15),
+- 320 re-recorded protected-page baselines against #398 (PRD item 58), every protected-page file in the
+  snapshot folders of `visual-comparison.spec.ts` (39), `visual-comparison.app-shell.spec.ts` (15),
   `visual-comparison.coming-soon.spec.ts` (72), `visual-comparison.settings.spec.ts` (75),
   `visual-comparison.two-factor.spec.ts` (93), `mobile/app-shell.spec.ts` (6),
   `mobile/coming-soon.spec.ts` (16), `mobile/settings.spec.ts` (2) and `mobile/two-factor.spec.ts`
@@ -1965,7 +1966,7 @@ changed-PNG list.
 
 **Acceptance Criteria:**
 
-- Given the PR's changed PNG list, when it is read, then it contains exactly the 362 files of PRD item 58 (320 re-recorded, 24 new, 18 deleted) and no other; in particular none of the 434 public-page baselines (auth, password recovery, error pages, not found, auth skeleton, registration notification, submit loader, mobile auth and mobile error pages) changed (NFR-15 as amended, PRD amendment item 32) (verified at QA / finish-PR stage, not in a local Ralph run).
+- Given the PR's changed PNG list, when it is read, then it contains exactly the 362 files of PRD item 58 (320 re-recorded, 24 new, 18 deleted) and no other; in particular no public-page baseline (auth, password recovery, error pages, not found, auth skeleton, registration notification, submit loader, mobile auth and mobile error pages) changed (NFR-15 as amended, PRD amendment item 32) (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given each of the 320 re-recorded baselines, when its CI diff image against #398 is read, then the difference lies inside the header's bell box (the enabled glyph and, on desktop and tablet, the badge reading the seed's 1 or the recorded count) or, in the mobile drawer capture, inside the drawn bell copy, plus the settings captures' own toast changes; any other difference stops the story and is reported (architecture K6a) (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given the settings `bell-success` and `bell-transient` captures, when they are taken, then the desktop and tablet badge reads 4 and 2 respectively (seed 1 plus the raised outcomes), never masked.
 - Given any protected-page capture in the nine re-recorded specs, when it is taken, then the shared wait has seen the enabled bell with `aria-expanded="false"` and, on desktop and tablet, the expected badge text (1 at rest, the recorded count after a save) before `toHaveScreenshot` runs, so no baseline records the bell's placeholder frame or a badge still loading and none flakes under `retries: 0` or the nightly flake budget of 0 (readiness R3-08).

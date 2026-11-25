@@ -76,8 +76,8 @@ describe('app layout styles', () => {
     expect(styles.navSlot).toEqual({
       gridColumn: 1,
       gridRow: 2,
-      scrollMarginTop: CLEARANCE,
-      '& *': { scrollMarginTop: CLEARANCE },
+      scrollMarginTop: '64px',
+      '& *': { scrollMarginTop: '64px' },
     });
     expect(styles.navPlaceholder).toEqual({
       display: 'none',

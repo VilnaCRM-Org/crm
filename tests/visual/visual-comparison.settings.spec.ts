@@ -27,6 +27,7 @@ import {
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
 import { freezeClock } from '@tests/e2e/utils/freeze-clock';
 import { t } from '@tests/e2e/utils/initialize-localization';
+import recordNoticeAnimations from '@tests/e2e/utils/record-notice-animations';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import { currentLanguage, notFoundScreens, PAGES, type ScreenSize, screenSizes } from './constants';
@@ -156,15 +157,6 @@ async function expectEverySuccess(page: Page): Promise<void> {
   }
 }
 
-const runningAnimationsAround = (outcome: Locator): Promise<number> =>
-  outcome.evaluate((element): number => {
-    const animations: Animation[] = [];
-    for (let node: Element | null = element; node !== null; node = node.parentElement) {
-      animations.push(...node.getAnimations());
-    }
-    return animations.filter((animation) => animation.playState === 'running').length;
-  });
-
 test.describe.parallel('Settings visual tests (issue #330)', () => {
   test.use({ timezoneId: 'UTC' });
 
@@ -274,12 +266,11 @@ test.describe.parallel('Settings visual tests (issue #330)', () => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await openClockedSettings(page, screen, everyAspectReplies(), { motion: 'allowed' });
       await expectResting(page);
+      const startedAnimations = await recordNoticeAnimations(page);
       await saveEveryAspect(page);
-      const entering = outcomeIn(page, text.passwordChanged);
-      await expect(entering).toBeVisible();
-
-      expect(await runningAnimationsAround(entering)).toBe(0);
       await expectEverySuccess(page);
+
+      expect(await startedAnimations()).toBe(0);
       await waitForShellBell(page, SUCCESS_UNREAD);
       await scrollToTop(page);
       await expect(page).toHaveScreenshot(settingsSnapshotName(screen, SUCCESS_CAPTURE), {

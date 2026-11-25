@@ -7,6 +7,8 @@ const MESSAGE_KEYS = new Map<unknown, NotificationMessageKey>([
   ['new_version', 'notification_center.broadcast.new_version'],
 ]);
 
+const TIME_OF_DAY = /^T\d{2}:\d{2}:(?:\d{2}|\d{2}\.\d+)(?:Z|[+-]\d{2}:\d{2})$/u;
+
 export default class BroadcastEventParser implements BroadcastEventReader {
   public readonly type = 'crm.broadcast';
 
@@ -21,8 +23,9 @@ export default class BroadcastEventParser implements BroadcastEventReader {
   private eventOf(value: unknown): BroadcastEvent | null {
     const { id, type, occurredAt, data } = Object(value) as Record<string, unknown>;
     const messageKey = MESSAGE_KEYS.get(Object(data).code);
-    if (type !== this.type || typeof occurredAt !== 'string') return null;
-    const createdAt = this.instantOf(occurredAt);
+    const time = String(occurredAt);
+    if (type !== this.type || time !== occurredAt) return null;
+    const createdAt = this.instantOf(time);
     if (typeof id !== 'string' || id === '') return null;
     return messageKey === undefined || Number.isNaN(createdAt)
       ? null
@@ -33,6 +36,6 @@ export default class BroadcastEventParser implements BroadcastEventReader {
     const day = occurredAt.slice(0, 10);
     const exists = new Date(`${day}T00:00:00Z`).toISOString().startsWith(day);
 
-    return exists ? Date.parse(occurredAt) : Number.NaN;
+    return exists && TIME_OF_DAY.test(occurredAt.slice(10)) ? Date.parse(occurredAt) : Number.NaN;
   }
 }

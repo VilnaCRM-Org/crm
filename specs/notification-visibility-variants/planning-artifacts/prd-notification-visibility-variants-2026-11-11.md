@@ -19,8 +19,8 @@ inputDocuments:
 # PRD: notification visibility variants
 
 **Author:** pm, autonomous run **Date:** 2026-11-11 **Feature:** `notification-visibility-variants`
-**Issue:** [#391](https://github.com/VilnaCRM-Org/crm/issues/391), planning pull request #392 (no
-code is committed or pushed until the owner approves)
+**Issue:** [#391](https://github.com/VilnaCRM-Org/crm/issues/391), planning pull request #392 (the
+implementation joined it once the owner approved)
 
 Predecessors: the [run summary](./run-summary-notification-visibility-variants-2026-11-11.md)
 (binding decisions; later blocks supersede earlier ones), the
@@ -533,8 +533,8 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 >     owner decision, 2026-11-05), so a combined three-success save no longer exists there: three saves
 >     raise three outcomes in turn. A raise of three stays in the port's contract and in its tests.
 >
-> **Amendment (2026-11-25, FR/NFR gate attempt 3 of pull request #392).** Closures of its findings; item
-> 63 above is reworded by the same pass.
+> **Amendment (2026-11-25, FR/NFR gate attempts 3 and 4 of pull request #392).** Closures of their
+> findings; item 63 above is reworded by the same pass.
 >
 > 66. **Story 3.4, the composed test.** The flow over the composed shell (guard, layout, header, slot,
 >     outlet, real adapter) is a unit-suite test, `notification-shell.composed.test.tsx`, because the
@@ -549,6 +549,16 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 >     they stay new files against #398, so the counts of item 58 do not change.
 > 68. **NFR-9, J15.** The browser test reaches "mark all read" with Tab from the open bell, activates it
 >     with Enter, and leaves the panel with Tab, which closes it.
+> 69. **FR-21 and NFR-4, the sidebar.** The clearance of the card applies to `main` and the footer only.
+>     The sidebar is sticky beside the card and keeps the 64 px of the header, so focusing one of its
+>     controls never moves the page because of the card.
+> 70. **Item 43, the time of a broadcast.** `occurredAt` is an ISO 8601 date and time with seconds and a
+>     zone, on a day that exists; any other value drops the event.
+> 71. **NFR-19, the owners of the catalog.** `utils/broadcast-event-parser.ts` names the two
+>     `notification_center.broadcast.*` keys, so it is the third owner of the notifications catalog.
+> 72. **NFR-6, the entrance.** A browser test records the animations that start in the banner, before the
+>     first save: one without a motion preference and none under reduced motion, at the desktop, tablet
+>     and mobile shells.
 
 ## 1. Executive summary
 

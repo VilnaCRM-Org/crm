@@ -6,11 +6,12 @@ const TABLET_ONLY = `${FROM_SIDEBAR} and (max-width:${DESKTOP_BREAKPOINT - 0.05}
 
 const HEADER_HEIGHT = '64px';
 const OVERHANG_PROPERTY = '--app-top-overhang';
-const HEADER_CLEARED = `calc(${HEADER_HEIGHT} + var(${OVERHANG_PROPERTY}, 0px))`;
+const TOP_CLEARED = `calc(${HEADER_HEIGHT} + var(${OVERHANG_PROPERTY}, 0px))`;
 const HEADER_CLEARANCE = {
-  scrollMarginTop: HEADER_CLEARED,
-  '& *': { scrollMarginTop: HEADER_CLEARED },
+  scrollMarginTop: HEADER_HEIGHT,
+  '& *': { scrollMarginTop: HEADER_HEIGHT },
 };
+const TOP_CLEARANCE = { scrollMarginTop: TOP_CLEARED, '& *': { scrollMarginTop: TOP_CLEARED } };
 
 const NAV_INSET_TOP = 10;
 const NAV_VIEWPORT_GAP = 86;
@@ -54,7 +55,7 @@ export default {
     [TABLET_ONLY]: { width: '251px', height: `${NAV_INSET_TOP + NAV_PANEL_HEIGHT.tablet}px` },
   },
   main: {
-    ...HEADER_CLEARANCE,
+    ...TOP_CLEARANCE,
     gridColumn: 1,
     gridRow: 2,
     minWidth: 0,
@@ -65,6 +66,6 @@ export default {
     '&:focus:not(:focus-visible)': { outline: 'none' },
     [FROM_SIDEBAR]: { gridColumn: 2 },
   },
-  footerArea: { gridColumn: '1 / -1', gridRow: 3, ...HEADER_CLEARANCE },
+  footerArea: { gridColumn: '1 / -1', gridRow: 3, ...TOP_CLEARANCE },
   footerSlot: { minHeight: '4.125rem' },
 } as const;

@@ -24,6 +24,7 @@ import {
   hexOf,
   readNoticeEdge,
 } from '@tests/e2e/utils/notification-measures';
+import recordNoticeAnimations from '@tests/e2e/utils/record-notice-animations';
 
 interface OutcomeKind {
   readonly name: string;
@@ -51,6 +52,42 @@ const KINDS: readonly OutcomeKind[] = [
   },
 ];
 
+const SIZES = [DESKTOP, TABLET, MOBILE];
+
+interface Motion {
+  readonly preference: 'no-preference' | 'reduce';
+  readonly title: string;
+  readonly started: number;
+}
+
+const MOTIONS: readonly Motion[] = [
+  { preference: 'no-preference', title: 'drops the card in once', started: 1 },
+  { preference: 'reduce', title: 'shows the card with no motion when it is reduced', started: 0 },
+];
+
+test.describe('Bell notice entrance (NFR-6, issue #391)', () => {
+  for (const size of SIZES) {
+    for (const { preference, title, started } of MOTIONS) {
+      test(`${title} at ${size.width} × ${size.height}`, async ({ page }) => {
+        const fullName = buildFullName();
+        await page.emulateMedia({ reducedMotion: preference });
+        await signInToSettings(page);
+        await stubProfile(page, { UpdateUser: [replyWithSaved({ initials: fullName })] });
+        await openLoadedSettings(page);
+        await expectShellReady(page);
+        await page.setViewportSize(size);
+        const startedAnimations = await recordNoticeAnimations(page);
+
+        await saveEditedName(page, fullName, buildPassword());
+        await expectSuccessOutcome(page, text.saved);
+        await expect(noticeCardOf(page)).toBeVisible();
+
+        await expect.poll(startedAnimations).toBe(started);
+      });
+    }
+  }
+});
+
 test.describe('Bell notice edge (SM-1, issue #391)', () => {
   test.use({ viewport: DESKTOP });
 
@@ -58,7 +95,7 @@ test.describe('Bell notice edge (SM-1, issue #391)', () => {
     await signInToSettings(page);
   });
 
-  for (const size of [DESKTOP, TABLET, MOBILE]) {
+  for (const size of SIZES) {
     for (const kind of KINDS) {
       const title = `draws ${kind.name} with the neutral edge at 3:1 or more`;
 

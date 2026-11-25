@@ -142,8 +142,9 @@ notifications wait for authorized subscriptions there and for user-service #526 
   `{ id, type, occurredAt, data: { code } }`. `BroadcastEventParser` accepts the codes
   `maintenance_planned` and `new_version` and maps each to a `notification_center.broadcast.*` key
   of this catalog. Text in an event is never shown. An event with any other code, or with an
-  `occurredAt` that is not an ISO 8601 time of a day that exists, is dropped. A broadcast records the
-  kind `success`, the only kind beside `error`; a history row draws no icon, so the kind is not shown.
+  `occurredAt` that is not an ISO 8601 date and time with seconds and a zone (`Z` or an offset) on a
+  day that exists, is dropped. A broadcast records the kind `success`, the only kind beside `error`;
+  a history row draws no icon, so the kind is not shown.
 - **Delivery:** `BroadcastEventClient` follows the service's streaming protocol over SSE. It drops
   repeated envelope ids (the newest 500), lets the browser reconnect an interrupted stream, and
   reopens a closed one after the last event id, with a delay that doubles up to 30 s and has a

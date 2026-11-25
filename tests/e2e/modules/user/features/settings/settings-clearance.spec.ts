@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 
 import { buildEmail, buildFullName, buildPassword } from '@tests/builders';
-import { bellOf, expectShellReady } from '@tests/e2e/utils/app-shell';
+import { bellOf, expectShellReady, shellText } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import waitForSettledScroll from '@tests/e2e/utils/wait-for-settled-scroll';
 
@@ -81,6 +81,10 @@ const THREE_OUTCOMES: OutcomeSet = {
 
 const OUTCOME_SETS: readonly OutcomeSet[] = [ONE_OUTCOME, THREE_OUTCOMES];
 
+const SCROLLED_PX = 200;
+
+const scrollTopOf = (page: Page): Promise<number> => page.evaluate(() => window.scrollY);
+
 const sizeName = (size: ViewportSize): string => `${size.width} × ${size.height}`;
 
 async function tabThroughEveryControl(page: Page, key = 'Tab'): Promise<TabReport> {
@@ -121,6 +125,34 @@ test.describe('Focus clearance (issue #391)', () => {
   test.beforeEach(async ({ page }) => {
     await signInToSettings(page);
   });
+
+  for (const outcomes of OUTCOME_SETS) {
+    test(`leaves the page where it is for the sidebar with ${outcomes.name}`, async ({ page }) => {
+      await openWithOutcomes(page, outcomes, { width: 1440, height: 900 });
+      const handle = page.getByRole('button', {
+        name: new RegExp(`^(${shellText.collapse}|${shellText.expand})$`, 'u'),
+      });
+      await page.evaluate((top) => window.scrollTo(0, top), SCROLLED_PX);
+      await waitForSettledScroll(page);
+      expect(await scrollTopOf(page)).toBe(SCROLLED_PX);
+
+      await handle.hover();
+      await page.mouse.down();
+      await waitForSettledScroll(page);
+      expect(await scrollTopOf(page)).toBe(SCROLLED_PX);
+      await page.mouse.move(0, 0);
+      await page.mouse.up();
+
+      await handle.focus();
+      await waitForSettledScroll(page);
+      expect(await scrollTopOf(page)).toBe(SCROLLED_PX);
+      await page.keyboard.press('Tab');
+      await waitForSettledScroll(page);
+
+      await expect(handle).not.toBeFocused();
+      expect(await scrollTopOf(page)).toBe(SCROLLED_PX);
+    });
+  }
 
   for (const size of SIZES) {
     for (const outcomes of OUTCOME_SETS) {

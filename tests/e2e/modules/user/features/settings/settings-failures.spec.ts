@@ -178,7 +178,7 @@ test.describe('Settings save failures (issues #330, #391)', () => {
     expect(stub.count('UpdateUser')).toBe(0);
   });
 
-  test('J7: shows the save failure with no retry action, assertively and in place', async ({
+  test('J7: shows the save failure with no retry action and announces it assertively', async ({
     page,
   }) => {
     stub = await stubProfile(page, { UpdateUser: [replyWithUnparsedUpdate] });
@@ -196,7 +196,7 @@ test.describe('Settings save failures (issues #330, #391)', () => {
     expect(stub.count('UpdateUser')).toBe(1);
   });
 
-  test('J9: shows the resend failure where the resend outcome belongs', async ({ page }) => {
+  test('J9: shows the resend failure in the bell card', async ({ page }) => {
     const newEmail = buildEmail();
     stub = await stubProfile(page, {
       UpdateUser: [replyWithSaved({ email: newEmail, confirmed: false })],

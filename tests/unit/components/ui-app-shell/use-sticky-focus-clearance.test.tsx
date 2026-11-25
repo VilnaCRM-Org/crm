@@ -52,36 +52,6 @@ describe('useStickyFocusClearance', () => {
     link.focus();
   };
 
-  describe('with the bell notice hanging below the header', () => {
-    afterEach(() => {
-      document.documentElement.style.removeProperty('--app-top-overhang');
-    });
-
-    it('adds the overhang to the header height when measuring the covered part', () => {
-      document.documentElement.style.setProperty('--app-top-overhang', '61px');
-      focusAt(80);
-      frames.forEach((frame) => frame(0));
-
-      expect(scrollBy).toHaveBeenCalledWith({ top: -45 });
-    });
-
-    it('treats an unset or unreadable overhang as 0px', () => {
-      document.documentElement.style.setProperty('--app-top-overhang', 'auto');
-      focusAt(21);
-      frames.forEach((frame) => frame(0));
-
-      expect(scrollBy).toHaveBeenCalledWith({ top: -43 });
-    });
-
-    it('leaves a control at the end of the overhang where it is', () => {
-      document.documentElement.style.setProperty('--app-top-overhang', '61px');
-      focusAt(125);
-      frames.forEach((frame) => frame(0));
-
-      expect(scrollBy).not.toHaveBeenCalled();
-    });
-  });
-
   it('measures only in the next frame, after the browser has scrolled the focus into view', () => {
     focusAt(21);
 

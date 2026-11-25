@@ -313,7 +313,8 @@ adapter (FR-3).
 > feature cannot register the settings catalog itself (`notifications-feature-self-contained`,
 > §3.6). Feature-owned keys need no new owner on the settings catalog, add no settings bytes to
 > every protected page and need no `lazy-key-scope` exemption. The notifications catalog lists the
-> adapter file and the feature's `components/` folder as owners and is registered by
+> adapter file, the feature's `components/` folder and, for the broadcast keys (2026-11-25, PRD item
+> 71), `utils/broadcast-event-parser.ts` as owners and is registered by
 > `BellNotifications` at module evaluation, which runs in `notifications-shell` on every protected
 > page under every style (A-27), before the panel or the notice translates a record.
 >
@@ -1304,9 +1305,10 @@ C only (`bell`). The **enabled bell, the badge and the history panel** are commo
 - **Stickiness and clearance (R14).** The card is inside the sticky header (`zIndex 1100`), so it
   stays in view while scrolling. `useNoticeClearance(cardRef, rows)` sets
   `--app-top-overhang: <card bottom - 64>px` on `document.documentElement` while shown and removes
-  it on hide. `app-layout.styles.ts` `HEADER_CLEARANCE` becomes
-  `scrollMarginTop: calc(64px + var(--app-top-overhang, 0px))`, and
-  `use-sticky-focus-clearance.ts` adds the same overhang. The hook also scrolls back a focused
+  it on hide. `app-layout.styles.ts` gives `main` and the
+  footer `scrollMarginTop: calc(64px + var(--app-top-overhang, 0px))`. The sidebar keeps the 64 px
+  of the header, in the styles and in `use-sticky-focus-clearance.ts`: it is sticky beside the card,
+  so a longer clearance only moves the page (PRD item 69). The hook also scrolls back a focused
   control the card has just covered. It does **not** use document `scroll-padding-top`, which made
   Chromium scroll on header focus (`src/routes/README.md:189-190`).
 - **Forced colors.** The drop-shadow outline is replaced by `border: 1px solid CanvasText` on the
@@ -1413,7 +1415,7 @@ drawn) and the user chip; the existing shell keyboard contracts gain that stop (
   and `src/components/types/ui-navigation-drawer/`): the drawn bell copy takes the enabled glyph
   colour when a notifications slot is present (A-29); `MobileNavigation`
   (`ui-app-header/mobile-navigation.tsx`) only forwards the flag (readiness R3-05).
-- `app-layout.styles.ts`, `use-sticky-focus-clearance.ts`: `--app-top-overhang`.
+- `app-layout.styles.ts`: `--app-top-overhang`.
 - `ShellSlotFactory`, route composer, validator and protected-layout loader: two slot keys.
 
 ### 11.3 New components (each with a story)
@@ -1688,7 +1690,7 @@ the outlet regions. Coverage stays 100 % over `src`.
 The mutate scope (`scripts/ci/mutation-scope.mjs`) picks up the new files through its existing
 `src/**` globs. Style objects, keyframes, the seed and the surface table are loaded inside the test
 body with `tests/unit/utils/isolated-module.ts`. The only expected equivalent mutants are empty hook
-dependency arrays, annotated with the existing proof wording; the "most severe tone" choice and all
+dependency arrays, annotated with the existing proof wording; the "most severe tone" choice and every
 surface-table row are killed by assertions. If a shard nears its 15-minute kill switch, raise
 `MUTATION_SHARD_TOTAL`, never the timeout.
 
