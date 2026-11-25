@@ -13,12 +13,14 @@ import {
   stubProfile,
 } from './utils/profile-stub';
 import {
+  editName,
   everySectionReplies,
   expectErrorOutcome,
+  namePasswordField,
   noticeCardOf,
   openLoadedSettings,
-  saveEditedName,
   saveEverySection,
+  saveNameButton,
   type SectionEdits,
   text,
 } from './utils/settings-page';
@@ -61,8 +63,10 @@ const ONE_OUTCOME: OutcomeSet = {
   name: 'one outcome',
   replies: () => ({ UpdateUser: [replyWithStatus(503)] }),
   show: async (page, edits) => {
-    await saveEditedName(page, edits.fullName, edits.password);
+    await editName(page, edits.fullName, edits.password);
+    await namePasswordField(page).press('Enter');
     await expectErrorOutcome(page, text.transient);
+    await expect(saveNameButton(page)).toBeFocused();
   },
 };
 
