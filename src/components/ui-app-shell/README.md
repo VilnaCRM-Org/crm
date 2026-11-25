@@ -26,8 +26,8 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
 - **The user slot is a prop.** Nothing under `src/components/` imports `src/modules/`. The settings
   route contract declares `shell.userMenu`, a loader for `UserMenuSlot`; the composer hands
   `AppLayout` the slot `protectedLayoutLoader.create` builds from it, so `AppLayout` receives only a
-  component that takes `layout`, `signOut` and `onAvatar`. `UIAppShell` keeps the avatar copy the slot
-  publishes through `onAvatar` in state and hands it to the mobile drawer header (`avatar` on
+  component that takes `layout`, `signOut` and `onAvatar`. `UIAppShell` keeps the avatar copy the
+  slot publishes through `onAvatar` in state and hands it to the mobile drawer header (`avatar` on
   `HeaderNavigation`). The slot keeps one menu mounted while the `current-user` chunk loads, so
   the chip keeps focus and an open menu when the name arrives. See "Shell slots" in
   `src/routes/README.md`.
@@ -92,10 +92,11 @@ yet"; the mobile header has no search. `badgeCounts` gives the bell and the task
 optional count each, which only the header stories pass (1 to the bell, 8 to the tasks button); no
 page passes either, and the bell's count applies only without a notifications slot. A badge is
 drawn beside its button, never inside it, so its digit is not part of the button's label. One
-guard (`badge-count-guard.ts`) decides both
-the badge and the hidden count description: only a whole count of at least 1 shows, so zero, a
-fraction, `NaN` and `Infinity` show neither. A disabled button paints its badge in the
-disabled-variant colour `#D0D4D8` that Figma draws on the disabled bell (`451:26214`).
+guard (`badge-count-guard.ts`) decides the badge of every button and the hidden count description of
+a disabled one: only a whole count of at least 1 shows, so zero, a fraction, `NaN` and `Infinity`
+show neither. The enabled bell gets its description from `BellNotifications`. A disabled button
+paints its badge in the disabled-variant colour `#D0D4D8` that Figma draws on the disabled bell
+(`451:26214`).
 The user slot reserves the chip's box with an `aria-hidden` placeholder until the chip arrives.
 
 ### Measured against Figma

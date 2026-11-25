@@ -201,6 +201,8 @@ describe('notification flow from a raised outcome into the history', () => {
     expect(await session.countUnread()).toBe(0);
     expect(claim).toHaveBeenCalledTimes(2);
     const next = new SessionNotificationRepository(repository, 'second');
+    await expect(next.claim('first')).rejects.toThrow('The session belongs to another owner');
+    await next.claim('second');
     expect(await next.countUnread()).toBe(1);
   });
 

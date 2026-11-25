@@ -6,6 +6,7 @@ export interface BroadcastEvent {
 }
 
 export interface BroadcastEventReader {
+  readonly type: string;
   parse(text: string): BroadcastEvent | null;
 }
 

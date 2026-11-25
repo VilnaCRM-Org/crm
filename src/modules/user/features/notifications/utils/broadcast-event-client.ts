@@ -1,7 +1,5 @@
 import type { BroadcastEventClientOptions, BroadcastEventStop } from '../types/broadcast-event';
 
-const EVENT_TYPE = 'crm.broadcast';
-
 const STREAM_PATH = '/api/events/stream';
 
 const FIRST_DELAY_MS = 1_000;
@@ -40,12 +38,12 @@ export default class BroadcastEventClient {
     source.onerror = (): void => {
       if (source.readyState === window.EventSource.CLOSED) this.retry();
     };
-    source.addEventListener(EVENT_TYPE, (frame) => this.accept(frame));
+    source.addEventListener(this.options.parser.type, (frame) => this.accept(frame));
   }
 
   private address(): string {
     const url = new URL(STREAM_PATH, this.options.base);
-    url.searchParams.set('types', EVENT_TYPE);
+    url.searchParams.set('types', this.options.parser.type);
     if (this.cursor !== null) url.searchParams.set('lastEventId', this.cursor);
     return url.toString();
   }

@@ -61,9 +61,16 @@ describe('broadcast events into the notification history', () => {
 
     const repeated = frame();
     const foreign = JSON.stringify({ ...buildBroadcastEvent(), type: 'other' });
-    [repeated, repeated, 'garbage', foreign, frame({ id: '' }), frame({ data: null })].forEach(
-      (text, index) => source.send(text, String(index))
-    );
+    const noSuchDay = frame({ occurredAt: '2026-02-31T12:00:00Z' });
+    [
+      repeated,
+      repeated,
+      'garbage',
+      foreign,
+      frame({ id: '' }),
+      frame({ data: null }),
+      noSuchDay,
+    ].forEach((text, index) => source.send(text, String(index)));
     source.send(foreign, '');
     Array.from({ length: 500 }, () => frame()).forEach((text) => source.send(text, '900'));
     expect(receive).toHaveBeenCalledTimes(501);

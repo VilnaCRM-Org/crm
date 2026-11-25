@@ -13,31 +13,37 @@ export default class SessionNotificationRepository implements NotificationReposi
   ) {}
 
   public async record(drafts: NotificationRecordDraftSet): Promise<NotificationRecordSet> {
-    await this.claim(this.owner);
+    await this.claimOnce();
 
     return this.repository.record(drafts);
   }
 
   public async list(): Promise<NotificationRecordSet> {
-    await this.claim(this.owner);
+    await this.claimOnce();
 
     return this.repository.list();
   }
 
   public async countUnread(): Promise<number> {
-    await this.claim(this.owner);
+    await this.claimOnce();
 
     return this.repository.countUnread();
   }
 
   public async markAllRead(): Promise<void> {
-    await this.claim(this.owner);
+    await this.claimOnce();
 
     return this.repository.markAllRead();
   }
 
   public claim(owner: string | null): Promise<void> {
-    this.claiming ??= this.repository.claim(owner).catch((error: unknown) => {
+    return owner === this.owner
+      ? this.claimOnce()
+      : Promise.reject(new Error('The session belongs to another owner'));
+  }
+
+  private claimOnce(): Promise<void> {
+    this.claiming ??= this.repository.claim(this.owner).catch((error: unknown) => {
       this.claiming = null;
       throw error;
     });

@@ -78,6 +78,27 @@ describe('SessionNotificationRepository', () => {
     expect(inner[method]).not.toHaveBeenCalled();
   });
 
+  it('claims for its own owner and shares that claim with the operations', async () => {
+    const inner = innerOf();
+    const repository = new SessionNotificationRepository(inner, 'owner');
+
+    await repository.claim('owner');
+    await repository.list();
+
+    expect(inner.claim).toHaveBeenCalledTimes(1);
+    expect(inner.claim).toHaveBeenCalledWith('owner');
+  });
+
+  it.each(['another', null])('rejects a claim for the owner %s', async (owner) => {
+    const inner = innerOf();
+
+    await expect(new SessionNotificationRepository(inner, 'owner').claim(owner)).rejects.toThrow(
+      'The session belongs to another owner'
+    );
+
+    expect(inner.claim).not.toHaveBeenCalled();
+  });
+
   it('claims again for the next operation after a failed claim', async () => {
     const inner = innerOf();
     inner.claim.mockRejectedValueOnce(new Error('claim failed'));

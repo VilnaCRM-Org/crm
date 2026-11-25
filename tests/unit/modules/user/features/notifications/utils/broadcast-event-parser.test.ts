@@ -24,6 +24,12 @@ describe('BroadcastEventParser', () => {
     });
   });
 
+  it('keeps the instant of an event written with an offset', () => {
+    expect(parse({ occurredAt: '2026-11-23T23:30:00-05:00' })).toMatchObject({
+      draft: { createdAt: Date.parse('2026-11-24T04:30:00Z') },
+    });
+  });
+
   it('never carries text from the event', () => {
     const parsed = parse({ data: { code: 'new_version', text: 'Hello', messageKey: 'auth.x' } });
 
@@ -38,6 +44,9 @@ describe('BroadcastEventParser', () => {
     ['no id', { id: undefined as unknown as string }],
     ['an empty id', { id: '' }],
     ['an unreadable time', { occurredAt: 'yesterday' }],
+    ['an unreadable hour', { occurredAt: '2026-11-23Tnoon' }],
+    ['a day that does not exist', { occurredAt: '2026-02-31T12:00:00Z' }],
+    ['a time in another notation', { occurredAt: 'Nov 23, 2026' }],
     ['a time that is a number', { occurredAt: 2026 as unknown as string }],
     ['a time that is a list', { occurredAt: ['2026-11-23'] as unknown as string }],
     ['a foreign type', { type: 'crm.personal' }],
