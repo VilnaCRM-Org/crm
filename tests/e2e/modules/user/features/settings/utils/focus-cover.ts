@@ -99,6 +99,6 @@ export async function probeFocused(page: Page): Promise<string> {
   await nextPaint(page);
   const { state, name } = await page.evaluate(visitFocused, SEEN_KEY);
   if (state !== 'fresh') return state;
-  const cover = (await coverHiding(page)) && (await coverOnceSettled(page));
+  const cover = await coverOnceSettled(page);
   return cover === undefined ? 'clear' : `${name} under the ${cover}`;
 }

@@ -36,6 +36,7 @@ describe('useNoticeClearance', () => {
   afterEach(() => {
     root.style.removeProperty('--app-top-overhang');
     Reflect.deleteProperty(window, 'scrollBy');
+    removeResizeObserver();
     document.body.replaceChildren();
   });
 
@@ -59,7 +60,6 @@ describe('useNoticeClearance', () => {
       ({ bottom: 150 }) as DOMRect;
 
     fire();
-    removeResizeObserver();
 
     expect(overhang()).toBe('86px');
   });
