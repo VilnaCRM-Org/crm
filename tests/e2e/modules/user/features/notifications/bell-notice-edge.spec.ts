@@ -65,6 +65,14 @@ const MOTIONS: readonly Motion[] = [
   { preference: 'reduce', title: 'shows the card with no motion when it is reduced', started: 0 },
 ];
 
+const passTwoFrames = (page: Page): Promise<void> =>
+  page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      })
+  );
+
 test.describe('Bell notice entrance (NFR-6, issue #391)', () => {
   for (const size of SIZES) {
     for (const { preference, title, started } of MOTIONS) {
@@ -82,6 +90,7 @@ test.describe('Bell notice entrance (NFR-6, issue #391)', () => {
         await expectSuccessOutcome(page, text.saved);
         await expect(noticeCardOf(page)).toBeVisible();
 
+        await passTwoFrames(page);
         await expect.poll(startedAnimations).toBe(started);
       });
     }
