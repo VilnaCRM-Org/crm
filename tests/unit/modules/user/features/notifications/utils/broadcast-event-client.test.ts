@@ -2,6 +2,7 @@ import Client from '@/modules/user/features/notifications/utils/broadcast-event-
 import Parser from '@/modules/user/features/notifications/utils/broadcast-event-parser';
 import { buildBroadcastEvent } from '@tests/builders/broadcast-event';
 import FakeEventSource from '@tests/unit/utils/fake-event-source';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const open = (
   receive = jest.fn()
@@ -31,8 +32,17 @@ describe('BroadcastEventClient', () => {
     Reflect.deleteProperty(window, 'EventSource');
   });
 
-  it('opens one stream of the broadcast type, without a cursor', () => {
-    open();
+  it('opens one stream of the broadcast type, without a cursor', async () => {
+    const IsolatedClient = await loadIsolated(
+      async () =>
+        (await import('@/modules/user/features/notifications/utils/broadcast-event-client')).default
+    );
+
+    new IsolatedClient({
+      base: 'https://events.example',
+      parser: new Parser(),
+      receive: jest.fn(),
+    }).open();
 
     expect(FakeEventSource.opened.map(({ url }) => url)).toEqual([
       'https://events.example/api/events/stream?types=crm.broadcast',

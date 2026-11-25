@@ -137,6 +137,17 @@ describe('the composed shell around a raised outcome', () => {
     await screen.findByRole('button', { name: 'Позначити всі прочитаними' });
   };
 
+  beforeAll(() =>
+    Promise.all([
+      import('@/routes/protected-layout'),
+      import('@/components/ui-app-shell'),
+      import('@/components/ui-footer'),
+      import('@/modules/user/features/notifications/components/notifications-shell-slot'),
+      import('@/modules/user/features/notifications/components/bell-outcome-notice'),
+      import('@/modules/user/features/notifications/components/notification-history-panel'),
+    ])
+  );
+
   beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
