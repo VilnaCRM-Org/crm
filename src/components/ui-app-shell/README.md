@@ -45,8 +45,8 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
 - **Chunk failures are reported by the route layer.** After `ChunkRetryLoader`'s one re-import,
   `AppLayoutFrame` calls, once, the `onShellFailure` prop `AppLayout` forwards (the composer binds
   it to `routeMapper.chunkFailureReporter('app-shell:load')`) and keeps the placeholders; the slot
-  frame stays empty and size-stable for `app-shell:user-menu`; a protected route never reloads
-  the document. Nothing under `src/components/layouts/` imports from `src/services/`.
+  frame stays empty and size-stable for `app-shell:user-menu` and `app-shell:notifications`; a
+  protected route never reloads the document. Nothing under `src/components/layouts/` imports from `src/services/`.
 - **The auth pages share one more vendor chunk (owner decision, 2026-11-06).** The shell's lazy
   chunks had split the `node_modules` code that both the `sign-in` and `sign-up` page chunks contain
   into pieces that compress worse, and `/sign-in` reached 265,997 bytes against the 265,000
@@ -58,8 +58,8 @@ drawer. Its surfaces are user-agnostic `UI*` components in `src/components/`; no
   007c533d) and no budget was raised.
 - **No ADR.** The pull request carries the `adr:not-required` label (OQ-10). This change
   supersedes enterprise-app-shell's prop-less `AppLayout` contract: `AppLayout` now takes an
-  optional `userMenu` slot and an `onShellFailure` callback, typed in
-  `src/components/types/layouts/app-layout.ts`.
+  optional `userMenu` slot, an optional `notifications` slot and an `onShellFailure` callback,
+  typed in `src/components/types/layouts/app-layout.ts`.
 - **Home and settings lose their stopgaps.** `/` no longer renders its own Sign out button or
   link to `/settings` (the sidebar, the drawer and the chip menu own both).
 

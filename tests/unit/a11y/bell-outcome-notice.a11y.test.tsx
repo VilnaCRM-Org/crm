@@ -1,4 +1,4 @@
-import { act, render, renderHook } from '@testing-library/react';
+import { act, render, renderHook, screen } from '@testing-library/react';
 import { type JSX, type ReactNode, useRef } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
@@ -62,6 +62,7 @@ describe('BellOutcomeNotice accessibility', () => {
     const { container } = render(<Page />);
 
     act(() => port.raise({ items }));
+    expect(screen.getAllByRole('listitem')).toHaveLength(items.length);
 
     await expectNoA11yViolations(container);
   });

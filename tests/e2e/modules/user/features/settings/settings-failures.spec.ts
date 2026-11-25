@@ -21,9 +21,11 @@ import {
   expectNoPersonalDataInUrls,
   expectOnlyAllowedOrigins,
   expectSuccessOutcome,
+  expectUnread,
   namePasswordField,
   noticeClose,
   openLoadedSettings,
+  outcomeIn,
   saveEditedEmail,
   saveEditedName,
   saveNameButton,
@@ -86,6 +88,7 @@ test.describe('Settings save failures (issues #330, #391)', () => {
     await saveEditedName(page, NEW_NAME, password);
 
     await expectErrorOutcome(page, text.rateLimited);
+    await expectUnread(page, 2);
     await expect(noticeClose(page)).toHaveAccessibleDescription(text.rateLimited);
     await expect(page.getByRole('button', { name: text.tryAgain })).toHaveCount(0);
   });
@@ -100,11 +103,14 @@ test.describe('Settings save failures (issues #330, #391)', () => {
 
     await saveEditedName(page, NEW_NAME, password);
     await expectErrorOutcome(page, text.transient);
+    await expectUnread(page, 2);
     expect(stub.count('UpdateUser')).toBe(1);
 
     await page.getByRole('button', { name: text.tryAgain, exact: true }).click();
 
     await expectSuccessOutcome(page, text.saved);
+    await expect(outcomeIn(page, text.transient)).toHaveCount(0);
+    await expectUnread(page, 3);
     expect(stub.count('UpdateUser')).toBe(2);
   });
 
@@ -126,6 +132,7 @@ test.describe('Settings save failures (issues #330, #391)', () => {
     await page.getByRole('button', { name: text.tryAgain, exact: true }).click();
 
     await expectSuccessOutcome(page, text.saved);
+    await expectUnread(page, 4);
     const updates = stub.calls.filter((call) => call.operation === 'UpdateUser');
     expect(updates).toHaveLength(3);
     expect(updates[2]?.variables['input']).toMatchObject({ initials: NEW_NAME });
@@ -182,6 +189,7 @@ test.describe('Settings save failures (issues #330, #391)', () => {
     await saveNameButton(page).click();
 
     await expectErrorOutcome(page, text.saveFailed);
+    await expectUnread(page, 2);
     await expectFocusKeptOnAppearance(page);
     await expect(saveNameButton(page)).toBeFocused();
     await expect(page.getByRole('button', { name: text.tryAgain })).toHaveCount(0);
@@ -201,6 +209,7 @@ test.describe('Settings save failures (issues #330, #391)', () => {
     await page.getByRole('button', { name: text.resend, exact: true }).click();
 
     await expectErrorOutcome(page, text.resendFailed);
+    await expectUnread(page, 3);
     expect(stub.count('ResendEmailToUser')).toBe(1);
   });
 });

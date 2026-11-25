@@ -3281,8 +3281,9 @@ at `/`.
 **Enforcement.** `make check-security-headers` (the `security headers` job of the `security testing`
 workflow, pull requests only) builds `--target production`, boots it, and asserts the response
 headers on `/`, `/sign-in`, `/site.webmanifest` and a hashed `/static/**` asset and the document
-headers plus the CSP on the two documents; then boots it again with the `APP_CONFIG_API_BASE_URL`
-and `APP_CONFIG_GRAPHQL_URL` overrides and asserts the API origins reached `connect-src`
+headers plus the CSP on the two documents; then boots it again with the `APP_CONFIG_API_BASE_URL`,
+`APP_CONFIG_GRAPHQL_URL` and `APP_CONFIG_NOTIFICATION_EVENTS_URL` overrides and asserts the API and
+the notification events origins reached `connect-src`
 (`scripts/ci/check-security-headers.sh`), so the entrypoint step cannot go dead unnoticed.
 `connect-src` is compared as an exact set — the committed `serve.json` sources plus the expected
 overrides, nothing more — every other directive must equal the policy, a directive the policy does

@@ -292,7 +292,7 @@ where they differ.
 > decision (iteration 3 re-checked it and failed, iteration 4 passed) and predates the two owner
 > decisions of 2026-11-23: the broadcast-only event feed (PRD items 37–43) and the bell pick with the
 > neutral edge (items 44–49). No readiness iteration has re-checked those two; the review and the FR/NFR
-> gate of pull request #392 replace it (items 50–61). The rest of this section is the iteration 4 record, except the dated scope lines.
+> gate of pull request #392 replace it (items 50–68). The rest of this section is the iteration 4 record, except the dated scope lines.
 
 Readiness PASS at iteration 4 of 5. The bundle has 4 epics, 36 stories and 2 blocked follow-ups,
 with 285 visual baselines expected to change (243 re-recorded, 42 new), all recorded from CI. (Final count

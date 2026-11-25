@@ -83,7 +83,8 @@
       "catalog": "modules/user/features/notifications/i18n",
       "owners": [
         "modules/user/features/notifications/repositories/in-memory-notification-repository.ts",
-        "modules/user/features/notifications/components"
+        "modules/user/features/notifications/components",
+        "modules/user/features/notifications/utils/broadcast-event-parser.ts"
       ]
     },
     {

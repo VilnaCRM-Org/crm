@@ -7,6 +7,10 @@ const { sm } = breakpointsTheme.breakpoints.values;
 
 const fromSm = `@media (min-width:${sm}px)`;
 
+const fromDesktop = '@media (min-width:1440px)';
+
+const centredOnFirstLine = { margin: '-0.1875rem 0' };
+
 const forcedColors = '@media (forced-colors: active)';
 
 const focusRing = {
@@ -47,6 +51,7 @@ export default {
     lineHeight: 'normal',
     color: customColors.text.dark,
     [fromSm]: { columnGap: '0.5rem' },
+    [fromDesktop]: { rowGap: 0 },
     [forcedColors]: { color: 'CanvasText' },
   },
   icon: {
@@ -55,6 +60,7 @@ export default {
     display: 'inline-flex',
     fontSize: '1.25rem',
     [fromSm]: glyphFromSm,
+    [fromDesktop]: centredOnFirstLine,
   },
   message: {
     gridColumn: 2,
@@ -65,6 +71,7 @@ export default {
     fontSize: '0.875rem',
     lineHeight: '1.25rem',
     [fromSm]: { fontSize: '1rem', lineHeight: '1.5rem' },
+    [fromDesktop]: { fontSize: '0.875rem', lineHeight: '1.125rem' },
   },
   time: {
     gridColumn: 2,
@@ -72,6 +79,12 @@ export default {
     fontWeight: 400,
     fontSize: '0.8125rem',
     lineHeight: '1.25rem',
+    [fromDesktop]: {
+      fontFamily: 'Inter',
+      fontWeight: 500,
+      fontSize: '0.75rem',
+      lineHeight: '1.125rem',
+    },
     [forcedColors]: { color: 'CanvasText' },
   },
   action: {
@@ -86,6 +99,7 @@ export default {
     gridColumn: 2,
     justifySelf: 'start',
     [fromSm]: { margin: 0, minHeight: '1.5rem' },
+    [fromDesktop]: { marginTop: '0.25rem' },
     ...systemControl,
   },
   close: {
@@ -94,6 +108,7 @@ export default {
     gridRow: 1,
     fontSize: '1.25rem',
     [fromSm]: { ...controlFromSm, ...glyphFromSm },
+    [fromDesktop]: centredOnFirstLine,
     ...systemControl,
   },
 } as const;

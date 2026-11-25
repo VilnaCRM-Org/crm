@@ -39,7 +39,7 @@ inputDocuments:
 
 **Author:** architect, autonomous run **Date:** 2026-11-11 **Feature:**
 `notification-visibility-variants` **Issue:** [#391](https://github.com/VilnaCRM-Org/crm/issues/391),
-planning pull request #392 (no code is committed or pushed until the owner approves, MA-4)
+planning pull request #392 (the implementation joined it once the owner approved, MA-4)
 
 Predecessors: the [run summary](./run-summary-notification-visibility-variants-2026-11-11.md)
 (binding; later blocks supersede earlier ones), the
@@ -983,11 +983,9 @@ in DI_COMPOSITION_ROOTS, so the boundary rules, not no-di-config-import-outside-
 keep it out of other code.
 ```
 
-> Assumption: no ADR is written. Since the ADR purge (PR #333) the repository keeps only ADR-001
-> and ADR-002 and records feature decisions in module READMEs; the stream setting is optional and off by default (PRD item 59); and
-> the two durable parts (a second shell slot, an isolation rule) apply decisions already recorded.
-> If a reviewer reads the port/adapter split as a new decision, it is an ADR-003 candidate,
-> "Notifications: shared port, feature adapter".
+> Assumption: no ADR is written, on the ground of PRD item 59 alone: the stream setting is optional
+> and off by default. A new ADR is written when the stream contract is agreed, and in any case
+> before a deployment sets `APP_CONFIG_NOTIFICATION_EVENTS_URL`.
 
 ## 8. Views
 
@@ -1254,7 +1252,9 @@ C only (`bell`). The **enabled bell, the badge and the history panel** are commo
   enabled round bell takes `z-index: 1`, so its glyph and badge stay above the tab.
 - **Card content.** Padding `15px 14px 11px 14px`; a row is the message (Golos 600 14/18), the time
   (Inter 500 12/18, `#57595B`) and a 24 × 24 close at the row end; rows divided by 1 px `#E1E7EA`,
-  gap 12; at most three rows, newest last.
+  gap 12; at most three rows, newest last. The 24 px status icon and close button overhang the 18 px
+  first line by 3 px on each side, so the row stays 36 px. Below the desktop shell the row keeps the
+  14/20 and, from `sm`, 16/24 message with the 13/20 time (PRD item 67).
 - **Tablet (1024–1439) and mobile (< 1024) shell, caret card** (`377:18485` language, R7). Width
   `min(313px, 100vw - 32px)`. The caret is 26 × 6 (a `clip-path` triangle in tone with a 1 px-inset
   white triangle), its tip 4 px below the bell box and on the bell's centre. The card's left edge is
@@ -1615,7 +1615,8 @@ clock in the actions tests). Builders `buildNotificationRecord(Set)` and
 
 ### 13.2 Integration (`tests/integration/**`)
 
-`tests/integration/modules/user/features/notifications/notification-flow.integration.test.tsx`
+`notification-flow.integration.test.ts` covers the hook-level flow; the composed flow is in the unit
+suite, `notification-shell.composed.test.tsx` (PRD item 66), which
 uses the real store, `useNotifications`, the outlet, the slot and `NotificationsShellSlot` with the
 real adapter. A raise is announced, rendered by the active surface only, and recorded once with
 `createdAt = raisedAt`, and under every style the bell's badge then counts it (1 → 2, or 1 → 4
@@ -1835,7 +1836,7 @@ that hides a toast.
 | A-7  | The announcer is page-level, inside `UINotificationOutlet`                                | 5.4      |
 | A-8  | The shell slot is mounted under every style, so all are recorded and counted              | 6.3      |
 | A-9  | The built-image check rides the `security headers` boot                                   | 7.4      |
-| A-10 | `[no-adr]`; ADR-003 only if reviewers ask                                                 | 7.6      |
+| A-10 | `[no-adr]`; a new ADR on the trigger of PRD item 59                                       | 7.6      |
 | A-11 | B and C use the most severe tone for the shared edge                                      | 9.4, 9.5 |
 | A-12 | Under `bell`, opening calls `dismissAll()`; the card does not return (A-26)               | 5.2, 8.3 |
 | A-13 | No count description at zero unread                                                       | 10       |

@@ -50,7 +50,7 @@ printf '🔒 [1/2] committed baseline: every response of the production image\n'
 start_probe
 node "$GATE" --url "$BASE_URL"
 
-printf '🔒 [2/2] runtime API overrides must extend connect-src at container start\n'
+printf '🔒 [2/2] runtime URL overrides must extend connect-src at container start\n'
 start_probe \
   -e "APP_CONFIG_API_BASE_URL=${API_ORIGIN}/api" \
   -e "APP_CONFIG_GRAPHQL_URL=${GRAPHQL_ORIGIN}/graphql" \

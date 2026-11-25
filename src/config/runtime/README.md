@@ -103,7 +103,8 @@ protected page keeps one server-sent-events stream open for broadcast events onl
 no token, no user id and no cross-origin credentials, an event carries a code and no text, and an
 accepted event stays in the in-memory history only: nothing is persisted. The container entrypoint
 adds its origin to the CSP `connect-src`. It has no build-time default, so a malformed value reads
-as absent in the browser and aborts the container start.
+as absent in the browser and aborts the container start. It names an origin: the stream path is
+resolved from the origin, so a path prefix in the value is dropped.
 
 `graphqlUrl` falls back to the build-time variable its consumer already read before this module
 existed, so existing deployments behave exactly as before until an `APP_CONFIG_*` value is

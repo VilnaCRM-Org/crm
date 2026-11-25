@@ -14,13 +14,7 @@ function release(): void {
   document.documentElement.style.removeProperty(layoutStyles.overhangProperty);
 }
 
-function startsUnderCard({ top, left, right }: DOMRect, area: DOMRect): boolean {
-  const beside = right <= area.left || left >= area.right;
-
-  return !beside && top >= HEADER_HEIGHT && top < area.bottom;
-}
-
-function endsUnderCard({ bottom, left, right }: DOMRect, area: DOMRect): boolean {
+function hiddenBy(area: DOMRect, { bottom, left, right }: DOMRect): boolean {
   const within = left >= area.left && right <= area.right;
 
   return within && bottom > HEADER_HEIGHT && bottom <= area.bottom;
@@ -30,14 +24,13 @@ function heldByKeyboardOnPage(element: HTMLElement): boolean {
   return element.matches(':focus-visible') && element.matches('main *, footer *');
 }
 
-function revealCovered(area: DOMRect, card: HTMLElement): void {
+function revealCovered(area: DOMRect): void {
   const { activeElement } = document;
-  if (!(activeElement instanceof HTMLElement) || card.contains(activeElement)) {
+  if (!(activeElement instanceof HTMLElement) || !heldByKeyboardOnPage(activeElement)) {
     return;
   }
   const held = activeElement.getBoundingClientRect();
-  const hidden = endsUnderCard(held, area) && heldByKeyboardOnPage(activeElement);
-  if (hidden || startsUnderCard(held, area)) {
+  if (hiddenBy(area, held)) {
     window.scrollBy({ top: -Math.ceil(area.bottom - held.top) });
   }
 }
@@ -50,7 +43,7 @@ function measureOverhang(card: HTMLElement | null): void {
   const area = card.getBoundingClientRect();
   const overhang = `${Math.max(0, area.bottom - HEADER_HEIGHT)}px`;
   document.documentElement.style.setProperty(layoutStyles.overhangProperty, overhang);
-  revealCovered(area, card);
+  revealCovered(area);
 }
 
 export default function useNoticeClearance(

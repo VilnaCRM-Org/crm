@@ -1,7 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 
 import ROUTE_PATHS from '@/routes/route-paths';
-import { sidebarSettingsOf } from '@tests/e2e/utils/app-shell';
+import { bellOf, sidebarSettingsOf } from '@tests/e2e/utils/app-shell';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -222,6 +222,11 @@ export async function expectFocusKeptOnAppearance(page: Page): Promise<void> {
 
 export const unreadDescription = (count: number): string =>
   t('notification_center.bell.unread_count', { count });
+
+export async function expectUnread(page: Page, count: number): Promise<void> {
+  await expect(bellOf(page)).toHaveAccessibleDescription(unreadDescription(count));
+  await expect(page.getByRole('banner').getByText(String(count), { exact: true })).toBeVisible();
+}
 
 export interface DocumentBox {
   readonly x: number;

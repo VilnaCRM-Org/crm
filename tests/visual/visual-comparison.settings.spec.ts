@@ -44,7 +44,7 @@ const TRANSIENT_UNREAD = 2;
 
 const FROZEN_AT = Date.parse('2026-11-11T10:00:00Z');
 const FIGMA_FRAME = { width: 1440, height: 900 };
-const MERGED_SHAPE_EXTENT: DocumentBox = { x: 1087, y: 8, width: 279, height: 117 };
+const FIGMA_EDGES = [1087, 8, 1366, 125] as const;
 const EXTENT_TOLERANCE_PX = 2;
 
 const personalHeading: string = t('settings.profile.sections.personal');
@@ -52,13 +52,6 @@ const loadFailed: string = t('settings.profile.load_failed');
 
 const SUCCESS_CAPTURE = 'bell-success';
 const TRANSIENT_CAPTURE = 'bell-transient';
-
-type ShapeCheck = (page: Page, screen: ScreenSize) => Promise<void>;
-
-interface OutcomeCase {
-  readonly screen: ScreenSize;
-  readonly shapeCheck: ShapeCheck;
-}
 
 async function openSettings(
   page: Page,
@@ -102,28 +95,18 @@ const outerBoxOf = (shape: Locator): Promise<DocumentBox> =>
     };
   });
 
-async function expectMergedShapeExtent(page: Page, screen: ScreenSize): Promise<void> {
-  await page.setViewportSize(FIGMA_FRAME);
-  await expect(mergedShapeOf(page)).toBeVisible();
-  const box = await outerBoxOf(mergedShapeOf(page));
-
-  expect(Math.abs(box.x - MERGED_SHAPE_EXTENT.x)).toBeLessThanOrEqual(EXTENT_TOLERANCE_PX);
-  expect(Math.abs(box.y - MERGED_SHAPE_EXTENT.y)).toBeLessThanOrEqual(EXTENT_TOLERANCE_PX);
-  expect(
-    Math.abs(box.x + box.width - MERGED_SHAPE_EXTENT.x - MERGED_SHAPE_EXTENT.width)
-  ).toBeLessThanOrEqual(EXTENT_TOLERANCE_PX);
-  expect(box.height).toBeGreaterThanOrEqual(MERGED_SHAPE_EXTENT.height - EXTENT_TOLERANCE_PX);
-  await page.setViewportSize({ width: screen.width, height: screen.height });
+async function expectFigmaExtent(page: Page): Promise<void> {
+  const furthestEdge = async (): Promise<number> => {
+    const box = await outerBoxOf(mergedShapeOf(page));
+    const edges = [box.x, box.y, box.x + box.width, box.y + box.height];
+    return Math.max(
+      ...edges.map((edge, index) => Math.abs(edge - (FIGMA_EDGES[index] ?? Infinity)))
+    );
+  };
+  await expect.poll(furthestEdge).toBeLessThanOrEqual(EXTENT_TOLERANCE_PX);
 }
 
-const noShapeCheck: ShapeCheck = async () => undefined;
-
-const OUTCOME_CASES: readonly OutcomeCase[] = notFoundScreens.map((screen): OutcomeCase => ({
-  screen,
-  shapeCheck: screen.width === FIGMA_FRAME.width ? expectMergedShapeExtent : noShapeCheck,
-}));
-
-const REDUCED_MOTION_SCREENS: readonly ScreenSize[] = notFoundScreens.filter(
+const DESKTOP_SCREENS: readonly ScreenSize[] = notFoundScreens.filter(
   (screen) => screen.name === 'desktop'
 );
 
@@ -240,7 +223,7 @@ test.describe.parallel('Settings visual tests (issue #330)', () => {
     });
   }
 
-  for (const { screen, shapeCheck } of OUTCOME_CASES) {
+  for (const screen of notFoundScreens) {
     test(`[settings] success outcomes ${screen.name}`, async ({ page }) => {
       await openClockedSettings(page, screen, everyAspectReplies());
       await expectResting(page);
@@ -262,13 +245,31 @@ test.describe.parallel('Settings visual tests (issue #330)', () => {
       await expectErrorOutcome(page, text.transient);
 
       await scrollToTop(page);
-      await shapeCheck(page, screen);
       await waitForShellBell(page, TRANSIENT_UNREAD);
       await takeSettingsSnapshot(page, screen, TRANSIENT_CAPTURE);
     });
   }
 
-  for (const screen of REDUCED_MOTION_SCREENS) {
+  for (const screen of DESKTOP_SCREENS) {
+    test(`[settings] one success fills the drawn extent ${screen.name}`, async ({ page }) => {
+      await openClockedSettings(
+        page,
+        { ...screen, ...FIGMA_FRAME },
+        { UpdateUser: [replyWithSaved({ initials: NEW_NAME })] }
+      );
+      await expectResting(page);
+      await nameField(page).fill(NEW_NAME);
+      await namePasswordField(page).fill(PASSWORD);
+      await freezeClock(page);
+      await saveNameButton(page).click();
+      await expect(outcomeIn(page, text.saved)).toBeVisible();
+      await scrollToTop(page);
+
+      await expectFigmaExtent(page);
+    });
+  }
+
+  for (const screen of DESKTOP_SCREENS) {
     test(`[settings] success outcomes under reduced motion ${screen.name}`, async ({ page }) => {
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await openClockedSettings(page, screen, everyAspectReplies(), { motion: 'allowed' });

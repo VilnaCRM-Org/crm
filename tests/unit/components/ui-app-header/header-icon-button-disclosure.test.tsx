@@ -105,12 +105,17 @@ describe('HeaderIconButton with a disclosure', () => {
     expect(bell()).toHaveAccessibleDescription('4 unread notifications');
   });
 
-  it('draws no badge for a count that is not a whole number of at least 1', () => {
+  it.each([0, 1.5, Number.NaN])('draws no badge for a count of %s', (count) => {
     renderShell(
-      <HeaderIconButton layout="desktop" kind="notifications" count={0} disclosure={disclosure()} />
+      <HeaderIconButton
+        layout="desktop"
+        kind="notifications"
+        count={count}
+        disclosure={disclosure()}
+      />
     );
 
-    expect(bell()).toHaveTextContent(/^$/u);
+    expect(findBellWrapper(bell())).toHaveTextContent(/^$/u);
   });
 
   it.each([

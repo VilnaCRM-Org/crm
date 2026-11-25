@@ -75,16 +75,18 @@ entry, after the user module registrar. Nothing in `src/` resolves the token tod
 registration is the seam for container code.
 
 The container-free shell cannot resolve the token: resolving it would load tsyringe and the
-composition root on the paint path of every protected page. It calls `useNotificationRepository()`
-(`hooks/use-notification-repository.ts`), the one seam the bell uses. The hook reads
-`NotificationRepositoryContext`, exported from the same file, whose default value is the singleton;
-nothing in `src/` provides another value, so the app always gets that instance, and a unit test
-resolves the token and asserts it is that very instance. A real adapter therefore has to change two
-places: the registration in `di.ts` and the instance the hook returns (its context default, or a
-`NotificationRepositoryContext.Provider` around the slot). Changing the registration alone leaves
-the bell on the mock, and that unit test fails. Storybook's `withFreshNotificationRepository(seed?)`
-provides a new `InMemoryNotificationRepository` per story through that context, so one story marking
-rows read never reaches the next.
+composition root on the paint path of every protected page. `useNotificationRepository()`
+(`hooks/use-notification-repository.ts`) reads `NotificationRepositoryContext`, exported from the
+same file. Its default value is the singleton, and a unit test resolves the token and asserts it
+is that very instance. The bell, the recorder and the broadcast hook never read that value
+directly: the slot calls `useSessionRepository()`, which wraps it, or the value of a provider
+placed around the slot, in a `SessionNotificationRepository`, and provides the wrapper to
+everything below. A real adapter replaces the wrapped value and keeps the wrapper, so it has to
+change two places: the registration in `di.ts` and the instance the hook returns at the slot (the
+context default, or a `NotificationRepositoryContext.Provider` around the slot). Changing the
+registration alone leaves the bell on the mock, and that unit test fails. Storybook's
+`withFreshNotificationRepository(seed?)` provides a new `InMemoryNotificationRepository` per story
+through that context, so one story marking rows read never reaches the next.
 
 `features/notifications/di.ts` is not in `DI_COMPOSITION_ROOTS` (`.dependency-cruiser.js`), whose
 module entry is `^src/modules/[^/]+/config/di[.]ts$`, so the

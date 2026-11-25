@@ -4,6 +4,7 @@ import loadIsolated from '@tests/unit/utils/isolated-module';
 type Styles = (typeof import('@/components/ui-notification-content/styles'))['default'];
 
 const SM = '@media (min-width:480px)';
+const DESKTOP = '@media (min-width:1440px)';
 const FORCED = '@media (forced-colors: active)';
 
 const loadStyles = (): Promise<Styles> =>
@@ -97,6 +98,7 @@ describe('notification content styles', () => {
       display: 'inline-flex',
       fontSize: '1.25rem',
       [SM]: { fontSize: '1.5rem' },
+      [DESKTOP]: { margin: '-0.1875rem 0' },
     });
     expect(styles.message).toEqual({
       gridColumn: 2,
@@ -107,6 +109,7 @@ describe('notification content styles', () => {
       fontSize: '0.875rem',
       lineHeight: '1.25rem',
       [SM]: { fontSize: '1rem', lineHeight: '1.5rem' },
+      [DESKTOP]: { fontSize: '0.875rem', lineHeight: '1.125rem' },
     });
     expect(styles.close.fontSize).toBe('1.25rem');
     expect(Reflect.get(styles.close, SM)).toEqual({
@@ -115,6 +118,20 @@ describe('notification content styles', () => {
       minHeight: '1.5rem',
       fontSize: '1.5rem',
     });
+  });
+
+  it('draws the desktop row as two 18 px lines, 36 px in all', async () => {
+    const styles = await loadStyles();
+
+    expect(Reflect.get(styles.root, DESKTOP)).toEqual({ rowGap: 0 });
+    expect(Reflect.get(styles.time, DESKTOP)).toEqual({
+      fontFamily: 'Inter',
+      fontWeight: 500,
+      fontSize: '0.75rem',
+      lineHeight: '1.125rem',
+    });
+    expect(Reflect.get(styles.close, DESKTOP)).toEqual({ margin: '-0.1875rem 0' });
+    expect(Reflect.get(styles.action, DESKTOP)).toEqual({ marginTop: '0.25rem' });
   });
 
   it('uses system colours and keeps the focus ring visible in forced colors', async () => {

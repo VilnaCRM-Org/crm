@@ -308,9 +308,10 @@ change, not a header-policy change.
 - `make check-security-headers` (the `security headers` job of
   [`security-testing.yml`](.github/workflows/security-testing.yml), every pull request) builds
   the deployable `production` image, boots it, and asserts every header on the HTML shell, a deep
-  route, the manifest and a hashed static asset — then boots it again with `APP_CONFIG_*` API
-  overrides and asserts they reached `connect-src`, so the entrypoint's rendering step cannot go
-  dead unnoticed. `connect-src` is an exact-set comparison against the committed `serve.json`
+  route, the manifest and a hashed static asset — then boots it again with the
+  `APP_CONFIG_*` URL overrides, the notification events origin included, and asserts they reached
+  `connect-src`, so the entrypoint's rendering step cannot go dead unnoticed. `connect-src` is an
+  exact-set comparison against the committed `serve.json`
   plus the expected overrides, every other directive must equal the policy, and a repeated
   directive fails the check because browsers enforce only the first occurrence. `/index.html`
   itself is a `301` to `/` under `serve`'s clean URLs and is not probed.

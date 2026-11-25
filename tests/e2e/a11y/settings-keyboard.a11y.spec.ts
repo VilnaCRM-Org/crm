@@ -391,13 +391,40 @@ test.describe('Bell disclosure (J15, issue #391)', () => {
     await expectBellState(page, true);
     const panel = await historyPanelOf(page);
     await expect(panel).toBeVisible();
-    await panel.getByRole('button', { name: markAllLabel, exact: true }).focus();
+    await expectTabOrder(page, [
+      {
+        locator: panel.getByRole('button', { name: markAllLabel, exact: true }),
+        visibleFocus: true,
+      },
+    ]);
 
     await page.keyboard.press('Escape');
 
     await expect(panel).toBeHidden();
     await expect(bellOf(page)).toBeFocused();
     await expectBellState(page, false);
+  });
+
+  test('the history is read, cleared and left with the keyboard alone', async ({ page }) => {
+    await openSettings(page, stubProfile(page));
+    await expectShellReady(page);
+    await logoOf(page).focus();
+    await expectTabOrder(page, [{ locator: bellOf(page), visibleFocus: true }]);
+    await expect(bellOf(page)).toHaveAccessibleDescription(unreadDescription(1));
+    await page.keyboard.press('Enter');
+    const panel = await historyPanelOf(page);
+    const markAll = panel.getByRole('button', { name: markAllLabel, exact: true });
+    await expect(markAll).toBeVisible();
+
+    await expectTabOrder(page, [{ locator: markAll, visibleFocus: true }]);
+    await page.keyboard.press('Enter');
+
+    await expect(bellOf(page)).toHaveAccessibleDescription('');
+    await expect(page.getByRole('banner').getByText(/^\d+$/)).toHaveCount(0);
+    await expect(markAll).toBeFocused();
+    await expectTabOrder(page, [{ locator: chipOf(page), visibleFocus: true }]);
+    await expect(panel).toBeHidden();
+    await expect(bellOf(page)).toHaveAttribute('aria-expanded', 'false');
   });
 
   test('the notice close is the Tab stop between the bell and the chip', async ({ page }) => {

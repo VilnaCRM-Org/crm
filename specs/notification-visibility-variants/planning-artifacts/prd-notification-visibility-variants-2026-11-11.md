@@ -522,16 +522,27 @@ start-prod` exports the empty `.env` line. `start-prod` also runs `up -d --no-re
 >     it or on nothing (a mouse open in Safari, or a click on panel text, leaves focus on the document);
 >     another control that takes the key keeps it. Focus that arrives outside from nowhere closes the
 >     panel and is not moved.
-> 63. **FR-21 and NFR-4, header and card together.** A page control a keyboard user holds that starts
->     above the 64 px line and ends under the card, inside its width, is scrolled clear. A control that
->     shows beside or below the card, one the header alone hides, and one outside the page are left
->     alone. The card measures again when the page changes height, because a section that collapses
->     above the focused control moves it without a scroll, and Safari does not compensate.
+> 63. **FR-21 and NFR-4, what the card scrolls clear.** A page control a keyboard user holds that the
+>     card, or the header and the card together, hide completely is scrolled clear. A control that shows
+>     beside or below the card, one the header alone hides, one a pointer focused and one outside the page
+>     are left alone. The card measures again when the page changes height, because a section that
+>     collapses above the focused control moves it without a scroll, and Safari does not compensate.
 > 64. **FR-24, the history rows.** A row of the history draws no icon (architecture §9.5, owner decision
 >     2026-11-20): its message, time and unread state are text.
 > 65. **FR-5 and J4, one save per section.** `/settings` saves each section on its own (user-settings
 >     owner decision, 2026-11-05), so a combined three-success save no longer exists there: three saves
 >     raise three outcomes in turn. A raise of three stays in the port's contract and in its tests.
+> 66. **Story 3.4, the composed test.** The flow over the composed shell (guard, layout, header, slot,
+>     outlet, real adapter) is a unit-suite test, `notification-shell.composed.test.tsx`, because the
+>     integration suite requires 100 % coverage of every file it loads and the shell's own units are
+>     covered elsewhere. The integration file keeps the hook-level flow.
+> 67. **FR-18, the one-row card.** At the desktop shell the card row takes Figma's metrics (`397:18094`,
+>     `397:18095`): message 14/18, time Inter 500 12/18, no gap, so one success is 62 px tall and the shape
+>     ends at 125. The status icon and the close button, which the design does not draw, stay 24 px and are
+>     centred on the first line. The extent is measured on one success, two-sided on all four edges. The six
+>     desktop outcome captures of item 58 are re-recorded.
+> 68. **NFR-9, J15.** The browser test reaches "mark all read" with Tab from the open bell, activates it
+>     with Enter, and leaves the panel with Tab, which closes it.
 
 ## 1. Executive summary
 

@@ -22,7 +22,7 @@ inputDocuments:
 
 **Author:** pm + sm, autonomous run **Date:** 2026-11-11 **Feature:**
 `notification-visibility-variants` **Issue:** [#391](https://github.com/VilnaCRM-Org/crm/issues/391),
-planning pull request #392 (no code is committed or pushed until the owner approves, MA-4)
+planning pull request #392 (the implementation joined it once the owner approved, MA-4)
 
 Predecessors: the [run summary](./run-summary-notification-visibility-variants-2026-11-11.md)
 (binding; later blocks supersede earlier ones), the
@@ -962,7 +962,8 @@ reports `BLOCKED`, never skips).
 > caret card's vertical anchor (top is the bell bottom plus 10 px: 4 px gap and the 6 px caret).
 > The caret card is `position: fixed` and animates itself, because a transform on an ancestor
 > would re-anchor a fixed child. The shared content piece keeps its 14/20 message and 13/20 time;
-> Figma's 14/18 and 12/18 stay a known delta of Story 2.2.
+> Figma's 14/18 and 12/18 stay a known delta of Story 2.2 (closed 2026-11-25 at the desktop shell, PRD
+> item 67).
 
 > Code facts (2026-11-23): the shape is now a 48 × 67 tab over a 279-wide card at 0, 55 and the
 > notice no longer anchors the bell; see the architecture §9.5 amendments of the same date. The
@@ -1003,7 +1004,7 @@ reports `BLOCKED`, never skips (readiness R3-10).
 **Acceptance Criteria:**
 
 - Given the seeded rows (one unread, two read), when the open panel renders, then the `h2` reads the heading copy, the rows are in the given order with icon, message and time, and only the unread row has the tint, an 8 px `#0074B5` dot and the hidden unread text («Непрочитане» in the stories).
-- Given an unread row, when contrast is computed, then the row text on the unread tint `#E8F7FF` is 15.61:1, the time 6.42:1, the dot 5.04:1 on white and 4.60:1 on the tint, and the error icon 4.09:1; the rejected `#1EAEFF` dot (2.46:1) is not used.
+- Given an unread row, when contrast is computed (superseded by architecture §9.5 and PRD item 64, which changed the tint), then the row text on the unread tint `#E8F7FF` is 15.61:1, the time 6.42:1, the dot 5.04:1 on white and 4.60:1 on the tint, and the error icon 4.09:1; the rejected `#1EAEFF` dot (2.46:1) is not used.
 - Given mark-all-read, when it is activated, then the handler runs once, the button stays enabled at zero unread so focus never drops, it is a `#0074B5` text button at 5.04:1 on white with a 24 px minimum and 44 px on mobile.
 - Given an empty row set, when it renders, then the empty-state line shows in `#57595B` (7.03:1 on white) and no list items exist.
 - Given `UINotificationHistoryFrame` closed with no children, when it renders, then the host element exists with the given id and the `hidden` attribute, so an `aria-controls` reference resolves before any panel content exists; open, it drops `hidden` and shows its children in the caret-card geometry at every shell layout (`min(313px, 100vw - 32px)` wide, `max-height: calc(100dvh - 80px)` with scroll).
@@ -1685,7 +1686,8 @@ imports `routes/index` only), `make lint-docs` (the app-shell README), `make che
 - Given the changed files, when coverage and Stryker run in CI, then both report 100 % and zero survivors.
 - Not applicable: new i18n keys; recording baselines (Story 4.6 records every changed capture).
 
-> Code facts (2026-11-20): the integration test composes the real registry, `ProtectedRoute`,
+> Code facts (2026-11-20; PRD item 66 moved the composed test to the unit suite, over
+> `protectedLayoutLoader` in place of the registry): the test composes the real `ProtectedRoute`,
 > `AppLayout`, `UIAppShell`, header and `NotificationsShellSlot` over a fresh adapter, with probe
 > pages for `/` and `/settings` (the real settings page needs the DI container and the GraphQL
 > profile and two-factor answers); the `/settings` probe registers the settings catalog as
@@ -1964,8 +1966,8 @@ changed-PNG list.
 **Acceptance Criteria:**
 
 - Given the PR's changed PNG list, when it is read, then it contains exactly the 362 files of PRD item 58 (320 re-recorded, 24 new, 18 deleted) and no other; in particular none of the 434 public-page baselines (auth, password recovery, error pages, not found, auth skeleton, registration notification, submit loader, mobile auth and mobile error pages) changed (NFR-15 as amended, PRD amendment item 32) (verified at QA / finish-PR stage, not in a local Ralph run).
-- Given each of the 320 re-recorded baselines, when its CI diff image against `main` is read, then the difference lies inside the header's bell box (the enabled glyph and, on desktop and tablet, the badge reading the seed's 1 or the recorded count) or, in the mobile drawer capture, inside the drawn bell copy, plus the settings captures' own toast changes; any other difference stops the story and is reported (architecture K6a) (verified at QA / finish-PR stage, not in a local Ralph run).
-- Given the settings `success-toasts` and `transient-toast` captures under the default style, when they are taken, then the desktop and tablet badge reads 4 and 2 respectively (seed 1 plus the raised outcomes), never masked.
+- Given each of the 320 re-recorded baselines, when its CI diff image against #398 is read, then the difference lies inside the header's bell box (the enabled glyph and, on desktop and tablet, the badge reading the seed's 1 or the recorded count) or, in the mobile drawer capture, inside the drawn bell copy, plus the settings captures' own toast changes; any other difference stops the story and is reported (architecture K6a) (verified at QA / finish-PR stage, not in a local Ralph run).
+- Given the settings `bell-success` and `bell-transient` captures, when they are taken, then the desktop and tablet badge reads 4 and 2 respectively (seed 1 plus the raised outcomes), never masked.
 - Given any protected-page capture in the nine re-recorded specs, when it is taken, then the shared wait has seen the enabled bell with `aria-expanded="false"` and, on desktop and tablet, the expected badge text (1 at rest, the recorded count after a save) before `toHaveScreenshot` runs, so no baseline records the bell's placeholder frame or a badge still loading and none flakes under `retries: 0` or the nightly flake budget of 0 (readiness R3-08).
 - Given `make test-visual` in CI after the baselines are committed, when it runs, then every capture equals its baseline, including every capture outside the list against `main` (NFR-14) (verified at QA / finish-PR stage, not in a local Ralph run).
 - Given the captures, when they are taken, then timestamps are deterministic through `freezeClock` and the fixed seed, never masked.
@@ -2229,7 +2231,7 @@ and `dismissAll()`; the bell stays enabled with no setting.
 
 - Given the removal merged, when the built Storybook index is read, then exactly one variant's stories remain.
 - Given the removal merged, when the runtime contract test and `make check-env-sync` run, then no `notificationStyle` key or `APP_CONFIG_NOTIFICATION_STYLE` variable exists anywhere, and the choice kind is gone unless another setting uses it.
-- Given any winner, when the header renders on a protected page, then the bell is enabled with the badge, the count description and the history panel, and the repository still exposes `record`, `list`, `countUnread` and `markAllRead` (owner decision 2026-11-12).
+- Given any winner, when the header renders on a protected page, then the bell is enabled with the badge, the count description and the history panel, and the repository still exposes `record`, `list`, `countUnread` and `markAllRead` (owner decision 2026-11-12), and `claim` since PRD item 57.
 - Given C lost, when the tree is searched, then no `UIBellNotice`, `BellOutcomeNotice`, `notifications-notice` chunk name or `--app-top-overhang` remains.
 - Given the removal merged, when the merged mutation gate runs, then no surviving mutant sits in a notifications path the winner does not use (no dead operation), and coverage stays 100.
 - Given the removal merged, when the visual job runs, then the losers' baselines are deleted and every remaining capture equals its baseline.

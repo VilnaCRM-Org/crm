@@ -28,6 +28,7 @@ import {
   expectOnlyAllowedOrigins,
   expectFocusKeptOnAppearance,
   expectSuccessOutcome,
+  expectUnread,
   unreadDescription,
   watchFocusOnAppearance,
   fillCurrentPassword,
@@ -117,6 +118,7 @@ test.describe('Settings save journeys (issues #330, #391)', () => {
     await saveNameButton(page).click();
 
     await expectSuccessOutcome(page, text.saved);
+    await expectUnread(page, 2);
     await expectFocusKeptOnAppearance(page);
     await expect(page.getByText(NEW_NAME, { exact: true })).toBeVisible();
     await expect(namePasswordField(page)).toHaveCount(0);
@@ -145,6 +147,7 @@ test.describe('Settings save journeys (issues #330, #391)', () => {
     await saveNameButton(page).click();
 
     await expectSuccessOutcome(page, text.saved);
+    await expectUnread(page, 2);
     expect(stub.count('UpdateUser')).toBe(1);
   });
 
@@ -159,6 +162,7 @@ test.describe('Settings save journeys (issues #330, #391)', () => {
     await saveEditedName(page, NEW_NAME, password);
 
     await expectSuccessOutcome(page, text.saved);
+    await expectUnread(page, 2);
     const update = stub.calls.find((call) => call.operation === 'UpdateUser');
     expect(Object.keys(update?.variables.input as object).sort()).toEqual([
       'clientMutationId',
@@ -184,12 +188,14 @@ test.describe('Settings save journeys (issues #330, #391)', () => {
     await saveEditedEmail(page, newEmail, password);
 
     await expectSuccessOutcome(page, text.emailSent);
+    await expectUnread(page, 2);
     await expect(saveEmailButton(page)).toBeHidden();
     await expect(page.getByText(text.unconfirmed, { exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: text.resend, exact: true }).click();
 
     await expectSuccessOutcome(page, text.resent);
+    await expectUnread(page, 3);
     expect(stub.count('ResendEmailToUser')).toBe(1);
   });
 
@@ -201,6 +207,7 @@ test.describe('Settings save journeys (issues #330, #391)', () => {
     await saveButton(page).click();
 
     await expectSuccessOutcome(page, text.passwordChanged);
+    await expectUnread(page, 2);
     await expectEveryPasswordFieldEmpty(page);
     expect(stub.count('UpdateUser')).toBe(1);
   });

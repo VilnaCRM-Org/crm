@@ -4,6 +4,7 @@ import ROUTE_PATHS from '@/routes/route-paths';
 import { buildEmail, buildFullName, buildPassword } from '@tests/builders';
 import {
   PROFILE_NODE,
+  replyWithSaved,
   signInToSettings,
   stubProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
@@ -239,6 +240,31 @@ test.describe('Bell history (issue #391)', () => {
     await page.keyboard.press('Escape');
     await expectClosed(page, history);
     await expect(bellOf(page)).toBeFocused();
+  });
+
+  test('leaves the outcome on its page and keeps it unread in the history elsewhere', async ({
+    page,
+  }) => {
+    const fullName = buildFullName();
+    await stubProfile(page, { UpdateUser: [replyWithSaved({ initials: fullName })] });
+    await openLoadedSettings(page);
+    await saveEditedName(page, fullName, buildPassword());
+    await expectSuccessOutcome(page, text.saved);
+    await expect(noticeClose(page)).toHaveCount(1);
+
+    await page.goBack();
+    await expect(page).toHaveURL(ROUTE_PATHS.home);
+    await expect(noticeClose(page)).toHaveCount(0);
+    const history = await openBellWithKeyboard(page);
+    await expect(rowsOf(history)).toHaveCount(1 + SEED_ROWS.length);
+    await expect(rowsOf(history).first()).toContainText(text.saved);
+    await expect(unreadLabelsOf(rowsOf(history).first())).toHaveCount(1);
+
+    await page.goForward();
+    await expect(page).toHaveURL(ROUTE_PATHS.settings);
+    await expect(nameField(page)).toHaveValue(/.+/);
+    await expect(noticeClose(page)).toHaveCount(0);
+    await expect(badgeOf(page)).toHaveText('2');
   });
 
   test('shows the seed again with a badge of one after a reload', async ({ page }) => {
