@@ -5,7 +5,7 @@ bmadCommand: 'create-architecture'
 project_name: 'crm'
 date: '2026-11-18'
 revised: '2026-11-25'
-iteration: 11
+iteration: 12
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR'
   - '2026-11-19 review: stale REST passages corrected'
@@ -17,6 +17,7 @@ revisionPasses:
   - '2026-11-24 FR/NFR gate iteration 9: §6 navigator and E2E rows, start abort'
   - '2026-11-24 FR/NFR gate iteration 10: §6 consent-page merge and repository rows'
   - '2026-11-25 bundle review: fit statement, scope of the history note, §6 outside edits'
+  - '2026-11-25 review: §6 names every file outside the feature'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'
@@ -261,21 +262,30 @@ What changed against this design while building it on the `main` of the day, and
 | Visual baselines for the callback states (S4.1)                                | recorded 2026-11-19 in CI (W5 closed)                                                                                                                     | They were first deferred: baselines come from the production stack, which this laptop's rules keep CI-only |
 | No new axe exception (superseded, readiness W7)                                | `#social-sign-in-actions > .MuiButton-contained` (issue #276)                                                                                             | The primary action reuses the design-owned `#1EAEFF` button, like the recovery in-card links               |
 
-Edits outside `modules/user/features/auth` and why each is there:
+Every file this feature changes outside `src/modules/user/features/auth`, its tests and this bundle:
 
-- `src/routes/`: the `socialCallback` path and the `socialStart` marker of the navigation state.
+- `src/routes/{route-paths,types/navigation-state}.ts`: the `socialCallback` path and the
+  `socialStart` marker of the navigation state.
 - `src/modules/user/config/{di,tokens}.ts`: the social tokens and registrations; the settings
   registrations moved unchanged to `src/modules/user/features/settings/di.ts`, which it composes.
-- `src/services/observability/`: the callback scrubber (NFR7).
-- `src/api/contracts/`, `src/api/generated/`: the pending contract and its generated operations (D3).
+- `src/services/observability/{pii-text-scrubber,social-callback-text-scrubber}.ts`: the callback
+  scrubber (NFR7).
+- `src/api/contracts/pending/social-sign-in.graphql`, `src/api/generated/graphql.ts`: the pending
+  contract and its generated operations (D3).
+- `src/i18n/localization.json`: the merged catalog, regenerated with the `auth.social.*` copy.
 - `src/utils/url-builder.ts` is removed, and with it the `mockoonUrl()` reader of
   `src/config/env/raw-env.ts` (S4.3).
-- `docker/`, `Mockoon.Dockerfile`, `scripts/mockoon-social-oauth.js`, `scripts/docker/`, `Makefile`,
+- `docker/apollo-server/lib/{resolvers,social-sign-in-resolvers}.ts`, `Mockoon.Dockerfile`,
+  `scripts/mockoon-social-oauth.js`, `scripts/docker/mockoon-entrypoint.sh`, `Makefile`,
   `.env.example`: the local back end (S1.1, S1.2).
-- `scripts/local-stack/start.sh` and its Bats suite: a separate developer fix for the local stack's
-  user-service e-mail workers, carried by this pull request; no requirement depends on it.
-- `config/di-collaborator-policy.js`, `docs/`, `CONTRIBUTING.md`, `CLAUDE.md`, `AGENTS.md` and the
-  module READMEs: the gates' policy entries and the documentation (S1.3, S4.2, S4.3).
+- `scripts/local-stack/start.sh`: a separate developer fix for the local stack's user-service e-mail
+  workers, carried by this pull request; no requirement depends on it.
+- `config/di-collaborator-policy.js` and `.claude/skills/AI-AGENT-GUIDE.md`: the policy entries of the
+  render-path singletons.
+- Documentation (S1.3, S3.2, S4.2, S4.3): `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`,
+  `docs/social-sign-in-local.md`, `docs/accessibility/acceptance-standard.md`, `specs/README.md`, and
+  the READMEs of `src/api/contracts`, `src/config/env`, `src/config/runtime`, `src/modules/user` and
+  `src/routes`.
 
 ## 7. GraphQL design (2026-11-19)
 
