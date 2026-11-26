@@ -76,7 +76,7 @@ RUN bun x rsbuild build && \
 
 
 # -------- rust-code-analysis Stage --------
-FROM mirror.gcr.io/library/debian:13-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a AS rca
+FROM mirror.gcr.io/library/debian:13-slim@sha256:8aa5a7bf5a1955bddbe7d74fcdd0b91ab30e74362a8b73af672b0481b35b44a0 AS rca
 
 ARG RCA_VERSION=0.0.25
 ARG RCA_SHA256=9ec2a217b8ff191e02dab5d5f2eee6158b63fd975c532b2c5d67c2e6c7249894
