@@ -403,6 +403,8 @@ test.describe('Bell disclosure (J15, issue #391)', () => {
     await expect(panel).toBeHidden();
     await expect(bellOf(page)).toBeFocused();
     await expectBellState(page, false);
+    await page.keyboard.press('Space');
+    await expectBellState(page, true);
   });
 
   test('the history is read, cleared and left with the keyboard alone', async ({ page }) => {
@@ -425,6 +427,23 @@ test.describe('Bell disclosure (J15, issue #391)', () => {
     await expectTabOrder(page, [{ locator: chipOf(page), visibleFocus: true }]);
     await expect(panel).toBeHidden();
     await expect(bellOf(page)).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('Retry and close of an error are the Tab stops between the bell and the chip', async ({
+    page,
+  }) => {
+    await openSettings(page, stubProfile(page, { UpdateUser: [replyWithStatus(503)] }));
+    await expectShellReady(page);
+    await saveEditedName(page, NEW_NAME, password);
+    await expectErrorOutcome(page, text.transient);
+    await logoOf(page).focus();
+
+    await expectTabOrder(page, [
+      { locator: bellOf(page), visibleFocus: true },
+      { locator: noticeRetry(page), visibleFocus: true },
+      { locator: noticeClose(page), visibleFocus: true },
+      { locator: chipOf(page), visibleFocus: true },
+    ]);
   });
 
   test('the notice close is the Tab stop between the bell and the chip', async ({ page }) => {

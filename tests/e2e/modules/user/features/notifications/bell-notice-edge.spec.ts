@@ -91,7 +91,7 @@ test.describe('Bell notice entrance (NFR-6, issue #391)', () => {
         await expect(noticeCardOf(page)).toBeVisible();
 
         await passTwoFrames(page);
-        await expect.poll(startedAnimations).toBe(started);
+        expect(await startedAnimations()).toBe(started);
       });
     }
   }
