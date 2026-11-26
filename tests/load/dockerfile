@@ -13,7 +13,7 @@ RUN xk6 build \
     --with github.com/grafana/xk6-exec@v0.5.0 \
     --with github.com/avitalique/xk6-file@v1.5.0
 
-FROM alpine:3.24@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+FROM alpine:3.24@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
 RUN apk add --no-cache ca-certificates=20261020-r0 tzdata=2026f-r0 \
     && addgroup -g 1000 k6 \
     && adduser -u 1000 -G k6 -D k6 \
