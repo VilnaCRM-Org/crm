@@ -264,8 +264,8 @@ under `prefers-reduced-motion: reduce` both durations are 0 (`useDrawerMotion`).
 
 Focus: the close button takes focus on open. Escape, the close button and a tap on the header
 outside the close button close the drawer and return focus to the burger. The header is the only
-spot outside the panel: the settled panel covers everything below it, so the scrim and the footer
-answer a tap only while the panel is still sliding in. A navigation row, a sub-item, Settings, Sign
+spot outside the panel: the settled panel covers everything below it, so the invisible backdrop
+answers a tap only while the panel is still sliding in. A navigation row, a sub-item, Settings, Sign
 out or any route change close it without restoring the burger, so the destination's `<main>` keeps
 the focus `useArrivalFocus` gave it; widening the viewport unmounts the drawer and focuses
 `main[tabindex="-1"]`. MUI enforces the trap while the drawer is open, so focus moved to the page
