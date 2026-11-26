@@ -31,6 +31,11 @@ const AUTH_TOKENS = Object.freeze({
   GraphQLTwoFactorSettingsRepository: Symbol('GraphQLTwoFactorSettingsRepository'),
   GraphQLTwoFactorSettingsTransformer: Symbol('GraphQLTwoFactorSettingsTransformer'),
   TwoFactorSettingsProvider: Symbol('TwoFactorSettingsProvider'),
+  SocialSignInRepository: Symbol('SocialSignInRepository'),
+  SocialSignInTransformer: Symbol('SocialSignInTransformer'),
+  SocialSignInProvider: Symbol('SocialSignInProvider'),
+  SocialSignInDeps: Symbol('SocialSignInDeps'),
+  AuthSession: Symbol('AuthSession'),
 } as const);
 
 export default AUTH_TOKENS;

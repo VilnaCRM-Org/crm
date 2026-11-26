@@ -1,13 +1,13 @@
-class BrowserNavigator {
-  // `window.open` is called for its side effect only. Its return value is deliberately ignored:
-  // with `noopener` the opener is severed, and several browsers signal that by returning `null`
-  // on a *successful* open. Treating `null` as "popup blocked" and navigating the current tab
-  // therefore replaces a working sign-in page with the OAuth endpoint on those browsers.
-  public openInNewTab(url: string): void {
-    window.open(url, '_blank', 'noopener,noreferrer');
+export class BrowserNavigator {
+  constructor(private readonly location: Location) {}
+
+  // Replaces the current history entry, so Back from the destination returns to the page before
+  // this one instead of to a page that would only send the browser forward again.
+  public replace(url: string): void {
+    this.location.replace(url);
   }
 }
 
-const browserNavigator = new BrowserNavigator();
+const browserNavigator = new BrowserNavigator(window.location);
 
 export default browserNavigator;

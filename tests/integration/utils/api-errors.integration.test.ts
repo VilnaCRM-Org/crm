@@ -5,9 +5,8 @@ import {
   ValidationError,
   ApiErrorCodes,
 } from '@/modules/user/lib/api-errors';
-import urlBuilder from '@/utils/url-builder';
 
-describe('API Errors and URL Builder Integration', () => {
+describe('API Errors Integration', () => {
   describe('ApiError Constructors', () => {
     it('should create AuthenticationError with default message', () => {
       const error = new AuthenticationError();
@@ -98,70 +97,6 @@ describe('API Errors and URL Builder Integration', () => {
       expect(error.status).toBe(422);
       expect(error.cause).toBe(cause);
       expect(error.name).toBe('ValidationError');
-    });
-  });
-
-  describe('urlBuilder branch coverage', () => {
-    const originalEnv = process.env.REACT_APP_MOCKOON_URL;
-
-    afterEach(() => {
-      process.env.REACT_APP_MOCKOON_URL = originalEnv;
-    });
-
-    it('should handle when baseUrl exists', () => {
-      process.env.REACT_APP_MOCKOON_URL = 'http://localhost:3001';
-
-      const result = urlBuilder.build('/api/users');
-
-      expect(result).toBe('http://localhost:3001/api/users');
-    });
-
-    it('should handle when baseUrl exists with trailing slashes', () => {
-      process.env.REACT_APP_MOCKOON_URL = 'http://localhost:3001///';
-
-      const result = urlBuilder.build('///api/users');
-
-      expect(result).toBe('http://localhost:3001/api/users');
-    });
-
-    it('should handle when baseUrl is empty string', () => {
-      process.env.REACT_APP_MOCKOON_URL = '';
-
-      const result = urlBuilder.build('/api/users');
-
-      expect(result).toBe('/api/users');
-    });
-
-    it('should handle when baseUrl is undefined', () => {
-      delete process.env.REACT_APP_MOCKOON_URL;
-
-      const result = urlBuilder.build('/api/users');
-
-      expect(result).toBe('/api/users');
-    });
-
-    it('should handle when baseUrl is whitespace only', () => {
-      process.env.REACT_APP_MOCKOON_URL = '   ';
-
-      const result = urlBuilder.build('/api/users');
-
-      expect(result).toBe('/api/users');
-    });
-
-    it('should handle endpoint without leading slash when baseUrl exists', () => {
-      process.env.REACT_APP_MOCKOON_URL = 'http://localhost:3001';
-
-      const result = urlBuilder.build('api/users');
-
-      expect(result).toBe('http://localhost:3001/api/users');
-    });
-
-    it('should handle endpoint without leading slash when baseUrl is empty', () => {
-      process.env.REACT_APP_MOCKOON_URL = '';
-
-      const result = urlBuilder.build('api/users');
-
-      expect(result).toBe('/api/users');
     });
   });
 });

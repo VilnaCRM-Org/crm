@@ -7,8 +7,9 @@ live in `url-builder`, `get-graphql-url`, and the auth store (issue #112).
 This is the **build-time** layer: `REACT_APP_*` values are inlined into the bundle, so changing one
 requires a rebuild. Configuration an administrator can change **without** a rebuild lives in the
 sibling **runtime** layer, `@/config/runtime` (issue #145), which reuses the two-layer split below
-for the same paint-path reason. Where both define a setting (`graphqlUrl`, the REST base URL), the
-runtime value wins and the build-time value is the default. See
+for the same paint-path reason. Where both define a setting (`graphqlUrl`), the runtime value wins
+and the build-time value is the default. `APP_CONFIG_API_BASE_URL` has no client reader today and
+only widens the CSP `connect-src`. See
 [`../runtime/README.md`](../runtime/README.md).
 
 ## Why a two-layer module
@@ -57,8 +58,8 @@ validated as URLs and `mainLanguage`/`fallbackLanguage` as the `['uk','en']` enu
 an aggregated startup error. `NODE_ENV` is the exception — it is a runtime/build flag that can vary
 by environment, so its enum uses `.catch(undefined)`: an unrecognised value degrades to
 "not production" (matching the previous `NODE_ENV === 'production'` compare) rather than crashing
-the app. Every field is `optional`, because each reader supplies its own default/fallback (empty
-mockoon URL, localhost GraphQL URL in dev, `uk`/`en` languages), so absence is valid; only a
+the app. Every field is `optional`, because each reader supplies its own default/fallback
+(localhost GraphQL URL in dev, `uk`/`en` languages), so absence is valid; only a
 _present but malformed_ value fails.
 
 ## Enforcement

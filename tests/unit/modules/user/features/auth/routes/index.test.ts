@@ -15,7 +15,7 @@ describe('auth route contract', () => {
     expect((await loadAuthRoutes()).id).toBe('user.auth');
   });
 
-  it('declares sign-up, sign-in, challenge and both recovery routes in that order', async () => {
+  it('declares the sign-up, sign-in, challenge, recovery and callback routes', async () => {
     const { routes } = await loadAuthRoutes();
 
     expect(routes.map((route) => route.path)).toEqual([
@@ -24,6 +24,7 @@ describe('auth route contract', () => {
       ROUTE_PATHS.twoFactorChallenge,
       ROUTE_PATHS.passwordRecovery,
       ROUTE_PATHS.passwordReset,
+      ROUTE_PATHS.socialCallback,
     ]);
   });
 
@@ -36,6 +37,7 @@ describe('auth route contract', () => {
       { titleKey: 'two_factor.title' },
       { titleKey: 'password_recovery.title' },
       { titleKey: 'password_reset.title' },
+      { titleKey: 'auth.social.callback_title' },
     ]);
   });
 
@@ -43,6 +45,7 @@ describe('auth route contract', () => {
     const { routes } = await loadAuthRoutes();
 
     expect(routes.map((route) => route.guard)).toEqual([
+      'public',
       'public',
       'public',
       'public',
@@ -72,5 +75,13 @@ describe('auth route contract', () => {
     const challenge = routes.find((route) => route.path === ROUTE_PATHS.twoFactorChallenge);
 
     await expect(challenge?.load()).resolves.toMatchObject({ default: TwoFactorChallenge });
+  });
+
+  it('loads the social callback page lazily from its own module', async () => {
+    const { routes } = await loadAuthRoutes();
+    const route = routes.find((candidate) => candidate.path === ROUTE_PATHS.socialCallback);
+    const { default: SocialCallback } = await import('@auth/routes/social-callback');
+
+    await expect(route?.load?.()).resolves.toMatchObject({ default: SocialCallback });
   });
 });

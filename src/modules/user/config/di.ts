@@ -6,15 +6,7 @@ import sandboxDemoSessionProvider, {
   type SandboxDemoSessionProvider,
 } from '@/config/env/sandbox-demo-session-provider';
 import type { ModuleRegistrar } from '@/config/types/module-registrar';
-import ProfileProvider, {
-  TwoFactorSettingsProvider,
-} from '@/modules/user/features/settings/data-providers';
-import GraphQLProfileRepository, {
-  GraphQLTwoFactorSettingsRepository,
-} from '@/modules/user/features/settings/repositories';
-import GraphQLProfileTransformer, {
-  GraphQLTwoFactorSettingsTransformer,
-} from '@/modules/user/features/settings/transformers';
+import userSettingsRegistrar from '@/modules/user/features/settings/di';
 import AuthUiErrorMapper from '@/modules/user/store/auth-ui-error-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
@@ -28,6 +20,7 @@ import ERROR_UTILS_TOKENS from '@/utils/error/tokens';
 import GraphQLUrl from '@/utils/get-graphql-url';
 import GraphQLSignInProvider from '@auth/data-providers/graphql-sign-in-provider';
 import PasswordRecoveryProvider from '@auth/data-providers/password-recovery-provider';
+import socialSignInRegistrar from '@auth/di';
 import {
   ApiErrorFactory,
   ApiStatusErrorFactory,
@@ -61,6 +54,8 @@ class UserModuleRegistrar implements ModuleRegistrar {
     this.registerRepository(container);
     this.registerAuthState(container);
     this.registerSessionLink(container);
+    socialSignInRegistrar.register(container);
+    userSettingsRegistrar.register(container);
   }
 
   // The auth store stays a container-free module singleton so the auth page paints without
@@ -133,7 +128,6 @@ class UserModuleRegistrar implements ModuleRegistrar {
       AUTH_TOKENS.UserServiceErrorTransformer,
       UserServiceErrorTransformer
     );
-    container.registerSingleton(AUTH_TOKENS.GraphQLProfileTransformer, GraphQLProfileTransformer);
     container.registerSingleton(AUTH_TOKENS.UserDisplayNameMapper, UserDisplayNameMapper);
   }
 
@@ -142,15 +136,6 @@ class UserModuleRegistrar implements ModuleRegistrar {
     container.registerSingleton(AUTH_TOKENS.GraphQLSignInRepository, GraphQLSignInRepository);
     container.registerSingleton(AUTH_TOKENS.GraphQLSignInTransformer, GraphQLSignInTransformer);
     container.registerSingleton(AUTH_TOKENS.GraphQLSignInProvider, GraphQLSignInProvider);
-    container.registerSingleton(
-      AUTH_TOKENS.GraphQLTwoFactorSettingsRepository,
-      GraphQLTwoFactorSettingsRepository
-    );
-    container.registerSingleton(
-      AUTH_TOKENS.GraphQLTwoFactorSettingsTransformer,
-      GraphQLTwoFactorSettingsTransformer
-    );
-    container.registerSingleton(AUTH_TOKENS.TwoFactorSettingsProvider, TwoFactorSettingsProvider);
   }
 
   private registerRepository(container: DependencyContainer): void {
@@ -163,8 +148,6 @@ class UserModuleRegistrar implements ModuleRegistrar {
       GraphQLPasswordRecoveryRepository
     );
     container.registerSingleton(AUTH_TOKENS.PasswordRecoveryProvider, PasswordRecoveryProvider);
-    container.registerSingleton(AUTH_TOKENS.GraphQLProfileRepository, GraphQLProfileRepository);
-    container.registerSingleton(AUTH_TOKENS.ProfileProvider, ProfileProvider);
   }
 
   private buildAuthRepositoryDeps(c: DependencyContainer): AuthRepositoryDeps {
