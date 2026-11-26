@@ -5,6 +5,7 @@ import { container } from 'tsyringe';
 import runtimeConfigRegistrar from '@/config/runtime/di';
 import type { ModuleRegistrar } from '@/config/types/module-registrar';
 import userModuleRegistrar from '@/modules/user/config/di';
+import notificationsRegistrar from '@/modules/user/features/notifications/di';
 import errorRegistrar from '@/services/error/di';
 import errorReportingRegistrar from '@/services/error-reporting/di';
 import httpClientRegistrar from '@/services/https-client/di';
@@ -25,6 +26,7 @@ const registrars: ModuleRegistrar[] = [
   observabilityRegistrar,
   securityEventRegistrar,
   userModuleRegistrar,
+  notificationsRegistrar,
 ];
 
 registrars.forEach((registrar) => registrar.register(container));

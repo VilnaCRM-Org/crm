@@ -10,7 +10,7 @@ import useFocusOnMount from '@/utils/use-focus-on-mount';
 import DrawerHeaderCopies from './drawer-header-copies';
 import styles from './styles';
 
-export default function DrawerHeader({ onDismiss, avatar }: DrawerHeaderProps): JSX.Element {
+export default function DrawerHeader({ onDismiss, copies }: DrawerHeaderProps): JSX.Element {
   const { t } = useTranslation();
   const focusOnMount = useFocusOnMount<HTMLButtonElement>();
 
@@ -18,7 +18,7 @@ export default function DrawerHeader({ onDismiss, avatar }: DrawerHeaderProps): 
     <Box role="presentation" onClick={onDismiss} sx={styles.header}>
       <Box component="img" src={logoMobile} alt="" aria-hidden="true" sx={styles.logo} />
       <Box sx={styles.cluster}>
-        <DrawerHeaderCopies avatar={avatar} />
+        <DrawerHeaderCopies avatar={copies?.avatar} liveBell={copies?.liveBell} />
         <Box
           component="button"
           type="button"

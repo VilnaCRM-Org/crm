@@ -70,7 +70,7 @@ describe('DrawerHeader', () => {
   });
 
   it('puts the supplied avatar in the aria-hidden copy, outside the one operable control', () => {
-    renderShell(<DrawerHeader onDismiss={jest.fn()} avatar={<span>ОП</span>} />);
+    renderShell(<DrawerHeader onDismiss={jest.fn()} copies={{ avatar: <span>ОП</span> }} />);
 
     const copy = screen.getByText('ОП');
 

@@ -84,17 +84,27 @@ Fail-fast happens at the earliest point that can act on it, not only in the brow
 
 ## Settings
 
-| Key            | Environment variable                 | Falls back to           |
-| -------------- | ------------------------------------ | ----------------------- |
-| `apiBaseUrl`   | `APP_CONFIG_API_BASE_URL`            | none (no client reader) |
-| `graphqlUrl`   | `APP_CONFIG_GRAPHQL_URL`             | `REACT_APP_GRAPHQL_URL` |
-| `flags.<name>` | `APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>` | the declared default    |
+| Key                     | Environment variable                 | Falls back to           |
+| ----------------------- | ------------------------------------ | ----------------------- |
+| `apiBaseUrl`            | `APP_CONFIG_API_BASE_URL`            | none (no client reader) |
+| `graphqlUrl`            | `APP_CONFIG_GRAPHQL_URL`             | `REACT_APP_GRAPHQL_URL` |
+| `notificationEventsUrl` | `APP_CONFIG_NOTIFICATION_EVENTS_URL` | none (no stream)        |
+| `flags.<name>`          | `APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>` | the declared default    |
 
 `graphqlUrl` is injected into `GraphQLUrl` (the Apollo endpoint), and flags are read through
 `featureFlagService`. `apiBaseUrl` has no client reader today: its reader, `url-builder`, went with
 the last REST caller (#331 retired the REST login client and specs/social-sign-in moved social
 sign-in to GraphQL). The setting is still validated, and the container entrypoint still adds its
 origin to the CSP `connect-src`; whether to keep it is a separate decision.
+
+`notificationEventsUrl` is read by the notifications shell slot (`useBroadcastEvents`) and is off
+by default: while it is absent no stream is opened. While it names notification-service, each
+protected page keeps one server-sent-events stream open for broadcast events only. The stream sends
+no token, no user id and no cross-origin credentials, an event carries a code and no text, and an
+accepted event stays in the in-memory history only: nothing is persisted. The container entrypoint
+adds its origin to the CSP `connect-src`. It has no build-time default, so a malformed value reads
+as absent in the browser and aborts the container start. It names an origin: the stream path is
+resolved from the origin, so a path prefix in the value is dropped.
 
 `graphqlUrl` falls back to the build-time variable its consumer already read before this module
 existed, so existing deployments behave exactly as before until an `APP_CONFIG_*` value is

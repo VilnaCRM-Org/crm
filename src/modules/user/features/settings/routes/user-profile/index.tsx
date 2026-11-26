@@ -2,11 +2,10 @@ import Box from '@mui/material/Box';
 import { type JSX, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import UINotificationOutlet from '@/components/ui-notification-outlet';
 import UIShellContent from '@/components/ui-shell-content';
-import UIToastStack from '@/components/ui-toast';
 import UITypography from '@/components/ui-typography';
 import usePageTitle from '@/hooks/use-page-title';
-import useToastQueue from '@/hooks/use-toast-queue';
 import i18n from '@/i18n';
 import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 
@@ -17,7 +16,7 @@ import UserProfileSettings from '../../components/user-profile-settings';
 import useProfileLoad from '../../hooks/use-profile-load';
 import en from '../../i18n/en.json';
 import uk from '../../i18n/uk.json';
-import type { SettingsHeadingProps, SettingsToastsProps } from '../../types/routes/user-profile';
+import type { SettingsHeadingProps } from '../../types/routes/user-profile';
 
 import styles from './styles';
 
@@ -36,23 +35,9 @@ function SettingsHeading({ headingRef }: SettingsHeadingProps): JSX.Element {
   );
 }
 
-function SettingsToasts({ queue, saveRef, headingRef }: SettingsToastsProps): JSX.Element {
-  return (
-    <UIToastStack
-      toasts={queue.toasts}
-      announcement={queue.announcement}
-      alert={queue.alert}
-      onDismiss={queue.dismiss}
-      returnFocusRef={saveRef}
-      fallbackFocusRef={headingRef}
-    />
-  );
-}
-
 export default function UserProfile(): JSX.Element {
   usePageTitle('settings.title');
   const load = useProfileLoad();
-  const toasts = useToastQueue();
   const saveRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLElement>(null);
 
@@ -68,7 +53,6 @@ export default function UserProfile(): JSX.Element {
               refocus={load.refocus}
               retry={load.retry}
               adoption={load.adoption}
-              toasts={toasts}
               saveRef={saveRef}
               headingRef={headingRef}
             />
@@ -77,7 +61,7 @@ export default function UserProfile(): JSX.Element {
           <TwoFactorSettings />
         </SettingsGrid>
       </Box>
-      <SettingsToasts queue={toasts} saveRef={saveRef} headingRef={headingRef} />
+      <UINotificationOutlet returnFocusRef={saveRef} fallbackFocusRef={headingRef} />
     </UIShellContent>
   );
 }

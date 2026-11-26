@@ -1,6 +1,6 @@
 import { z } from '@/config/zod';
 
-// Protocol-constrained rather than bare `z.url()`: both settings are HTTP endpoints, and the
+// Protocol-constrained rather than bare `z.url()`: every URL setting is an HTTP endpoint, and the
 // container entrypoint already rejects every other scheme, so a block that reaches the document
 // without passing through the renderer must not be able to smuggle in a `mailto:` or
 // `javascript:` value that only fails later inside the HTTP clients.
@@ -15,6 +15,7 @@ const HttpUrl = z.url({ protocol: /^https?$/ });
 const AppConfigSchema = z.strictObject({
   apiBaseUrl: HttpUrl.optional(),
   graphqlUrl: HttpUrl.optional(),
+  notificationEventsUrl: HttpUrl.optional(),
   flags: z.strictObject({}).optional(),
 });
 

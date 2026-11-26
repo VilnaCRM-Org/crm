@@ -21,9 +21,9 @@ route set discoverable (audit, nav, sitemap).
 | ----------------------- | ------------------------------------------------------------------ |
 | `types/app-route.ts`    | `AppRouteObject` (path/index, lazy `load`, `guard`, `meta`)        |
 | `types/route-module.ts` | `RouteModule` (`id` + `routes`) — a module's contract shape        |
-| `types/shell-slot.ts`   | `RouteModuleShell` (`userMenu` loader), slot props, `onAvatar`     |
+| `types/shell-slot.ts`   | `RouteModuleShell` (two slot loaders), slot props, `onAvatar`      |
 | `app-routes.ts`         | Shell contract: home, five coming-soon routes, 404, 403, 5xx       |
-| `shell-slot-factory.ts` | Wraps `shell.userMenu` in a lazy, retrying slot component          |
+| `shell-slot-factory.ts` | Wraps a shell slot loader in a lazy, retrying slot component       |
 | `registry.ts`           | Collects every module contract into one list                       |
 | `route-validator.ts`    | Rejects an invalid contract when the router is built (rules below) |
 | `route-mapper.tsx`      | Maps one contract route → a lazy route with an `errorElement`      |
@@ -32,8 +32,8 @@ route set discoverable (audit, nav, sitemap).
 | `routes.tsx`            | Wiring only: `createBrowserRouter(...)` + `onRouteError`           |
 
 `route-validator.ts` throws when two modules share an `id`, when more than one module declares
-`shell.userMenu`, when a nested route declares a `guard` (guards are top-level only), and when a
-route has neither a `path` nor `index: true`.
+`shell.userMenu` or more than one declares `shell.notifications`, when a nested route declares a
+`guard` (guards are top-level only), and when a route has neither a `path` nor `index: true`.
 
 The composer, mapper, and validator are container-free **module singletons**
 (`export default new X()`), so no tsyringe is pulled into the auth page's paint
@@ -93,31 +93,36 @@ contract beside `/settings`.
 ## Shell slots (issue #362)
 
 A module may put one piece of its UI into the app shell without the shell importing the module.
-`RouteModule.shell` is an optional `RouteModuleShell`; today it carries `userMenu`, a loader of a
-component that takes `signOut`, an `onChunkFailure` callback and an `onAvatar` callback
-(`ShellSlotProps`). The settings contract declares it
-(`webpackChunkName: "user-menu"`). `RouteComposer` finds the one module that declares it and passes
-the loader to `protectedLayoutLoader.create`, which hands `AppLayout` a slot built by the
-`ShellSlotFactory` in the `protected-layout` chunk: a lazy component wrapped like a page chunk (one
-re-import, the MUI theme shell loaded in parallel), reporting through
+`RouteModule.shell` is an optional `RouteModuleShell` with two slot keys (`ShellSlotKey`):
+`userMenu` and `notifications`. Each is a loader of a component that takes the shell `layout`
+(`ShellSlotLayout`: `mobile`, `tablet` or `desktop`), `signOut`, an `onChunkFailure` callback and an
+`onAvatar` callback (`ShellSlotProps`). The settings contract declares `userMenu`
+(`webpackChunkName: "user-menu"`) and the notifications contract (`user.notifications`) declares
+`notifications` (`webpackChunkName: "notifications-shell"`), which enables the bell on every
+protected page; without a declaring contract the header keeps its disabled bell. `RouteComposer`
+finds, per key, the one module that declares it and passes both loaders to
+`protectedLayoutLoader.create`, which hands `AppLayout` one slot per declared key, each built by
+`ShellSlotFactory.create(load, source)` in the `protected-layout` chunk: a lazy component wrapped
+like a page chunk (one re-import, the MUI theme shell loaded in parallel), reporting through
 `routeMapper.slotFailureReporter()`. `RouteValidator` rejects a registry in which two modules
-declare `shell.userMenu`.
+declare the same key (`Only one route module may declare shell.<key> (<ids>)`).
 
 - **The avatar copy (`onAvatar`):** the host (`UIAppShell`) renders the slot with
-  `ShellSlotHostProps` — `signOut` plus `onAvatar`, its own state setter — and the factory passes
-  both through. The loaded slot calls `onAvatar` with an aria-hidden, non-focusable copy of the
-  avatar it is showing, and with `null` when it unmounts; the shell hands that node to the mobile
-  drawer, whose opaque header covers the header avatar. It is the slot's output, not a second slot:
-  a second component reading the user would issue a second `currentUser` query (the read is
-  `no-cache` and re-runs on every navigation) and flash the glyph before the monogram on every
-  drawer open, and copying the user into a client store is what the state rules forbid. So the copy
-  costs no request, no chunk and no new contract key. Before the slot loads, after its chunk fails
-  twice, or without a declaring module, `onAvatar` is never called and the drawer keeps its 40 px
-  `#E1E7EA` placeholder with the no-data glyph, the same size, so nothing shifts and nothing is
-  announced.
+  `ShellSlotHostProps` — the shell `layout`, `signOut` and `onAvatar`, its own state setter — and
+  the factory passes all three through. The loaded slot calls `onAvatar` with an aria-hidden,
+  non-focusable copy of the avatar it is showing, and with `null` when it unmounts; the shell hands
+  that node to the mobile drawer, whose opaque header covers the header avatar. It is the slot's
+  output, not a second slot: a second component reading the user would issue a second `currentUser`
+  query (the read is `no-cache` and re-runs on every navigation) and flash the glyph before the
+  monogram on every drawer open, and copying the user into a client store is what the state rules
+  forbid. So the copy costs no request, no chunk and no new contract key. Before the slot loads,
+  after its chunk fails twice, or without a declaring module, `onAvatar` is never called and the
+  drawer keeps its 40 px `#E1E7EA` placeholder with the no-data glyph, the same size, so nothing
+  shifts and nothing is announced.
 
 - **Second failure of the slot chunk:** the slot frame stays empty and keeps its size, and the
-  failure is captured with `source: 'app-shell:user-menu'`. The page and the rest of the shell
+  failure is captured with the slot's own `ShellSlotSource`: `'app-shell:user-menu'` for the user
+  menu, `'app-shell:notifications'` for the notifications slot. The page and the rest of the shell
   are untouched and nothing reloads. Each mount of the slot creates its own lazy component and
   holds its own `Suspense` boundary (an aria-hidden placeholder while the chunk loads), so a host
   that mounts again after a twice-failed load imports the chunk again instead of keeping the empty
@@ -136,7 +141,7 @@ declare `shell.userMenu`.
   `docs/adr/` (OQ-10), and the pull request carries the `adr:not-required` label (or a `[no-adr]`
   body line). Issue 362 supersedes enterprise-app-shell's prop-less `AppLayout` contract with an
   optional `userMenu` slot, an `onShellFailure` callback and the props type file
-  `src/components/types/layouts/app-layout.ts`.
+  `src/components/types/layouts/app-layout.ts`. Issue 391 adds the optional `notifications` slot.
 
 ## The contract
 
@@ -184,8 +189,8 @@ size-holding placeholders, a header slot and a navigation column), the page's `<
 as a sibling, the shared `UIFooter`, so the footer keeps its `contentinfo` role and never sits
 inside `<main>`. A shell chunk that still fails after its retry resolves to the same placeholders
 and is reported through the `onShellFailure` callback the composer passes beside the optional
-`userMenu` slot (see "Shell slots"). The frame reserves the 64 px sticky header as
-`scroll-margin-top` on the sidebar, `<main>` and footer slots. With the shell's
+`userMenu` and `notifications` slots (see "Shell slots"). The frame reserves the 64 px sticky header
+as `scroll-margin-top` on the sidebar, `<main>` and footer slots. With the shell's
 browser-specific focus clearance (`useStickyFocusClearance`), that keeps a control that receives
 keyboard focus from sitting under the header (WCAG 2.4.11); the shell README lists the Firefox
 cases where a partly visible control stays under it until that follow-up runs.
@@ -205,9 +210,10 @@ context (`ProtectedOutletContext`,
 from
 `src/routes/types/protected-outlet-context.ts`) to the page with
 `<Outlet context={outletContext} />` — a bare `<Outlet />` resets the context to `undefined` in
-react-router 7 — and hands the same `signOut` to the lazy app shell
-(`<AppShell signOut={outletContext.signOut} userMenu={userMenu} />`), whose sidebar, drawer and user
-menu are the sign-out controls (issue #362). The home page at `/` no longer reads the context.
+react-router 7 — and hands the same `signOut` to the lazy app shell, together with both shell
+slots (`<AppShell signOut={…} userMenu={userMenu} notifications={notifications} />`), whose
+sidebar, drawer and user menu are the sign-out controls (issue #362). The home page at `/` no
+longer reads the context.
 
 `twoFactorStatus` is `'enabled' | 'disabled' | 'unknown'` and is the one place the settings card
 and the guard share what is known about the account's two-factor state; `setTwoFactorStatus`

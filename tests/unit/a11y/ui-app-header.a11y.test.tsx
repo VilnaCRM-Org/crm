@@ -19,4 +19,16 @@ describe('UIAppHeader a11y', () => {
       await expectNoA11yViolations(container);
     }
   );
+
+  it.each(['desktop', 'tablet', 'mobile'] as const)(
+    'has no violation at %s with a notifications slot',
+    async (layout) => {
+      const { container } = renderShell(
+        <UIAppHeader layout={layout} notifications={<button type="button">Сповіщення</button>} />,
+        { locale: 'uk' }
+      );
+
+      await expectNoA11yViolations(container);
+    }
+  );
 });

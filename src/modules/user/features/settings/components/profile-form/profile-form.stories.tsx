@@ -38,7 +38,6 @@ const meta: Meta<typeof ProfileForm> = {
       revision: (): number => 0,
     },
     refocus: false,
-    toasts: { toasts: { items: [] }, announcement: '', alert: '', show: noop, dismiss: noop },
     saveRef: { current: null },
     headingRef: { current: null },
   },
@@ -53,8 +52,7 @@ const meta: Meta<typeof ProfileForm> = {
           '`AUTH_TOKENS.ProfileProvider`, so nothing reaches the network: by default a Save ' +
           'echoes the change back as saved. The password Save with no new password shows the ' +
           'no-change status in any story; SavePending keeps a Save running, and ' +
-          'WrongCurrentPassword answers it with the field error. The toast queue is a no-op ' +
-          'here; the UserProfile page story shows the toasts.',
+          'WrongCurrentPassword answers it with the field error.',
       },
       story: { inline: false },
     },

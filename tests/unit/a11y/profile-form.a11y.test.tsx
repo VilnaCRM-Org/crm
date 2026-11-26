@@ -33,13 +33,6 @@ const form = (): JSX.Element => (
       revision: (): number => 0,
     }}
     refocus={false}
-    toasts={{
-      toasts: { items: [] },
-      announcement: '',
-      alert: '',
-      show: jest.fn(),
-      dismiss: jest.fn(),
-    }}
     saveRef={createRef<HTMLElement>()}
     headingRef={createRef<HTMLElement>()}
   />

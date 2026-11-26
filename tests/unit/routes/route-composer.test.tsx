@@ -27,10 +27,15 @@ function UserMenuSlot(): null {
   return null;
 }
 
-const stubLayout = ({ userMenu }: ProtectedShell): ProtectedLayout => ({
+function NotificationsSlot(): null {
+  return null;
+}
+
+const stubLayout = ({ userMenu, notifications }: ProtectedShell): ProtectedLayout => ({
   ProtectedRoute,
   AppLayout,
   ...(userMenu === undefined ? {} : { userMenu: UserMenuSlot }),
+  ...(notifications === undefined ? {} : { notifications: NotificationsSlot }),
 });
 
 let createLayout: jest.SpyInstance<ProtectedLayout, [ProtectedShell]>;
@@ -38,6 +43,11 @@ let createLayout: jest.SpyInstance<ProtectedLayout, [ProtectedShell]>;
 beforeEach(() => {
   createLayout = jest.spyOn(protectedLayoutLoader, 'create').mockImplementation(stubLayout);
 });
+
+const shellOf = (id: string): RouteModule['shell'] =>
+  registry.items.find((module) => module.id === id)?.shell;
+const withoutModule = (id: string): RouteModule[] =>
+  registry.items.filter((module) => module.id !== id);
 
 const page = (): Promise<{ default: ComponentType }> =>
   Promise.resolve({ default: (): null => null });
@@ -133,15 +143,18 @@ describe('route composer', () => {
     const { layout } = protectedBranchOf(tree);
     const { props } = layout.element as ReactElement<{
       userMenu: unknown;
+      notifications: unknown;
       onShellFailure: unknown;
     }>;
 
     expect(createLayout).toHaveBeenCalledWith({
-      userMenu: registry.items.find((module) => module.id === 'user.settings')?.shell?.userMenu,
+      userMenu: shellOf('user.settings')?.userMenu,
+      notifications: shellOf('user.notifications')?.notifications,
       report: slotReporter,
     });
     expect(reporterFor).toHaveBeenCalledWith('app-shell:load');
     expect(props.userMenu).toBe(UserMenuSlot);
+    expect(props.notifications).toBe(NotificationsSlot);
     expect(props.onShellFailure).toBe(reporter);
   });
 
@@ -150,23 +163,70 @@ describe('route composer', () => {
     const { layout } = protectedBranchOf(tree);
     const { props } = layout.element as ReactElement<Record<string, unknown>>;
 
-    expect(Object.keys(props).sort()).toEqual(['onShellFailure', 'userMenu']);
+    expect(Object.keys(props).sort()).toEqual(['notifications', 'onShellFailure', 'userMenu']);
   });
 
   it('gives AppLayout no slot when no module declares shell.userMenu', () => {
-    const modules: RouteModule[] = [
-      ...registry.items.filter((module) => module.id !== 'user.settings'),
-    ];
-
-    const tree = routeComposer.compose({ items: modules }).items;
+    const tree = routeComposer.compose({ items: withoutModule('user.settings') }).items;
     const { layout } = protectedBranchOf(tree);
     const { props } = layout.element as ReactElement<{ userMenu: unknown }>;
 
     expect(createLayout).toHaveBeenCalledWith({
       userMenu: undefined,
+      notifications: shellOf('user.notifications')?.notifications,
       report: expect.any(Function) as unknown,
     });
     expect(props.userMenu).toBeUndefined();
+  });
+
+  it('hands AppLayout both shell slots when a module declares shell.notifications', () => {
+    const notificationsLoad = jest.fn();
+    const modules: RouteModule[] = [
+      ...withoutModule('user.notifications'),
+      {
+        id: 'notifications-probe',
+        routes: [{ path: '/probe', guard: 'protected', load: page }],
+        shell: { notifications: notificationsLoad },
+      },
+    ];
+
+    const tree = routeComposer.compose({ items: modules }).items;
+    const { layout } = protectedBranchOf(tree);
+    const { props } = layout.element as ReactElement<{
+      userMenu: unknown;
+      notifications: unknown;
+    }>;
+
+    expect(createLayout).toHaveBeenCalledWith({
+      userMenu: shellOf('user.settings')?.userMenu,
+      notifications: notificationsLoad,
+      report: expect.any(Function) as unknown,
+    });
+    expect(props.userMenu).toBe(UserMenuSlot);
+    expect(props.notifications).toBe(NotificationsSlot);
+    expect(notificationsLoad).not.toHaveBeenCalled();
+  });
+
+  it('gives AppLayout no notifications slot when no module declares one', () => {
+    const tree = routeComposer.compose({ items: withoutModule('user.notifications') }).items;
+    const { layout } = protectedBranchOf(tree);
+    const { props } = layout.element as ReactElement<{ notifications: unknown }>;
+    const [shell] = createLayout.mock.calls[0] ?? [];
+
+    expect(shell?.notifications).toBeUndefined();
+    expect(props.notifications).toBeUndefined();
+  });
+
+  it('refuses to compose two modules that both declare shell.notifications', () => {
+    const load = jest.fn();
+    const modules: RouteModule[] = [
+      { id: 'left', routes: [{ path: '/l', load: page }], shell: { notifications: load } },
+      { id: 'right', routes: [{ path: '/r', load: page }], shell: { notifications: load } },
+    ];
+
+    expect(() => routeComposer.compose({ items: modules })).toThrow(
+      'Only one route module may declare shell.notifications (left, right)'
+    );
   });
 
   it('renders no AppLayout anywhere on the public branch', () => {

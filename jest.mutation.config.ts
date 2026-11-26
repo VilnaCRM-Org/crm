@@ -27,6 +27,7 @@ const config: Config = {
     // above, kept out of the mutation suite to avoid subprocess churn under Stryker.
     '/tests/unit/config/eslint-policy\\.test\\.ts$',
     '/settings/components/user-profile-settings/ready-story-provider\\.test\\.tsx$',
+    '/tests/unit/a11y/(bell-notifications|notifications-shell-slot)\\.a11y\\.test\\.tsx$',
   ],
   testEnvironment: requireFromConfig.resolve('./tests/jsdom-fetch-environment.cjs'),
   setupFilesAfterEnv: ['<rootDir>/tests/mutation/setup.ts'],

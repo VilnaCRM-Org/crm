@@ -119,6 +119,32 @@ strip_config_block() {
   [ "$(config_block "$staging")" != "$(config_block "$production")" ]
 }
 
+@test "the notification events service is rendered only when its variable is set" {
+  local without with
+  without="$(copy_artifact without-events)"
+  with="$(copy_artifact with-events)"
+
+  run --separate-stderr env APP_CONFIG_GRAPHQL_URL="$STAGING_GRAPHQL_URL" node "$RENDERER" "$without"
+  [ "$status" -eq 0 ]
+  [[ "$(config_block "$without")" != *notificationEventsUrl* ]]
+
+  run --separate-stderr env APP_CONFIG_NOTIFICATION_EVENTS_URL='https://events.vilnacrm.example' \
+    node "$RENDERER" "$with"
+  [ "$status" -eq 0 ]
+  [[ "$(config_block "$with")" == *'"notificationEventsUrl":"https://events.vilnacrm.example"'* ]]
+}
+
+@test "a notification events variable that is not a URL fails the renderer" {
+  local artifact
+  artifact="$(copy_artifact invalid-events)"
+
+  run --separate-stderr env APP_CONFIG_NOTIFICATION_EVENTS_URL='events' node "$RENDERER" "$artifact"
+
+  [ "$status" -ne 0 ]
+  [[ "$stderr" == *"APP_CONFIG_NOTIFICATION_EVENTS_URL must be an absolute URL"* ]]
+  diff "$SHELL_SOURCE" "$artifact"
+}
+
 @test "rendering changes nothing outside the runtime configuration block" {
   local staging production
   staging="$(copy_artifact staging)"

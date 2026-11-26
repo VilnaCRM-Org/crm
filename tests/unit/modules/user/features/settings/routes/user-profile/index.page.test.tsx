@@ -19,7 +19,9 @@ import {
 import { answerProfileOperation } from '@tests/integration/mocks/profile-operations';
 import server from '@tests/integration/mocks/server';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import OutcomeNoticeHeader from '@tests/unit/utils/outcome-notice-header';
 import SessionOutlet from '@tests/unit/utils/session-outlet';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const NAME = 'Ваше ПІБ';
 const EMAIL = 'E-mail';
@@ -63,6 +65,7 @@ const mount = async (): Promise<void> => {
   });
   render(
     <I18nextProvider i18n={createSettingsLocaleI18n('uk', ['en'])}>
+      <OutcomeNoticeHeader />
       <main>
         <MemoryRouter>
           <SessionOutlet>
@@ -116,11 +119,11 @@ const submitPasswordWith = async (
   return submitWith(answer, CURRENT, SAVE_PASSWORD);
 };
 
-const TOAST_TEXT = /Зміни збережено|Ми надіслали|Ви успішно|Не вдалося зберегти|Забагато/;
+const NOTICE_TEXT = /Зміни збережено|Ми надіслали|Ви успішно|Не вдалося зберегти|Забагато/;
 
-const toastTexts = (): string[] =>
+const noticeTexts = (): string[] =>
   screen
-    .queryAllByText(TOAST_TEXT)
+    .queryAllByText(NOTICE_TEXT)
     .filter((node) => node.getAttribute('role') === null)
     .map((node) => node.textContent ?? '');
 
@@ -130,6 +133,7 @@ describe('settings page save outcomes (page)', () => {
   });
 
   beforeEach(() => {
+    resetClientStores();
     useAuthStore.setState({ ...CLEARED_AUTH_STATE, token: buildToken() });
     useConnectivityStore.setState({ online: true });
   });
@@ -144,7 +148,7 @@ describe('settings page save outcomes (page)', () => {
     useConnectivityStore.setState({ online: true });
   });
 
-  it('saves a name: one toast announced once, focus on the input, payload shown', async () => {
+  it('saves a name: one notice row announced once, focus on the input, payload shown', async () => {
     await mount();
     await editName();
     answerProfileOperation('UpdateUser', { respond: () => saved({ initials: NEW_NAME }) });
@@ -153,7 +157,7 @@ describe('settings page save outcomes (page)', () => {
     await userEvent.click(saveButton());
 
     await screen.findByRole('button', { name: 'Закрити сповіщення' });
-    expect(toastTexts()).toEqual([expect.stringContaining(SAVED)]);
+    expect(noticeTexts()).toEqual([expect.stringContaining(SAVED)]);
     const regions = screen
       .getAllByRole('status')
       .filter((node) => node.textContent?.includes(SAVED));
@@ -165,7 +169,7 @@ describe('settings page save outcomes (page)', () => {
     expect(screen.queryByRole('button', { name: SAVE_NAME })).not.toBeInTheDocument();
   });
 
-  it('saves an e-mail and shows the confirmation-link toast', async () => {
+  it('saves an e-mail and shows the confirmation-link notice', async () => {
     await mount();
     await editEmail();
 
@@ -204,11 +208,11 @@ describe('settings page save outcomes (page)', () => {
     await waitFor(() => expect(answered).toHaveLength(1));
     release();
 
-    await waitFor(() => expect(toastTexts()).toHaveLength(1));
+    await waitFor(() => expect(noticeTexts()).toHaveLength(1));
     expect(answered).toHaveLength(1);
   });
 
-  it('stacks one toast per save in order and keeps the drafts of the other forms', async () => {
+  it('lists one notice row per save in order and keeps the drafts of the other forms', async () => {
     await mount();
     await editEmail();
     await typeInto(NEW, NEW_PASSWORD);
@@ -216,16 +220,16 @@ describe('settings page save outcomes (page)', () => {
     await editName();
 
     const name = await submitWith(() => saved({ initials: NEW_NAME }));
-    await waitFor(() => expect(toastTexts()).toHaveLength(1));
+    await waitFor(() => expect(noticeTexts()).toHaveLength(1));
     expect(field(EMAIL)).toHaveValue(NEW_EMAIL);
     expect(field(NEW)).toHaveValue(NEW_PASSWORD);
     expect(field(CURRENT)).toHaveValue(KEPT_PASSWORD);
     await submitEmailWith(() => saved({ initials: NEW_NAME, email: NEW_EMAIL }));
-    await waitFor(() => expect(toastTexts()).toHaveLength(2));
+    await waitFor(() => expect(noticeTexts()).toHaveLength(2));
     await userEvent.click(saveButton(SAVE_PASSWORD));
 
-    await waitFor(() => expect(toastTexts()).toHaveLength(3));
-    expect(toastTexts().map((text) => text.replace(/\s+/g, ' '))).toEqual([
+    await waitFor(() => expect(noticeTexts()).toHaveLength(3));
+    expect(noticeTexts().map((text) => text.replace(/\s+/g, ' '))).toEqual([
       expect.stringContaining(SAVED),
       expect.stringContaining(EMAIL_SENT),
       expect.stringContaining(PASSWORD_CHANGED),
@@ -278,7 +282,7 @@ describe('settings page save outcomes (page)', () => {
     await waitFor(() => expect(field(NEW)).toHaveFocus());
   });
 
-  it('shows the generic toast and no field error for a list with an unknown path', async () => {
+  it('shows the generic notice and no field error for a list with an unknown path', async () => {
     await mount();
     await editName();
 
@@ -317,7 +321,7 @@ describe('settings page save outcomes (page)', () => {
     expect(field(NEW)).toHaveValue(NEW_PASSWORD);
   });
 
-  it('shows the generic toast for an unknown message that carries FORBIDDEN', async () => {
+  it('shows the generic notice for an unknown message that carries FORBIDDEN', async () => {
     await mount();
     await editName();
 
@@ -328,7 +332,7 @@ describe('settings page save outcomes (page)', () => {
     expect(await screen.findByText(GENERIC)).toBeVisible();
   });
 
-  it('shows the generic toast for "Access Denied." and keeps the session', async () => {
+  it('shows the generic notice for "Access Denied." and keeps the session', async () => {
     await mount();
     await editName();
     const { token } = useAuthStore.getState();
@@ -344,7 +348,7 @@ describe('settings page save outcomes (page)', () => {
     expect(useAuthStore.getState().token).toBe(token);
   });
 
-  it('shows the rate-limit toast without an action for an HTTP 429', async () => {
+  it('shows the rate-limit notice without an action for an HTTP 429', async () => {
     await mount();
     await editName();
 
@@ -374,7 +378,7 @@ describe('settings page save outcomes (page)', () => {
     await userEvent.click(screen.getByRole('button', { name: RETRY }));
 
     await waitFor(() => expect(answered).toHaveLength(2));
-    await waitFor(() => expect(toastTexts()).toEqual([expect.stringContaining(SAVED)]));
+    await waitFor(() => expect(noticeTexts()).toEqual([expect.stringContaining(SAVED)]));
     expect(screen.queryByText(TRANSIENT)).not.toBeInTheDocument();
     await waitFor(() => expect(field(NAME)).toHaveFocus());
   });
@@ -388,11 +392,11 @@ describe('settings page save outcomes (page)', () => {
       (): Response => saved({ initials: NEW_NAME, email: NEW_EMAIL, confirmed: false }),
     ];
     const answered = await submitWith(() => (replies.shift() ?? saved)());
-    await waitFor(() => expect(toastTexts()).toEqual([expect.stringContaining(TRANSIENT)]));
+    await waitFor(() => expect(noticeTexts()).toEqual([expect.stringContaining(TRANSIENT)]));
     await typeInto(EMAIL_PASSWORD, ENTERED_PASSWORD);
     await userEvent.click(saveButton(SAVE_EMAIL));
-    await waitFor(() => expect(toastTexts()).toHaveLength(2));
-    expect(toastTexts()[1]).toContain(EMAIL_SENT);
+    await waitFor(() => expect(noticeTexts()).toHaveLength(2));
+    expect(noticeTexts()[1]).toContain(EMAIL_SENT);
     return answered;
   };
 
@@ -407,10 +411,10 @@ describe('settings page save outcomes (page)', () => {
     expect(retried).toMatchObject({ initials: NEW_NAME });
     expect(retried).not.toHaveProperty('email');
     expect(answered[1]?.variables['input']).toHaveProperty('email', NEW_EMAIL);
-    await waitFor(() => expect(toastTexts().join(' ')).not.toContain(TRANSIENT));
+    await waitFor(() => expect(noticeTexts().join(' ')).not.toContain(TRANSIENT));
   });
 
-  it('returns focus to the name Save when the name toast closes after an e-mail save', async () => {
+  it('returns focus to the target of the latest save when the last notice row closes', async () => {
     await mount();
     await failNameThenSaveEmail();
     const [nameClose, emailClose] = screen.getAllByRole('button', { name: 'Закрити сповіщення' });
@@ -419,8 +423,9 @@ describe('settings page save outcomes (page)', () => {
     expect(nameClose).toHaveFocus();
     await userEvent.click(nameClose as HTMLElement);
 
-    expect(toastTexts()).toHaveLength(0);
-    expect(saveButton()).toHaveFocus();
+    expect(noticeTexts()).toHaveLength(0);
+    expect(field(EMAIL)).toHaveFocus();
+    expect(saveButton()).not.toHaveFocus();
   });
 
   it('sends nothing when the retry is activated while offline', async () => {
@@ -469,18 +474,18 @@ describe('settings page save outcomes (page)', () => {
     );
   });
 
-  it('keeps toasts through Clear and returns focus to the password Save on close', async () => {
+  it('keeps the notice through Clear and returns focus to the password Save on close', async () => {
     await mount();
     await submitPasswordWith(() => saved());
     await screen.findByRole('button', { name: 'Закрити сповіщення' });
 
     await userEvent.click(screen.getByRole('button', { name: 'Очистити' }));
-    expect(toastTexts()).toHaveLength(1);
+    expect(noticeTexts()).toHaveLength(1);
     expect(field(NAME)).toHaveValue(loaded.initials);
 
     await userEvent.click(screen.getByRole('button', { name: 'Закрити сповіщення' }));
 
-    expect(toastTexts()).toHaveLength(0);
+    expect(noticeTexts()).toHaveLength(0);
     expect(saveButton(SAVE_PASSWORD)).toHaveFocus();
   });
 
@@ -492,7 +497,7 @@ describe('settings page save outcomes (page)', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Закрити сповіщення' }));
 
-    expect(toastTexts()).toHaveLength(0);
+    expect(noticeTexts()).toHaveLength(0);
     expect(field(NAME)).toHaveFocus();
   });
 });

@@ -69,6 +69,10 @@ function LayoutStub({ userMenu, onShellFailure }: AppLayoutProps): JSX.Element {
   );
 }
 
+function LayoutProbe({ layout }: ShellSlotProps): JSX.Element {
+  return <p>slot layout:{layout}</p>;
+}
+
 const stubModule: ProtectedLayoutModule = {
   ProtectedRoute: GuardStub,
   AppLayout: LayoutStub,
@@ -247,7 +251,7 @@ describe('ProtectedLayoutLoader', () => {
 
     render(
       <Suspense fallback={<p>pending</p>}>
-        <Slot signOut={signOut} onAvatar={jest.fn()} />
+        <Slot layout="desktop" signOut={signOut} onAvatar={jest.fn()} />
       </Suspense>
     );
     await user.click(await screen.findByRole('button', { name: 'sign out' }));
@@ -268,11 +272,62 @@ describe('ProtectedLayoutLoader', () => {
 
     render(
       <Suspense fallback={<p>pending</p>}>
-        <Slot signOut={jest.fn()} onAvatar={jest.fn()} />
+        <Slot layout="desktop" signOut={jest.fn()} onAvatar={jest.fn()} />
       </Suspense>
     );
 
     await waitFor(() => expect(report).toHaveBeenCalledTimes(1));
     expect(report).toHaveBeenCalledWith('app-shell:user-menu', failure);
+  });
+
+  it('returns no notifications slot when no module declares one', () => {
+    const layout = protectedLayoutLoader.create({
+      userMenu: () => Promise.resolve({ default: LoadedSlot }),
+      notifications: undefined,
+      report: jest.fn(),
+    });
+
+    expect(layout).toHaveProperty('userMenu');
+    expect(layout).not.toHaveProperty('notifications');
+  });
+
+  it('builds the notifications slot from the chunk and hands it the shell layout', async () => {
+    const { notifications: Slot, userMenu } = protectedLayoutLoader.create({
+      notifications: () => Promise.resolve({ default: LayoutProbe }),
+      report: jest.fn(),
+    });
+    if (Slot === undefined) throw new Error('expected a notifications slot');
+
+    render(
+      <Suspense fallback={<p>pending</p>}>
+        <Slot layout="tablet" signOut={jest.fn()} onAvatar={jest.fn()} />
+      </Suspense>
+    );
+
+    expect(await screen.findByText('slot layout:tablet')).toBeInTheDocument();
+    expect(userMenu).toBeUndefined();
+  });
+
+  it('reports each slot chunk failure with its own source', async () => {
+    const report = jest.fn();
+    const menuFailure = new Error(buildToken());
+    const bellFailure = new Error(buildToken());
+    const { userMenu: Menu, notifications: Bell } = protectedLayoutLoader.create({
+      userMenu: () => Promise.reject(menuFailure),
+      notifications: () => Promise.reject(bellFailure),
+      report,
+    });
+    if (Menu === undefined || Bell === undefined) throw new Error('expected both slots');
+
+    render(
+      <Suspense fallback={<p>pending</p>}>
+        <Menu layout="desktop" signOut={jest.fn()} onAvatar={jest.fn()} />
+        <Bell layout="desktop" signOut={jest.fn()} onAvatar={jest.fn()} />
+      </Suspense>
+    );
+
+    await waitFor(() => expect(report).toHaveBeenCalledTimes(2));
+    expect(report).toHaveBeenCalledWith('app-shell:user-menu', menuFailure);
+    expect(report).toHaveBeenCalledWith('app-shell:notifications', bellFailure);
   });
 });
