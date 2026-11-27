@@ -17,8 +17,8 @@ const meta: Meta<typeof MobileNavigation> = {
       description: {
         component:
           'The burger and the modal drawer it opens. Escape, the close button and a tap on the ' +
-          'scrim return focus to the burger; a navigation row, Settings or Sign out close the ' +
-          'drawer without restoring it, so the destination focuses its `<main>`.',
+          'drawer header return focus to the burger; a navigation row, Settings or Sign out ' +
+          'close the drawer without restoring it, so the destination focuses its `<main>`.',
       },
       story: { inline: false },
     },

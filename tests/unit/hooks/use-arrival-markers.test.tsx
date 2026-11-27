@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { act, render, screen, waitFor } from '@testing-library/react';
-import type { JSX } from 'react';
+import { type JSX, useEffect } from 'react';
 import { createMemoryRouter, RouterProvider, useLocation } from 'react-router';
 
 import useArrivalFocus from '@/hooks/use-arrival-focus';
@@ -85,6 +85,51 @@ describe('one-time arrival markers', () => {
 
     await act(() => router.navigate('/sign-in', { replace: true }));
     expect(screen.getByText('notice=null')).toBeInTheDocument();
+  });
+
+  it('keeps the newer page and shows an abandoned notice once, on the next visit', async () => {
+    const pending = [(): void => void router.navigate('/password-reset')];
+    function LeavingArrival(): JSX.Element {
+      useEffect(() => pending.pop()?.(), []);
+      return <p>sign in</p>;
+    }
+    function Page(): JSX.Element {
+      return (
+        <>
+          <LeavingArrival />
+          <Arrival />
+        </>
+      );
+    }
+    const router = createMemoryRouter([
+      { path: '/', element: <p>home</p> },
+      { path: '/sign-in', element: <Page /> },
+      { path: '/password-reset', element: <p>reset</p> },
+    ]);
+    render(<RouterProvider router={router} />);
+
+    await act(() =>
+      router.navigate('/sign-in', {
+        state: { from: { pathname: '/deals' }, focusMain: true, notice: 'password_reset' },
+      })
+    );
+
+    expect(router.state.location).toMatchObject({ pathname: '/password-reset', state: null });
+    expect(screen.getByText('reset')).toBeInTheDocument();
+
+    await act(() => router.navigate(-1));
+
+    expect(router.state.location.state).toEqual({
+      from: { pathname: '/deals' },
+      focusMain: false,
+    });
+    expect(screen.getByText('notice=password_reset')).toBeInTheDocument();
+    expect(screen.getByRole('main')).not.toHaveFocus();
+
+    await act(() => router.navigate(1));
+    await act(() => router.navigate(-1));
+
+    expect(await screen.findByText('notice=null')).toBeInTheDocument();
   });
 
   it('reports no notice for a plain arrival', async () => {
