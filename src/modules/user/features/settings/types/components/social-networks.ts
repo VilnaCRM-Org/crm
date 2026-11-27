@@ -3,6 +3,7 @@ import type { ComponentType, Ref, RefObject, SVGProps } from 'react';
 import type { SocialLinkProviderId } from '@/modules/user/types/social-link/social-link-callback';
 
 import type {
+  SocialLinkFocusReturn,
   SocialLinks,
   SocialLinksStatus,
   SocialLinkStep,
@@ -19,6 +20,7 @@ export interface SocialListProps {
 }
 
 export interface SocialNetworksProps {
+  readonly returnFocusRef: SocialLinkFocusReturn;
   readonly tileStyle?: SocialTileStyle;
 }
 

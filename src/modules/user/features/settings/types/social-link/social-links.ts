@@ -19,6 +19,8 @@ export interface SocialLinkTarget {
   readonly controlRef: RefObject<HTMLElement | null>;
 }
 
+export type SocialLinkFocusReturn = RefObject<HTMLElement | null>;
+
 export type SocialLinkAction = (target: SocialLinkTarget) => Promise<void>;
 
 export type SocialLinksStatus = 'loading' | 'ready' | 'failed' | 'retrying';
@@ -87,6 +89,11 @@ export interface SocialLinkSettlement {
 export type SocialLinkSettle = (settlement: SocialLinkSettlement) => void;
 
 export type SocialLinkAdopt = (id: SocialLinkProviderId, intent: SocialLinkIntent) => void;
+
+export interface SocialLinkSettleDeps {
+  readonly adopt: SocialLinkAdopt;
+  readonly returnFocusRef: SocialLinkFocusReturn;
+}
 
 export type SocialLinkShow = (kind: NotificationKind, key: NotificationMessageKey) => void;
 

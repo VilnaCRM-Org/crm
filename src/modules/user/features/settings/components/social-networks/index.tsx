@@ -118,6 +118,9 @@ export function SocialNetworksCard({ links, tileStyle }: SocialNetworksCardProps
   );
 }
 
-export default function SocialNetworks({ tileStyle = 'tinted' }: SocialNetworksProps): JSX.Element {
-  return <SocialNetworksCard links={useSocialLinks()} tileStyle={tileStyle} />;
+export default function SocialNetworks({
+  returnFocusRef,
+  tileStyle = 'tinted',
+}: SocialNetworksProps): JSX.Element {
+  return <SocialNetworksCard links={useSocialLinks(returnFocusRef)} tileStyle={tileStyle} />;
 }

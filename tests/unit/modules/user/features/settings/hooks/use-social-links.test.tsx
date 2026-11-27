@@ -5,7 +5,10 @@ import { I18nextProvider } from 'react-i18next';
 import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import useSocialLinks from '@/modules/user/features/settings/hooks/use-social-links';
-import type { SocialLinks } from '@/modules/user/features/settings/types/social-link/social-links';
+import type {
+  SocialLinkFocusReturn,
+  SocialLinks,
+} from '@/modules/user/features/settings/types/social-link/social-links';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import FakeBroadcastChannel from '@tests/unit/utils/fake-broadcast-channel';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
@@ -37,8 +40,10 @@ const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
   <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
 );
 
-const setup = async (): Promise<{ result: { current: SocialLinks }; unmount: () => void }> => {
-  const view = renderHook(() => useSocialLinks(), { wrapper });
+const setup = async (
+  returnFocusRef: SocialLinkFocusReturn = { current: null }
+): Promise<{ result: { current: SocialLinks }; unmount: () => void }> => {
+  const view = renderHook(() => useSocialLinks(returnFocusRef), { wrapper });
   await act(async () => undefined);
   return view;
 };
@@ -115,7 +120,10 @@ describe('useSocialLinks', () => {
   it('ignores the read StrictMode aborted', async () => {
     const answers: ((linked: unknown) => void)[] = [];
     mockProvider.linked.mockImplementation(() => new Promise((resolve) => answers.push(resolve)));
-    const { result } = renderHook(() => useSocialLinks(), { wrapper, reactStrictMode: true });
+    const { result } = renderHook(() => useSocialLinks({ current: null }), {
+      wrapper,
+      reactStrictMode: true,
+    });
 
     expect(answers).toHaveLength(2);
     await act(async () => {
@@ -126,15 +134,18 @@ describe('useSocialLinks', () => {
     expect(result.current.status).toBe('ready');
   });
 
-  it('removes only the unlinked provider', async () => {
+  it('removes only the unlinked provider and points the return target at its tile', async () => {
     mockProvider.linked.mockResolvedValue(listed(['google', 'github']));
     mockProvider.unlink.mockResolvedValue({ kind: 'changed' });
-    const { result } = await setup();
+    const control = document.createElement('button');
+    const returnFocusRef: SocialLinkFocusReturn = { current: null };
+    const { result } = await setup(returnFocusRef);
 
-    await act(() => result.current.unlink(google));
+    await act(() => result.current.unlink({ ...google, controlRef: { current: control } }));
 
     expect(result.current.linked).toEqual({ items: ['github'] });
     expect(useNotificationOutletStore.getState().raised.items).toHaveLength(1);
+    expect(returnFocusRef.current).toBe(control);
   });
 
   it('is busy while a provider is unlinked, and unlinks nothing else meanwhile', async () => {

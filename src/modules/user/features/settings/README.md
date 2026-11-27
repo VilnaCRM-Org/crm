@@ -234,11 +234,17 @@ the same fallback closing a notice row uses, and a field the user is still in ke
 `useCollapseFocus` does the same for a Clear that removes itself.
 
 Every Save outcome belongs to the section that sent it. The drafts carry no return target of their
-own: the page publishes one `saveRef` to the outlet as `returnFocusRef`, and `useSettledFocus`
-points it at the Save of the section that settled last, or at its text input when a name or e-mail
-save hid the Save. Closing the last notice row returns focus there, and to the `h1` when that
-control cannot take focus, so after a failed name save and a successful e-mail save it lands on the
-e-mail field. The transient-failure "Спробувати ще раз"
+own: the page publishes one `saveRef` to the outlet as `returnFocusRef` and hands the same ref to
+`SocialNetworks`. A profile section takes it as soon as it sends a save (`useProfileSave`), even
+a save that then raises nothing, and `useSettledFocus` points it at that section's Save, or at its
+text input when a name or e-mail save hid the Save. A social link result points it at its tile's
+control once the tile has changed (`useSocialLinkSettle`): the unlink control after a link or a
+`provider_linked` refusal (which shows the tile as linked), the link button after an unlink, the
+unchanged control after any other failure; an aborted attempt raises nothing and leaves it alone.
+Closing the last notice row returns focus to whichever of them took the target last, and to the
+`h1` when that control cannot take focus, so after a failed name save and a
+successful e-mail save it lands on the e-mail field, and after a Google link on Google's unlink
+control. The transient-failure "Спробувати ще раз"
 clicks the Save of the section that failed, so a name failure followed by an e-mail save retries
 the name alone.
 
@@ -325,7 +331,8 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   the popup waits.
   A result changes its own provider's tile alone, raises one notification through
   `useNotifications().raise` (the provider name travels as `messageValues`, and the result is
-  recorded in the bell history), and leaves the keyboard on the tile. Until
+  recorded in the bell history), and leaves the keyboard on the tile; closing it as the last notice
+  row returns the keyboard to the tile's control, unless a profile save was sent since. Until
   `linkedSocialProviders` answers, and after it fails, the tiles offer nothing to press; a list
   read refused with a 401 shows nothing, as `session_ended` does on the profile card.
   `SocialLinkProvider` reports a failure that never reached the link through

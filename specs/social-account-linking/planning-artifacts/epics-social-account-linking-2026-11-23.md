@@ -91,7 +91,8 @@ Every story also meets NFR1 and carries its own direct tests.
 
 ### S3.3 Notifications — dependent on S3.1
 
-- One notification per FR11 result in both locales, announced by the existing live regions.
+- One notification per FR11 result in both locales, announced by the existing live regions;
+  closing the last notification row returns focus to the tile's control (FR10).
 
 ### S3.4 Linked-tile styles (trial) — dependent on S3.1, S3.2
 

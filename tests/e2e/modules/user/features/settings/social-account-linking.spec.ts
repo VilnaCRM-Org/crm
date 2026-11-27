@@ -63,7 +63,7 @@ test.describe('Social account linking', () => {
     ]);
   });
 
-  test('keeps the keyboard on the tile, and on the heading once the notification closes', async ({
+  test('keeps the keyboard on the tile, and returns it there once the notification closes', async ({
     page,
   }) => {
     await open(page);
@@ -75,7 +75,7 @@ test.describe('Social account linking', () => {
     await page.keyboard.press('Enter');
 
     await expect(noticeClose(page)).toHaveCount(0);
-    await expect(page.getByRole('heading', { level: 1, name: text.heading })).toBeFocused();
+    await expect(unlinkButton(page, 'Google')).toBeFocused();
   });
 
   test('explains a cancelled consent and completes nothing', async ({ page }) => {

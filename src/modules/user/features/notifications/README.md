@@ -18,15 +18,18 @@ module so that any page can use it:
   (`NotificationDraftSet`, `NotificationView`, `ShownNotification`, `NotificationOutletState` and
   the others). A `NotificationDraft` is `{ kind, messageKey, messageValues?, action? }`; the
   optional `messageValues` (`{ items: [{ name, value }] }`) are interpolated into the key wherever
-  it is translated (`notification-values-adapter.ts`), stored with the record and shown in the
-  history.
+  it is translated, stored with the record and shown in the history.
+  `notification-values-adapter.ts` hands them to i18next under its `replace` option and nowhere
+  else, so a value is never read as an option: one named `lng`, `ns` or `returnDetails` cannot
+  change the language, the namespace or the type of the translated text.
 - `src/hooks/use-notifications.ts`: `useNotifications()` returns the `NotificationsPort`
   (`src/hooks/types/notifications-port.ts`): `raise`, `dismiss`, `dismissAll`,
   `publishFocus` and `clear`.
 - The read hooks beside it: `useShownNotifications`, `useNotificationViews`,
   `useRetiringNotificationViews`, `useNotificationFocus`, `useNotificationFocusReturn` and
-  `useNotificationAnnouncement`. The focus return goes to the page's published control (Save, or
-  its fallback), then to the last resort the caller passes: the bell.
+  `useNotificationAnnouncement`. The focus return goes to the page's published control (on
+  settings, the Save or the social tile control that took it last, or its fallback), then to the
+  last resort the caller passes: the bell.
 
 ## The contract
 
@@ -42,9 +45,13 @@ operations, and each one returns a promise:
 | `claim(owner)`   | nothing; another owner starts from the seed |
 
 A `NotificationRecord` holds only `id`, `kind`, `messageKey`, the optional `messageValues` the key
-interpolates (named string values such as `provider: Google`), `createdAt` (epoch milliseconds) and
-`read`. It stores an i18n key and its values, never translated text, and carries no action, e-mail,
-name, password, token or user id.
+interpolates, `createdAt` (epoch milliseconds) and `read`. It stores an i18n key and its values,
+never translated text, and carries no action. The values come from two places only: a social link
+result in settings, whose one value is the provider name (`provider: Google`), and the
+`data.values` of a broadcast event, kept with whatever names and strings the service sent (see
+"Broadcast events"). They are interpolation variables and nothing else, and they must not carry
+personal data (an e-mail, a name, a password, a token or a user id): the record cannot tell such a
+value from any other, and a broadcast reaches every subscriber.
 
 ## The in-memory adapter and its seed
 
@@ -147,12 +154,13 @@ notifications wait for authorized subscriptions there and for user-service #526 
   `{ id, type, occurredAt, data: { code, values? } }`. `BroadcastEventParser` accepts the codes
   `maintenance_planned` and `new_version` and maps each to a `notification_center.broadcast.*` key
   of this catalog. The optional `data.values` is an object of string values the key interpolates
-  (`{{name}}`), kept as the record's `messageValues` (`{ items: [{ name, value }] }`); values that
-  are not such an object, or hold anything but strings, are dropped while the event is kept. No
-  other text in an event is shown, and the catalog key is always ours. An event with any other code,
-  or with an `occurredAt` that is not an ISO 8601 date and time with seconds and a zone (`Z` or an
-  offset) on a day that exists, is dropped. A broadcast records the kind `success`, the only kind
-  beside `error`; a history row draws no icon, so the kind is not shown.
+  (`{{name}}`), kept as the record's `messageValues` (`{ items: [{ name, value }] }`) whatever the
+  names are, and translated as interpolation variables only; they must not carry personal data.
+  Values that are not such an object, or hold anything but strings, are dropped while the event is
+  kept. No other text in an event is shown, and the catalog key is always ours. An event with any
+  other code, or with an `occurredAt` that is not an ISO 8601 date and time with seconds and a zone
+  (`Z` or an offset) on a day that exists, is dropped. A broadcast records the kind `success`, the
+  only kind beside `error`; a history row draws no icon, so the kind is not shown.
 - **Delivery:** `BroadcastEventClient` follows the service's streaming protocol over SSE. It drops
   repeated envelope ids (the newest 500), lets the browser reconnect an interrupted stream, and
   reopens a closed one after the last event id, with a delay that doubles up to 30 s and has a

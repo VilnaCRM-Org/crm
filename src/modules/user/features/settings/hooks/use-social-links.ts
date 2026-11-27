@@ -7,6 +7,7 @@ import { useService } from '@/providers/di';
 import type { SocialLinkProvider } from '../data-providers';
 import type { LinkedProviderSet } from '../types/social-link/outcome';
 import type {
+  SocialLinkFocusReturn,
   SocialLinkIntent,
   SocialLinks,
   SocialLinksAction,
@@ -54,7 +55,7 @@ async function load(
   else if (outcome.reason !== 'session_ended') dispatch({ type: 'failed' });
 }
 
-export default function useSocialLinks(): SocialLinks {
+export default function useSocialLinks(returnFocusRef: SocialLinkFocusReturn): SocialLinks {
   const provider = useService<SocialLinkProvider>(AUTH_TOKENS.SocialLinkProvider);
   const [{ status, linked, reload }, dispatch] = useReducer(reduceLinks, INITIAL_STATE);
   useEffect(() => {
@@ -62,9 +63,10 @@ export default function useSocialLinks(): SocialLinks {
     void load(provider, controller.signal, dispatch);
     return (): void => controller.abort();
   }, [provider, reload]);
-  const settle = useSocialLinkSettle((id, intent): void =>
-    dispatch({ type: 'changed', id, intent })
-  );
+  const settle = useSocialLinkSettle({
+    adopt: (id, intent): void => dispatch({ type: 'changed', id, intent }),
+    returnFocusRef,
+  });
   const busy = useSocialBusy();
   const link = useSocialLinkAttempt({ provider, settle, busy });
   const unlink = useSocialUnlink({ provider, settle, busy });

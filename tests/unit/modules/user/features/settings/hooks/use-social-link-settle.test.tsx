@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
@@ -7,8 +7,12 @@ import useNotificationOutletStore from '@/lib/notifications/use-notification-out
 import useSocialLinkSettle from '@/modules/user/features/settings/hooks/use-social-link-settle';
 import type {
   SocialLinkFailureKind,
-  SocialLinkSettle,
+  SocialLinkTarget,
 } from '@/modules/user/features/settings/types/social-link';
+import type {
+  SocialLinkFocusReturn,
+  SocialLinkSettlement,
+} from '@/modules/user/features/settings/types/social-link/social-links';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
@@ -46,15 +50,33 @@ const announced = (): { polite: string; assertive: string } => {
   return { polite: polite.replace(/\u200b/gu, ''), assertive: assertive.replace(/\u200b/gu, '') };
 };
 
-const setup = (): { settle: SocialLinkSettle; adopt: jest.Mock } => {
+interface SettleSetup {
+  readonly settle: (settlement: SocialLinkSettlement) => void;
+  readonly adopt: jest.Mock;
+  readonly rerender: () => void;
+}
+
+const setup = (returnFocusRef: SocialLinkFocusReturn = { current: null }): SettleSetup => {
   const adopt = jest.fn();
   const i18n = createSettingsLocaleI18n('en', []);
   const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
     <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
   );
-  const { result } = renderHook(() => useSocialLinkSettle(adopt), { wrapper });
-  return { settle: result.current, adopt };
+  const { result, rerender } = renderHook(() => useSocialLinkSettle({ adopt, returnFocusRef }), {
+    wrapper,
+  });
+  const settle = (settlement: SocialLinkSettlement): void => {
+    act(() => {
+      result.current(settlement);
+    });
+  };
+  return { settle, adopt, rerender: () => rerender() };
 };
+
+const tileWith = (control: HTMLElement): SocialLinkTarget => ({
+  ...google,
+  controlRef: { current: control },
+});
 
 const providerValues = { items: [{ name: 'provider', value: 'Google' }] };
 
@@ -124,12 +146,49 @@ describe('useSocialLinkSettle', () => {
     expect(announced().assertive).toBe('Your Google account is already linked.');
   });
 
-  it('shows nothing for an aborted attempt', () => {
-    const { settle, adopt } = setup();
+  it('shows nothing for an aborted attempt and leaves the return target alone', () => {
+    const save = document.createElement('button');
+    const returnFocusRef: SocialLinkFocusReturn = { current: save };
+    const { settle, adopt } = setup(returnFocusRef);
 
-    settle({ target: google, intent: 'linked', outcome: { kind: 'aborted' } });
+    settle({
+      target: tileWith(document.createElement('button')),
+      intent: 'linked',
+      outcome: { kind: 'aborted' },
+    });
 
     expect(adopt).not.toHaveBeenCalled();
     expect(useNotificationOutletStore.getState().revision).toBe(0);
+    expect(returnFocusRef.current).toBe(save);
+  });
+
+  it.each([
+    ['a change', { kind: 'changed' }],
+    ['an already-linked refusal', { kind: 'failed', reason: 'provider_linked' }],
+    ['a failure', { kind: 'failed', reason: 'unavailable' }],
+  ] as const)('points the page return target at the tile control after %s', (_name, outcome) => {
+    const control = document.createElement('button');
+    const returnFocusRef: SocialLinkFocusReturn = { current: document.createElement('button') };
+    const { settle } = setup(returnFocusRef);
+
+    settle({ target: tileWith(control), intent: 'linked', outcome });
+
+    expect(returnFocusRef.current).toBe(control);
+  });
+
+  it('keeps a return target another section took until the tile settles again', () => {
+    const control = document.createElement('button');
+    const save = document.createElement('button');
+    const target = tileWith(control);
+    const returnFocusRef: SocialLinkFocusReturn = { current: null };
+    const { settle, rerender } = setup(returnFocusRef);
+
+    settle({ target, intent: 'linked', outcome: { kind: 'changed' } });
+    returnFocusRef.current = save;
+    rerender();
+    expect(returnFocusRef.current).toBe(save);
+
+    settle({ target, intent: 'unlinked', outcome: { kind: 'changed' } });
+    expect(returnFocusRef.current).toBe(control);
   });
 });

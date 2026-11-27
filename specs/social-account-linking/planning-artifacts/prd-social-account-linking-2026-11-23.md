@@ -10,6 +10,7 @@ revisionPasses:
   - '2026-11-27 review: FR1, FR4, FR6, FR11 — how an attempt ends, the popup return, the list after a 401'
   - '2026-11-27 review: FR8, NFR2 — the linked border is under 3:1, owner-accepted'
   - '2026-11-27 owner: L8, L9, FR8–FR10, NFR2, NFR4–NFR6 — three linked-tile styles compared in Storybook'
+  - '2026-11-27 review: FR10 — closing a result notification returns focus to its tile, not to Save'
 slug: 'social-account-linking'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/prd-social-sign-in-2026-11-18.md'
@@ -152,7 +153,11 @@ HTTP 401 still ends the session, as FR1 and FR11 state.
   Escape close it and focus the control; confirming closes it, focuses the control and calls
   `unlinkSocialProviderUser(provider)` once.
 - **FR10** After a tile changes state, keyboard focus moves to the tile's new control: the link
-  button, or the style's unlink control.
+  button, or the style's unlink control. Closing the last notification row returns focus to the
+  control of the tile whose result was raised: the new one after a change or a `provider_linked`
+  refusal, which shows the tile as linked, and the same one after any other failure, unless a
+  profile save was sent later; the page publishes one return target, and the section the user
+  acted in last owns it.
 - **FR11** Success and failure each raise one notification, announced by the settings live regions:
 
   | Source                                                  | Failure kind           |

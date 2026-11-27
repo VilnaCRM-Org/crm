@@ -181,10 +181,10 @@ codegen` and `make codegen-check`), fails when that header is missing or no long
   and uses the same consent page as sign-in. Every linking request carries the session's
   `Authorization: Bearer <token>` (`SessionLinkFactory`), but the mock never reads it: its server
   context is `{}` (`docker/apollo-server/lib/server.ts`) and it serves one seeded account, so it
-  keeps one set of links for every client. A link `state` follows rules
-  like the sign-in ones (its own refusal codes): used once, for its own provider, refused with a blank `code` (left unused),
-  expired after ten minutes, the newest 1000 kept. A completion for a provider that is already
-  linked is refused with `provider_already_linked`, as a second initiate is.
+  keeps one set of links for every client. A link `state` follows rules like the sign-in ones
+  (its own refusal codes): used once, for its own provider, refused with a blank `code` (left
+  unused), expired after ten minutes, the newest 1000 kept. A completion for a provider that is
+  already linked is refused with `provider_already_linked`, as a second initiate is.
 - **Removed by:** the contract pin bump to the first user-service release that declares them.
 
 The mock is stateless by default: `requestPasswordResetUser` and `confirmPasswordResetUser`

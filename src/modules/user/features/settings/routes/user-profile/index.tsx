@@ -56,7 +56,7 @@ export default function UserProfile(): JSX.Element {
               saveRef={saveRef}
               headingRef={headingRef}
             />
-            <SocialNetworks />
+            <SocialNetworks returnFocusRef={saveRef} />
           </Box>
           <TwoFactorSettings />
         </SettingsGrid>

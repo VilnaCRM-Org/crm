@@ -7,7 +7,10 @@ import { I18nextProvider } from 'react-i18next';
 import SocialNetworks, {
   SocialNetworksCard,
 } from '@/modules/user/features/settings/components/social-networks';
-import type { SocialLinks } from '@/modules/user/features/settings/types/social-link/social-links';
+import type {
+  SocialLinkFocusReturn,
+  SocialLinks,
+} from '@/modules/user/features/settings/types/social-link/social-links';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import {
   doubledClass,
@@ -42,9 +45,15 @@ const card = (
   </I18nextProvider>
 );
 
+const RETURN_FOCUS: SocialLinkFocusReturn = { current: null };
+
 const page = (tileStyle?: SocialTileStyle): JSX.Element => (
   <I18nextProvider i18n={createSettingsLocaleI18n('uk', [])}>
-    {tileStyle === undefined ? <SocialNetworks /> : <SocialNetworks tileStyle={tileStyle} />}
+    {tileStyle === undefined ? (
+      <SocialNetworks returnFocusRef={RETURN_FOCUS} />
+    ) : (
+      <SocialNetworks returnFocusRef={RETURN_FOCUS} tileStyle={tileStyle} />
+    )}
   </I18nextProvider>
 );
 
@@ -68,12 +77,13 @@ const lastDeclared = (element: Element, suffix: string, property: string): strin
     .at(-1);
 
 describe('SocialNetworks', () => {
-  it('renders the card from the links hook', () => {
+  it('renders the card from the links hook, handing it the page return target', () => {
     mockUseSocialLinks.mockReturnValue(buildSocialLinks());
 
     render(page());
 
-    expect(mockUseSocialLinks).toHaveBeenCalledWith();
+    expect(mockUseSocialLinks.mock.lastCall).toEqual([RETURN_FOCUS]);
+    expect(mockUseSocialLinks.mock.lastCall?.[0]).toBe(RETURN_FOCUS);
     expect(screen.getByRole('list', { name: 'Соціальні мережі' })).toBeInTheDocument();
   });
 

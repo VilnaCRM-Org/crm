@@ -1,19 +1,22 @@
 import '@testing-library/jest-dom';
 import { screen, within } from '@testing-library/react';
 
+import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import renderUserProfile from '@tests/unit/utils/render-user-profile';
 
+const mockUseSocialLinks = jest.fn((..._args: unknown[]): unknown => ({
+  status: 'ready',
+  linked: { items: ['github'] },
+  busy: false,
+  link: (): Promise<void> => Promise.resolve(),
+  unlink: (): Promise<void> => Promise.resolve(),
+  retry: (): undefined => undefined,
+}));
+
 jest.mock('@/modules/user/features/settings/hooks/use-social-links', () => ({
   __esModule: true,
-  default: (): unknown => ({
-    status: 'ready',
-    linked: { items: ['github'] },
-    busy: false,
-    link: (): Promise<void> => Promise.resolve(),
-    unlink: (): Promise<void> => Promise.resolve(),
-    retry: (): undefined => undefined,
-  }),
+  default: (...args: unknown[]): unknown => mockUseSocialLinks(...args),
 }));
 
 jest.mock('@/modules/user/features/settings/hooks/use-profile-load', () =>
@@ -33,5 +36,13 @@ describe('UserProfile social tiles', () => {
     expect(unlink).toHaveStyle({ color: '#1EAEFF' });
     expect(unlink).not.toHaveClass('MuiButton-root');
     expect(screen.queryByRole('img', { name: 'Підключено', hidden: true })).not.toBeInTheDocument();
+  });
+
+  it('hands the social card the return target the page publishes to the outlet', () => {
+    renderUserProfile(createSettingsLocaleI18n('uk'));
+
+    const published = useNotificationOutletStore.getState().focus?.primary;
+    expect(published).toBeDefined();
+    expect(mockUseSocialLinks.mock.lastCall?.[0]).toBe(published);
   });
 });
