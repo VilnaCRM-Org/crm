@@ -1,6 +1,5 @@
 import type { RefObject } from 'react';
 
-import type { ToastQueue } from '@/components/types/ui-toast';
 import type { UserEntity } from '@/modules/user/types/user/user-entity';
 
 import type ProfileChangeDetector from '../../utils/profile-change-detector';
@@ -13,7 +12,6 @@ import type { UserEntityAdoption } from './use-profile-load';
 export interface ProfileEditContext {
   readonly user: UserEntity;
   readonly adoption: UserEntityAdoption;
-  readonly toasts: ToastQueue;
   readonly saveRef: RefObject<HTMLElement | null>;
   readonly headingRef: RefObject<HTMLElement | null>;
 }

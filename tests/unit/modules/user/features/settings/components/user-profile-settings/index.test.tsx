@@ -42,13 +42,6 @@ const props = (overrides: Partial<Props> = {}): Props => ({
     isCurrent: (): boolean => true,
     revision: (): number => 0,
   },
-  toasts: {
-    toasts: { items: [] },
-    announcement: '',
-    alert: '',
-    show: jest.fn(),
-    dismiss: jest.fn(),
-  },
   saveRef: { current: null },
   headingRef: { current: null },
   ...overrides,
@@ -63,7 +56,6 @@ const card = (overrides: Partial<Props> = {}): JSX.Element => {
       refocus={state.refocus}
       retry={state.retry}
       adoption={state.adoption}
-      toasts={state.toasts}
       saveRef={state.saveRef}
       headingRef={state.headingRef}
     />

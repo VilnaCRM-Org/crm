@@ -1,10 +1,12 @@
 import type { AppRouteObject } from './types/app-route';
 import type { RouteModule, RouteModuleRegistry } from './types/route-module';
+import type { ShellSlotKey } from './types/shell-slot';
 
 class RouteValidator {
   public validate({ items: modules }: RouteModuleRegistry): void {
     this.assertUniqueIds(modules);
-    this.assertOneUserMenu(modules);
+    this.assertOneSlot(modules, 'userMenu');
+    this.assertOneSlot(modules, 'notifications');
     modules.forEach((module) => module.routes.forEach((route) => this.assertRoute(route, false)));
   }
 
@@ -16,13 +18,13 @@ class RouteValidator {
     }
   }
 
-  private assertOneUserMenu(modules: readonly RouteModule[]): void {
+  private assertOneSlot(modules: readonly RouteModule[], key: ShellSlotKey): void {
     const declaring: string[] = [];
     for (const { id, shell } of modules) {
-      if (shell?.userMenu !== undefined) declaring.push(id);
+      if (shell?.[key] !== undefined) declaring.push(id);
     }
     if (declaring.length > 1) {
-      throw new Error(`Only one route module may declare shell.userMenu (${declaring.join(', ')})`);
+      throw new Error(`Only one route module may declare shell.${key} (${declaring.join(', ')})`);
     }
   }
 

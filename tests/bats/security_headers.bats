@@ -84,8 +84,8 @@ run_runner() {
 
   assert_log_contains 'docker run -d --name crm-security-headers-probe -p 127.0.0.1:3011:3001 crm-security-headers-probe'
   assert_log_contains 'node scripts/ci/check-security-headers.mjs --url http://127.0.0.1:3011'
-  assert_log_contains 'docker run -d --name crm-security-headers-probe -p 127.0.0.1:3011:3001 -e APP_CONFIG_API_BASE_URL=https://api.security-headers-probe.example/api -e APP_CONFIG_GRAPHQL_URL=https://graphql.security-headers-probe.example/graphql crm-security-headers-probe'
-  assert_log_contains 'node scripts/ci/check-security-headers.mjs --url http://127.0.0.1:3011 --expect-connect https://api.security-headers-probe.example --expect-connect https://graphql.security-headers-probe.example'
+  assert_log_contains 'docker run -d --name crm-security-headers-probe -p 127.0.0.1:3011:3001 -e APP_CONFIG_API_BASE_URL=https://api.security-headers-probe.example/api -e APP_CONFIG_GRAPHQL_URL=https://graphql.security-headers-probe.example/graphql -e APP_CONFIG_NOTIFICATION_EVENTS_URL=https://events.security-headers-probe.example crm-security-headers-probe'
+  assert_log_contains 'node scripts/ci/check-security-headers.mjs --url http://127.0.0.1:3011 --expect-connect https://api.security-headers-probe.example --expect-connect https://graphql.security-headers-probe.example --expect-connect https://events.security-headers-probe.example'
   assert_log_contains 'curl -fsS http://127.0.0.1:3011/'
 
   run grep -c -- 'docker rm -f crm-security-headers-probe' "$COMMAND_LOG"

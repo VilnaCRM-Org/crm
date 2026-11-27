@@ -169,8 +169,9 @@ more project names.
   overflow, and submit reachability at keyboard-height viewport. `app-shell-touch.spec.ts` does the
   same for the app shell: the drawer, the avatar menu, and no overflow at device width and 320 px.
   Its 44 px tap-area floor applies to every shell control except two recorded gaps: the drawer
-  sub-items (42 px Figma pitch) and the disabled bell and list (40 px Figma pitch), both listed
-  under "Known gaps" in `src/components/ui-app-shell/README.md`. Playwright cannot open a native
+  sub-items (42 px Figma pitch) and the disabled list (40 px Figma pitch), both listed under
+  "Known gaps" in `src/components/ui-app-shell/README.md`; the enabled notifications bell meets the
+  44 px floor. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
   `two-factor-challenge-touch.spec.ts` and `two-factor-settings-touch.spec.ts` (issue #331) do it for
@@ -317,9 +318,12 @@ are killed by the integration tests that assert on them. The mutation config exc
 `tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
 instrumentation), the `tests/unit/config/eslint-policy` test (it resolves `eslint.config.mjs`
 through a child `node` process and reaches no `src` module, so it kills nothing and only adds
-process churn) and the settings `ready-story-provider` test, which imports a `*.stories.tsx` file
-that `stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so it fails the dry run of every
-shard that selects it and pins only story wiring outside the mutate scope. The config also uses
+process churn) and the settings `ready-story-provider`, `bell-notifications.a11y` and
+`notifications-shell-slot.a11y` tests, which import `*.stories.tsx` files that
+`stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so each fails the dry run of every
+shard that selects it and pins only story wiring outside the mutate scope. The same list is in
+`scripts/ci/mutation-related-tests.mjs`, and
+`tests/unit/tooling/mutation-related-tests.test.ts` fails when the two differ. The config also uses
 ts-jest `isolatedModules`, and `stryker.config.mjs` sets `ignoreStatic: true`.
 These keep the run affordable — parallelism comes from the 76-way shard count rather than
 Stryker's in-process concurrency.
@@ -357,8 +361,8 @@ shard under the file cap that holds the fewest mutants (the lighter load, then t
 breaking ties), so the 1.05x figure is a target the fallback can overshoot, never a guarantee.
 Counting the whole scope takes about 4 s, so every shard job and the merge job
 count at run time and derive the same packing from the same commit; no weight file is committed, so
-none can go stale. At 565 files the scope holds 508 sharded files; 57 files run in no shard. The 76
-shards carry 41 to 139 runnable mutants (mean 132) and 1,254 to 3,120 weight units, except
+none can go stale. At 588 files the scope holds 528 sharded files; 60 files run in no shard. The 76
+shards carry 46 to 146 runnable mutants (mean 139) and 1,616 to 3,224 weight units, except
 `ui-form/styles.ts`, alone at 5,394. Weighing by scored mutants alone had packed that scrubber's 103
 mutants (then still inside `pii-scrubber.ts`, 149 mutants with 37 related test files) and
 `lazy-catalog-loader.ts` (111 related test files) into shards that ran an estimated 22 and 29
@@ -368,8 +372,9 @@ as the scrubber was twice: its free-text patterns moved to `PiiTextScrubber`, an
 alone still took 14.6 minutes cold, its two-factor patterns moved to `TwoFactorTextScrubber` (47 and
 60 mutants). The cap binds the same way: at 63 shards it fell to 166, under the 177 runnable
 mutants `user-service-error-transformer.ts` held alone, so its field-violation parsing moved to an
-injected `FieldViolationParser`; at 76 it is 139, one over the 138 runnable mutants
-`graphql-sign-in-transformer.ts` holds alone. File size was a poor proxy too: under the 30-shard
+injected `FieldViolationParser`; at 76 it was 139, one over the 138 runnable mutants
+`graphql-sign-in-transformer.ts` holds alone, and is 146 since #331 and #150 grew the scope.
+File size was a poor proxy too: under the 30-shard
 size packing a cold shard 11 drew 253 mutants and met the 15-minute kill switch before it finished.
 `tests/unit/tooling/mutation-checker-config.test.ts` fails when the heaviest cold shard at the
 workflows' count passes 240 scored mutants, so scope growth reddens a unit test before a shard meets
@@ -415,7 +420,7 @@ by chance as files changed: 63 failed it once a later commit added files. The pa
 caps every shard at twice the mean file count. That cap is a hard bound rather than a target:
 `total` shards at the cap always seat every sharded file, so the mutant fallback never has to
 breach it, and the spread holds by construction while the scope has at least half as many sharded
-files as there are shards (508 against 76 today). Below that, twice the mean is under one file and
+files as there are shards (528 against 76 today). Below that, twice the mean is under one file and
 `fileCap` clamps the cap to `max(1, …)`, so a shard holding one file is over twice the mean.
 
 ### Honest mutant classification (issue #171)
@@ -508,11 +513,11 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-Sixteen directives are annotated today, at two mutators. Fifteen are `ArrayDeclaration` on a
-React hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
+Eighteen directives are annotated today, at two mutators. Seventeen are `ArrayDeclaration` on a
+React hook dependency array, and they come in two shapes. Eleven are empty: `ArrayDeclaration` rewrites
 `[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
 constant one-element array is equal on every render and the effect or memo fires exactly as it
-does with `[]`. Five annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
+does with `[]`. Six annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
 and each is equivalent for a reason worth stating separately:
 
 - `use-login-submitter.ts` annotates `[run, loginControllersRef]`: `run` is the `SignInRun` that
@@ -524,8 +529,9 @@ and each is equivalent for a reason worth stating separately:
 - `use-profile-save.ts` and `use-email-resend.ts` (issue #330) annotate `[provider]`, the deps of
   the `run` callback handed to `useAbortableSubmit`. `provider` comes from
   `useService(AUTH_TOKENS.ProfileProvider)`, which memoizes `container.resolve` on the token, and
-  the token is a module constant; `src/modules/user/config/di.ts` binds it with
-  `registerSingleton`, so every resolve returns the same instance. The identity of `provider` is
+  the token is a module constant; `src/modules/user/features/settings/di.ts` (`UserSettingsRegistrar`,
+  which `src/modules/user/config/di.ts` composes) binds it with `registerSingleton`, so every resolve
+  returns the same instance. The identity of `provider` is
   therefore fixed for the component's lifetime, and an emptied list memoizes the same `run`.
 - `challenge-code-field.tsx` (issue #331) annotates `[setFocus]` on the effect that focuses the
   code field when the challenge mounts. `setFocus` comes from `useFormContext`, and react-hook-form
@@ -533,12 +539,18 @@ and each is equivalent for a reason worth stating separately:
   effect exactly once, as `[setFocus]` does. jsdom shows no focus from that call, while the e2e
   spec pins the first cell focused on arrival, so only a test that fakes a changing `setFocus`
   could tell the two apart.
+- `use-social-callback-relay.ts` (specs/social-sign-in) annotates `[loader, run]`, the deps of
+  the effect that settles one social sign-in relay. `loader` is held in `useState` by
+  `use-auth-provider-loader.ts`, `run` is a `useState` initializer in `use-social-callback.ts`,
+  and the callback page remounts its content on every history entry (keyed by `location.key`),
+  so neither identity changes while the effect is mounted and an emptied list runs it exactly as
+  often.
 
 Hoisting any of these literals to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
 array literal, so there is nothing left to change.
 
-The sixteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+The eighteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
 `{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
 re-validates the confirmation field when the new password changes once the confirmation is touched
 or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
@@ -547,12 +559,12 @@ is `confirmPassword` itself, and the effect only triggers in that same armed win
 (`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
 re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
 the same result and no rendered state differs. Narrowing the watch is what the source should say,
-so the annotation stays rather than the simpler-looking `{}`. Adding a seventeenth needs the same
+so the annotation stays rather than the simpler-looking `{}`. Adding a nineteenth needs the same
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is the 565 files counted under "Mutation testing scope and baseline" above; not all of
-them produce scored mutants — the 57 unsharded ones hold no runnable mutant (re-export barrels,
+mutate scope is the 588 files counted under "Mutation testing scope and baseline" above; not all of
+them produce scored mutants — the 60 unsharded ones hold no runnable mutant (re-export barrels,
 token modules, route maps), and a sharded file whose only mutants are static is skipped by
 `ignoreStatic`.
 
@@ -685,7 +697,7 @@ request, distinct from `static testing` and `performance testing`.
 the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
 not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
 `applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
-The allowlist today carries twelve `color-contrast` entries rooted in the Figma palette tokens
+The allowlist today carries thirteen `color-contrast` entries rooted in the Figma palette tokens
 (`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, the
 error-page primary actions and decorative status digits, the sign-in "Забули пароль?" brand
 text link at 2.45:1 by the product owner's DEV-67 decision, issue #309, the password-recovery
@@ -693,9 +705,10 @@ in-card link buttons "До входу" and "Запросити нове поси
 issue #315, the recovery cards' "Назад" back link in the Figma `#969B9D` at 2.81:1 by the user's
 decision on issue #315, the settings greeting "Вітаємо!" in `#969B9D` at 2.81:1 by the product
 owner's call on issue #330, and the current navigation row and sub-item, Figma's active `#0399ED`
-on the 10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362, and the
+on the 10 % `#1EAEFF` tint at about 2.8:1 by the owner's OQ-14 decision, issue #362, the
 two-factor challenge's "Назад" back control in the Figma `#969B9D` at 2.81:1 by the owner's
-decision of 2026-11-04, issue #331), tracked in
+decision of 2026-11-04, issue #331, and the social sign-in callback's primary action, white on
+`#1EAEFF` at 2.45:1 by the owner's decision of 2026-11-19, specs/social-sign-in), tracked in
 issue #276 and deleted when it closes. Each entry is a known WCAG 2.1 AA non-conformance kept by owner
 decision, not a pass; the owner re-confirmed the current navigation row on 2026-11-09.
 `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless button and an `alt`-less image really
@@ -723,7 +736,7 @@ The visual helpers wait on conditions rather than the clock:
 DOM and the scroll position has held for five consecutive frames, replacing the two 3-second sleeps
 in `stabilize-page.ts` and the 300 ms sleep in the auth-skeleton spec (≈6 s per snapshot across 244
 visual tests). The scroll position is in the fingerprint because a full-page WebKit capture draws a
-`position: fixed` element (the toast stack) where it sits at the current scroll offset.
+`position: fixed` element (the bell's caret card) where it sits at the current scroll offset.
 
 **What the issue asked for and this repository cannot use as written:** an `actions/cache` step
 for the Bun cache does not apply — no workflow runs `bun install` on the runner; every install
@@ -1524,7 +1537,7 @@ complement.
 ### Architecture gate integrity (issue #181)
 
 `.dependency-cruiser.js` encodes the barrel/public-API contract, DI composition-root isolation,
-layer bans, type-file purity, and folder/naming conventions in 51 rules of hand-written path
+layer bans, type-file purity, and folder/naming conventions in 52 rules of hand-written path
 regexes. Nothing in CI distinguished "no violations because the code is clean" from "no violations
 because a regex went dead" — a typo'd anchor makes a rule match nothing and the gate passes
 **vacuously** for every future PR.
@@ -1681,7 +1694,8 @@ top-level interface or alias. The gate fails at those positions:
   `unknown` — `unknown` stays only as the parameter of a method that narrows a caught error, and
   as an `error` / `cause` member;
 - **(e)** an inline `Partial`, `Pick`, `Omit` or `Required` — name the derivation once in a
-  type-only file (`export type ToastDraft = Omit<ToastItem, 'id'>;`) and use the name.
+  type-only file (`export type CallerTextFieldProps = Omit<FormTextFieldProps, ControllerOwnedTextFieldProp>;`)
+  and use the name.
 
 Allowed: single scalars and named literal unions, named third-party types (`ReactNode`,
 `AbortSignal`, `TFunction`), generics over named types (`Promise<RecoveryOutcome>`), callback
@@ -1951,11 +1965,16 @@ its `meta.titleKey`; the user-menu folder and the shell hooks beside those files
 `use-user-menu`, `use-user-menu-keys`, `use-chip-label`, `use-chip-name-growth`) load on every
 protected page, before the settings catalog is registered, so they own no settings key; the
 feature's `data-providers/`, `repositories/` and `transformers/` load in the container chunk and
-own no settings key. The toast catalog
-(`ui_toast.*`) is owned by `components/ui-toast`, the only module that renders it, so the close
-label stays off `/sign-in`. The three catalogs of the app shell (issue #362) are owned the same
-way: the shell copy (`app_shell.*`) by its five component folders `components/ui-app-shell`,
-`ui-app-header`, `ui-sidebar`, `ui-navigation-list` and `ui-navigation-drawer`; the coming-soon
+own no settings key. The notification content catalog
+(`ui_notification.*`) is owned by `components/ui-notification-content`, the only module that
+renders it, so the close label stays off `/sign-in`. The notification-centre catalog
+(`notification_center.*`, issue #391) is owned by `notifications/components`, by the adapter
+file `notifications/repositories/in-memory-notification-repository.ts`, whose seed rows name its
+keys, and by `notifications/utils/broadcast-event-parser.ts`, which names the broadcast keys. The
+three catalogs of the app shell
+(issue #362) are owned the same way: the shell copy (`app_shell.*`) by its five component
+folders `components/ui-app-shell`, `ui-app-header`, `ui-sidebar`, `ui-navigation-list` and
+`ui-navigation-drawer`; the coming-soon
 copy (`coming_soon.*`) by `components/coming-soon`; and the user-menu copy (`user_menu.*`) by
 `settings/components/user-menu` and `settings/hooks/use-chip-label.ts`. The two catalogs of
 two-factor sign-in (issue #331) follow suit: the challenge copy (`two_factor.*`) is owned by
@@ -2082,7 +2101,7 @@ shift that cost ~0.03 of the mobile Lighthouse budget), then shows a spinner and
 via a polite live region. `RouteFallback` takes optional `minHeight` and `message` props, so an
 in-page Suspense boundary (the registration form's result chunk) reuses it instead of shipping
 `fallback={null}`. The MUI theme engine is not on the eager path either: `RouteMapper`, the footer
-loader, the app-shell loader and the user-menu shell slot (`ShellSlotFactory`) wrap each lazy
+loader, the app-shell loader and the two shell slots (`ShellSlotFactory`) wrap each lazy
 surface in a `ThemedChunkLoader` that fetches the `mui-theme` chunk in parallel with it, and the
 paint-path components style themselves with `@emotion/styled`, never `Box` or another
 `@mui/material` import. The protected branch is off the eager path as well: `ProtectedRoute` and
@@ -2219,6 +2238,14 @@ The project uses tsyringe for DI with **per-module / per-infra composition roots
      `src/utils/error/{di,tokens}.ts` (`ERROR_UTILS_TOKENS`),
      `src/config/runtime/{di,tokens}.ts` (`RUNTIME_TOKENS`).
    - Module: `src/modules/user/config/{di,tokens}.ts` (`AUTH_TOKENS`).
+   - Feature root: `src/modules/user/features/notifications/{di,tokens}.ts`
+     (`NOTIFICATION_TOKENS`, `NotificationsRegistrar`, issue #391), applied by the aggregator after
+     the user module registrar. It sits at the feature root so the feature can move to its own
+     module unchanged, and it is not in `.dependency-cruiser.js` `DI_COMPOSITION_ROOTS`, so
+     `no-di-config-import-outside-composition-root` does not guard it; the boundary rules do
+     (`no-module-internal-imports`, `no-cross-feature-imports` and `no-feature-internal-imports`
+     stop an importer, and `notifications-feature-self-contained` stops the feature importing the
+     rest of the user module).
 2. Each root is a `ModuleRegistrar` (`src/config/types/module-registrar.ts`) singleton.
    `src/config/dependency-injection-config.ts` is a **thin aggregator** holding **zero**
    `container.register*` calls — it collects the registrars and invokes each against the
@@ -2616,8 +2643,10 @@ Three different things are outside the gate, and the distinction matters when yo
   **container-free render-path singletons** — `auth-store-selectors`,
   `response-schemas`, `map-registration-error`,
   `load-registration-notification`, `registration-handlers-factory`,
+  the social sign-in `social-sign-in-flow-source`, `social-sign-in-navigator` and
+  `social-callback-view-mapper`,
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
-  boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, the
+  boundaries receive by prop, issue #116), `locale-formatter-core`, the
   `security-event-core` and its `auth-failure-monitor` leaf, the observability core /
   correlation-id / sentry-client / sentry-config / pii-scrubber / pii-text-scrubber / web-vitals
   leaves, the
@@ -2735,9 +2764,11 @@ container-resolved classes inject it instead of value-importing it (issue #130).
    validates the **committed** block in `public/index.html` against the schema so the shipped
    default cannot drift from the contract.
 
-**Settings:** `apiBaseUrl` (`APP_CONFIG_API_BASE_URL`, consumed by `@/utils/url-builder`, falling
-back to `REACT_APP_MOCKOON_URL`), `graphqlUrl` (`APP_CONFIG_GRAPHQL_URL`, injected into
-`GraphQLUrl`, falling back to `REACT_APP_GRAPHQL_URL`), and
+**Settings:** `apiBaseUrl` (`APP_CONFIG_API_BASE_URL`; no client reader since `url-builder` went
+with the last REST caller, so today it only widens the CSP `connect-src`), `graphqlUrl`
+(`APP_CONFIG_GRAPHQL_URL`, injected into `GraphQLUrl`, falling back to `REACT_APP_GRAPHQL_URL`),
+`notificationEventsUrl` (`APP_CONFIG_NOTIFICATION_EVENTS_URL`, the origin of notification-service,
+empty by default: the bell then opens no stream; broadcast events only, issue #391), and
 `flags.<name>` (`APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>`). Languages stay build-time — `src/i18n.js`
 initializes i18next at module evaluation and `src/config/i18n-config.js` is `require`d by node
 tooling without a TypeScript loader, so that is an i18n boot-path restructuring, not a config
@@ -2775,8 +2806,9 @@ wiring — it contains no route-array literal and no feature/module page imports
 
 - **Contract types** — `src/routes/types/{app-route,route-module,shell-slot}.ts` (`AppRouteObject`:
   `path`/`index`, lazy `load`, declarative `guard`, `meta`; `RouteModule`: `id` + `routes` + an
-  optional `shell.userMenu` lazy slot loader). Type-only files (issue #88). The composer hands the
-  one declared `shell.userMenu` (`routeValidator` rejects a second) to
+  optional `shell.userMenu` and an optional `shell.notifications` lazy slot loader). Type-only files
+  (issue #88). The composer hands the one declared loader of each slot (`routeValidator` rejects a
+  second) to
   `protectedLayoutLoader.create`, which wraps it through `ShellSlotFactory`, and passes the slot
   plus a chunk-failure reporter to `AppLayout`, which lazy-loads `UIAppShell` (header, sidebar,
   mobile drawer) around the page outlet (issue #362). `ProtectedRoute`, `AppLayout` and
@@ -2813,19 +2845,29 @@ Deep-importing a feature page from the shell fails
 `routes.tsx`, or a route object with an `element` and no `errorElement` inside
 `src/routes/**`, fails the issue-#116 ESLint selectors (see pattern 14).
 
-**Toasts (issue #330)** — `UIToastStack` (`src/components/ui-toast/`, state in `useToastQueue`)
-is the one transient-message surface: no timer, so a toast stays until the user closes it; two
-always-mounted `UILiveStatus` regions announce the queue, a polite one for success texts and an
-assertive one (`politeness="assertive"`, `role="alert"`) for error texts, both with the
-alternating mark so an identical repeat is spoken again; no toast carries a role of its own, and
-each close button is described by its message; at most three are shown. Closing a toast moves
-focus to the next close button, then the previous one, then the control the page names
-(`returnFocusRef`) while it is connected and enabled, then `fallbackFocusRef` (the settings
-`<h1 tabindex="-1">`); a toast pushed out by the cap while it holds focus hands it to the newest
-close button. The stack reserves `scroll-padding-bottom` so a focused control is never hidden
-under it, and when it measures itself over a control that already has focus (the settled Save, focused
-in the same commit that pushes the toast) it scrolls that control into view, so the result does not
-depend on which layout effect runs first.
+**Notifications (issues #330, #391)** — a page raises outcomes through one port, never through a
+renderer: `useNotifications()` (`src/hooks/use-notifications.ts`, typed by `NotificationsPort` in
+`src/hooks/types/notifications-port.ts`) returns `raise`, `dismiss`, `dismissAll`, `publishFocus`
+and `clear`, bound to the container-free Zustand outlet store (`useNotificationOutletStore` in
+`src/lib/notifications/`); the read hooks beside it are `useShownNotifications`,
+`useNotificationViews`, `useRetiringNotificationViews`, `useNotificationFocus`,
+`useNotificationFocusReturn` and `useNotificationAnnouncement`. The page mounts
+`UINotificationOutlet` (`src/components/ui-notification-outlet/`), which publishes its
+`returnFocusRef` and `fallbackFocusRef` (the settings `<h1 tabindex="-1">`), clears the store on
+unmount, and holds the two always-mounted `UILiveStatus` regions, a polite one for success texts
+and an assertive one (`politeness="assertive"`) for error texts, both with the alternating mark so
+an identical repeat is spoken again. No outcome has a timer, and at most three are shown. The
+outlet draws nothing: the shell's notifications slot (`src/modules/user/features/notifications/`,
+chunk `notifications-shell`) records each outcome, shows the enabled bell, its unread badge and the
+history panel, and draws the outcomes as `UIBellNotice` (chunk `notifications-notice`), the merged
+card under the bell at desktop and the caret card below it. Its edge is the neutral `border.strong`
+for every kind, at 3:1 or more on the page; only the status icon keeps its colour. Opening the bell
+hides the card. Closing a row moves focus to the next close button, then the previous one, then the
+published `returnFocusRef` while it is connected and enabled, then `fallbackFocusRef`, then the
+bell. The card sets `--app-top-overhang`, so a focused control is never hidden under it, and
+scrolls a control that already has focus into view when it measures itself over it. The bell won a
+comparison of three variants (owner decision 2026-11-23; see the user module README's notifications
+decision).
 
 ### GraphQL Setup
 
@@ -2863,15 +2905,16 @@ verified in CI.
   (`src/lib/locale-catalog/lazy-catalog-loader.ts`), whose `register(i18n, catalog)` takes the
   owner's own statically imported JSON as a named `LocaleCatalogPair` and calls `addResourceBundle`
   for both locales; the owner keeps the JSON import, so the chunk split does not move, and a new
-  lazy catalog adds no loader class. Nine lazy catalogs exist today: the password-recovery copy
+  lazy catalog adds no loader class. Ten lazy catalogs exist today: the password-recovery copy
   (`password_recovery.*`, `password_reset.*`), owned by
   `src/modules/user/features/auth/routes/recovery-catalog/` and registered by `RecoveryPageLayout`,
   which the `reset-password` and `create-new-password` route modules render; the password-policy
   copy (`password_policy.*`), owned by `src/components/ui-password-policy-rules/` and registered
   when that component module evaluates; the settings copy (`settings.*`), owned by
   `src/modules/user/features/settings/` and registered when the `UserProfile` route module
-  evaluates; the toast copy (`ui_toast.*`), owned by `src/components/ui-toast/` and registered when
-  `UIToast` evaluates; the app-shell copy (`app_shell.*`, issue #362), owned by
+  evaluates; the notification content copy (`ui_notification.*`), owned by
+  `src/components/ui-notification-content/` and registered when `UINotificationContent`
+  evaluates; the app-shell copy (`app_shell.*`, issue #362), owned by
   `src/components/ui-app-shell/` and registered when `UIAppShell` (the lazy `ui-app-shell` chunk
   `AppLayout` loads) evaluates; the coming-soon copy (`coming_soon.*`), owned by
   `src/components/coming-soon/` and registered when `ComingSoonPage` evaluates; the user-menu
@@ -2879,10 +2922,13 @@ verified in CI.
   registered when the `user-menu` shell slot (`UserMenuSlot`) evaluates; the two-factor challenge
   copy (`two_factor.*`, issue #331), owned by
   `src/modules/user/features/auth/routes/two-factor-catalog/` and registered when the
-  `two-factor-challenge` route module evaluates; and the low-codes notice copy
+  `two-factor-challenge` route module evaluates; the low-codes notice copy
   (`recovery_codes_notice.*`), owned by
   `src/modules/user/features/auth/components/recovery-codes-notice/` and registered when the lazy
-  `RecoveryCodesNotice` chunk evaluates. Those two were 3,749 B of the minified merged catalog
+  `RecoveryCodesNotice` chunk evaluates; and the notification-centre copy
+  (`notification_center.*`, issue #391), owned by `src/modules/user/features/notifications/` and
+  registered when `BellNotifications` (in the `notifications-shell` chunk every protected page
+  loads) evaluates. The two #331 catalogs were 3,749 B of the minified merged catalog
   (about 0.9 KB gzip) on every page. The recovery keys were
   3,742 B of the minified merged catalog; moving them took `index.js` from 51,394 B to about 47.9 kB
   raw, about 3.5 KB less and still about 0.95 KB above the #333 base (46,946 B), so the move alone
@@ -2891,12 +2937,14 @@ verified in CI.
   (`sign_in.notices.password_reset` stays in the auth catalog); the gate's owner list enforces it.
   Unit tests opt in per file: `createLocaleI18n` and `tests/i18n/test-i18n.ts` carry the merged
   catalog only, exactly like an eager page, and tests of the recovery routes and their components
-  use `createRecoveryLocaleI18n` (settings tests `createSettingsLocaleI18n`, toast tests
-  `createToastLocaleI18n`, shell tests `createAppShellLocaleI18n`, which also registers the
-  user-menu catalog, coming-soon tests `createComingSoonLocaleI18n`, two-factor challenge tests
-  `createTwoFactorLocaleI18n`, which also registers the recovery catalogs its card back control
-  reads, and low-codes notice tests `createCodesNoticeLocaleI18n`), so a lazy key leaking into
-  an eager page renders raw in that page's tests too. Storybook's preview and the e2e
+  use `createRecoveryLocaleI18n` (settings tests `createSettingsLocaleI18n`, notification
+  content tests `createNotificationContentLocaleI18n`, notification-centre
+  tests `createNotificationCenterLocaleI18n`, which also registers the settings catalog the seed
+  copy mirrors, bell tests `createBellLocaleI18n`, shell tests `createAppShellLocaleI18n`, which
+  also registers the user-menu catalog, coming-soon tests `createComingSoonLocaleI18n`, two-factor
+  challenge tests `createTwoFactorLocaleI18n`, which also registers the recovery catalogs its card
+  back control reads, and low-codes notice tests `createCodesNoticeLocaleI18n`), so a lazy key
+  leaking into an eager page renders raw in that page's tests too. Storybook's preview and the e2e
   `initialize-localization.js` (which reads the policy and registers every lazy catalog from its
   JSON files) keep the copy available for every story and spec.
 - **Regenerate**: `make i18n-generate` after adding, renaming, or removing any key.
@@ -3201,9 +3249,11 @@ the runtime image ships beside the entrypoint:
 - **The container entrypoint extends `connect-src`.** `scripts/docker-entrypoint.sh` runs
   `scripts/render-security-headers.js` after `render-app-config.js`, rendering the served
   `/app/serve.json` from the immutable baseline the image ships at `/app/config/serve.json`
-  plus the origins of `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL`, so a repointed API
-  is reachable under the enforced policy without a rebuild and an override that is changed or
-  cleared between restarts leaves no stale origin behind. Invalid values abort the start.
+  plus the origins of `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL` /
+  `APP_CONFIG_NOTIFICATION_EVENTS_URL`, so a repointed API or a
+  configured notification event stream is reachable under the enforced policy without a rebuild and
+  an override that is changed or cleared between restarts leaves no stale origin behind. Invalid
+  values abort the start.
 - **The RSBuild dev server** sets `server.headers` from the same policy, so a CSP break surfaces
   on `make start`. HMR is a same-origin WebSocket, which `'self'` admits.
 
@@ -3229,22 +3279,23 @@ Verified in headless Chromium against the production image: fully styled, fonts 
 console violations; `serve`'s clean URLs redirect `/index.html` to `/`, so the shell is probed
 at `/`.
 
-**Enforcement.** `make check-security-headers` (the `security headers` job of the
-`security testing` workflow, pull requests only) builds `--target production`, boots it, and
-asserts the response headers on `/`, `/sign-in`, `/site.webmanifest` and a hashed `/static/**`
-asset and the document headers plus the CSP on the two documents;
-then boots it again with `APP_CONFIG_*` overrides and asserts they reached `connect-src`, so the
-entrypoint step cannot go dead unnoticed. `connect-src` is compared as an exact set — the
-committed `serve.json` sources plus the expected overrides, nothing more — every other
-directive must equal the policy, a directive the policy does not declare is a finding
-(`script-src-elem 'unsafe-inline'` would otherwise slip past a strict `script-src`), and a
-repeated directive is rejected outright, because browsers enforce the first occurrence and a
-checker that kept the last one could be talked past.
-`loadPolicy()` refuses a weakened policy — no `nosniff`, HSTS under 180 days or without
-`includeSubDomains`, `X-Frame-Options` outside `DENY`/`SAMEORIGIN`, a widened
-`default-src`/`frame-ancestors`/`base-uri`/`object-src`, `'unsafe-inline'` /
-`'unsafe-eval'` / a wildcard on `script-src`, `*` anywhere — so a weakened baseline cannot be
-generated, shipped, or pass the gate.
+**Enforcement.** `make check-security-headers` (the `security headers` job of the `security testing`
+workflow, pull requests only) builds `--target production`, boots it, and asserts the response
+headers on `/`, `/sign-in`, `/site.webmanifest` and a hashed `/static/**` asset and the document
+headers plus the CSP on the two documents; then boots it again with the `APP_CONFIG_API_BASE_URL`,
+`APP_CONFIG_GRAPHQL_URL` and `APP_CONFIG_NOTIFICATION_EVENTS_URL` overrides and asserts the API and
+the notification events origins reached `connect-src`
+(`scripts/ci/check-security-headers.sh`), so the entrypoint step cannot go dead unnoticed.
+`connect-src` is compared as an exact set — the committed `serve.json` sources plus the expected
+overrides, nothing more — every other directive must equal the policy, a directive the policy does
+not declare is a finding (`script-src-elem 'unsafe-inline'` would otherwise slip past a strict
+`script-src`), and a repeated directive is rejected outright, because browsers enforce the first
+occurrence and a checker that kept the last one could be talked past. `loadPolicy()` refuses a
+weakened policy — no `nosniff`, HSTS under 180 days or without `includeSubDomains`,
+`X-Frame-Options` outside `DENY`/`SAMEORIGIN`, a widened
+`default-src`/`frame-ancestors`/`base-uri`/`object-src`, `'unsafe-inline'` / `'unsafe-eval'` / a
+wildcard on `script-src`, `*` anywhere — so a weakened baseline cannot be generated, shipped, or
+pass the gate.
 [`tests/unit/scripts/security-headers.test.ts`](tests/unit/scripts/security-headers.test.ts) pins
 those floors with must-fail cases,
 [`tests/unit/scripts/check-security-headers.test.ts`](tests/unit/scripts/check-security-headers.test.ts)
@@ -3527,18 +3578,19 @@ true` (no caller opts in today; a token issue would be the one safe case). **Nev
     Chunk recovery: `ChunkRetryLoader` (`src/lib/reliability/`) memoizes one dynamic `import()`,
     forgets a failure, and re-imports once when `chunkLoadErrorDetector` recognises it; it wraps
     every page loader in `RouteMapper`, the footer loader, the app-shell loader
-    (`app-shell-loader.ts`), the user-menu shell slot (`ShellSlotFactory`) and its current-user
-    loader, the `mui-theme` shell loader, the registration-notification loader, and
-    `DeferredAuthActions.load()`. A shell chunk that still fails is never rethrown to a route
-    `errorElement`: it renders the shell placeholders, an empty user-menu slot or the identity-less
-    menu, and is captured through `observabilityCore.captureError` with source `app-shell:load`,
-    `app-shell:user-menu` or `app-shell:current-user`. `ReloadingChunkLoader` — **public routes
-    only** — then asks `ReloadOnceGuard` (a per-key `sessionStorage` flag, refusing when storage
-    throws) and calls `pageReloadNavigator.reload()` once, leaving React suspended on the fallback;
-    a second miss in the session, and every miss on a protected route, is rethrown to the route
-    `errorElement` (strategy `reload`, user-initiated). `tests/unit/routes/route-mapper.test.tsx`
-    pins the guard-dependent choice, `tests/unit/tooling/performance-serving.test.ts` pins that the
-    mapper still wraps `route.load` through `React.lazy`.
+    (`app-shell-loader.ts`), the user-menu and notifications shell slots (`ShellSlotFactory`), the
+    current-user, notice and history loaders, the `mui-theme` shell loader, the
+    registration-notification loader, and `DeferredAuthActions.load()`. A shell chunk that still
+    fails is never rethrown to a route `errorElement`: it renders the shell placeholders, an empty
+    user-menu slot or the identity-less menu, and is captured through
+    `observabilityCore.captureError` with its `ShellChunkSource`
+    (`src/routes/types/shell-slot.ts`). `ReloadingChunkLoader` — **public routes only** — then asks
+    `ReloadOnceGuard` (a per-key `sessionStorage` flag, refusing when storage throws) and calls
+    `pageReloadNavigator.reload()` once, leaving React suspended on the fallback; a second miss in
+    the session, and every miss on a protected route, is rethrown to the route `errorElement`
+    (strategy `reload`, user-initiated). `tests/unit/routes/route-mapper.test.tsx` pins the
+    guard-dependent choice, `tests/unit/tooling/performance-serving.test.ts` pins that the mapper
+    still wraps `route.load` through `React.lazy`.
 
     Post-load warm-up (issue #309): `PostLoadPrefetcher` (`src/lib/reliability/`),
     attached once from `src/index.tsx` after `root.render`, loads `errorPageLoader` and the

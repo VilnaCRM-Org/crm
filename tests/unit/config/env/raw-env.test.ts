@@ -22,18 +22,6 @@ describe('rawEnv', () => {
     });
   });
 
-  describe('mockoonUrl', () => {
-    it('trims the configured mockoon url', () => {
-      process.env.REACT_APP_MOCKOON_URL = '  http://localhost:8080  ';
-      expect(rawEnv.mockoonUrl()).toBe('http://localhost:8080');
-    });
-
-    it('returns an empty string when unset', () => {
-      delete process.env.REACT_APP_MOCKOON_URL;
-      expect(rawEnv.mockoonUrl()).toBe('');
-    });
-  });
-
   describe('authFailureAlert', () => {
     it('trims both configured alert variables', () => {
       process.env.REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD = '  9  ';

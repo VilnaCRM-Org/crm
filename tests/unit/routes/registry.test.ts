@@ -5,7 +5,7 @@ describe('route registry', () => {
   it('collects the module route contracts in composition order with unique ids', () => {
     const ids = registry.items.map((module) => module.id);
 
-    expect(ids).toEqual(['app.shell', 'user.auth', 'user.settings']);
+    expect(ids).toEqual(['app.shell', 'user.auth', 'user.settings', 'user.notifications']);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
@@ -86,6 +86,16 @@ describe('route registry', () => {
     }
   });
 
+  it('carries the notifications shell slot from the notifications contract', () => {
+    const notifications = registry.items.find((module) => module.id === 'user.notifications');
+
+    expect(notifications?.routes).toEqual([]);
+    expect(typeof notifications?.shell?.notifications).toBe('function');
+    expect(
+      registry.items.filter((module) => module.shell?.notifications !== undefined)
+    ).toHaveLength(1);
+  });
+
   it('declares the auth pages as public routes carrying their title metadata', () => {
     const auth = registry.items.find((module) => module.id === 'user.auth');
 
@@ -95,6 +105,7 @@ describe('route registry', () => {
       ROUTE_PATHS.twoFactorChallenge,
       ROUTE_PATHS.passwordRecovery,
       ROUTE_PATHS.passwordReset,
+      ROUTE_PATHS.socialCallback,
     ]);
     expect(auth?.routes.every((route) => route.guard === 'public')).toBe(true);
     expect(auth?.routes.map((route) => route.meta?.titleKey)).toEqual([
@@ -103,6 +114,7 @@ describe('route registry', () => {
       'two_factor.title',
       'password_recovery.title',
       'password_reset.title',
+      'auth.social.callback_title',
     ]);
   });
 });

@@ -1,0 +1,112 @@
+import ROUTE_PATHS from '@/routes/route-paths';
+import type {
+  SocialCallbackQuery,
+  SocialCallbackView,
+  SocialPendingView,
+  SocialProviderLabels,
+  SocialStartingView,
+} from '@auth/types/social-sign-in/social-callback-view';
+import type { SocialProvider } from '@auth/types/social-sign-in/social-provider';
+import type { SocialSignInErrorKind } from '@auth/types/social-sign-in/social-sign-in-error-kind';
+import type {
+  SocialSignInOutcome,
+  SocialStartOutcome,
+} from '@auth/types/social-sign-in/social-sign-in-outcome';
+import socialProviderGuard from '@auth/utils/social-provider-guard';
+import socialSignInFlowSource from '@auth/utils/social-sign-in-flow-source';
+
+const PROVIDER_LABELS: SocialProviderLabels = {
+  google: 'Google',
+  github: 'GitHub',
+  facebook: 'Facebook',
+  twitter: 'Twitter',
+};
+
+// What the social callback page shows, decided from how it was opened (a start from the
+// provider buttons, or a provider redirect back) and from each relay's outcome
+// (specs/social-sign-in, FR5-FR13).
+class SocialCallbackViewMapper {
+  public readQuery(): SocialCallbackQuery {
+    const params = new URLSearchParams(window.location.search);
+    return { code: params.get('code'), state: params.get('state'), error: params.get('error') };
+  }
+
+  // The code and state must not stay in the history entry. Stripping is idempotent, so it is safe
+  // under StrictMode's repeated effects, and it keeps the router's own history state.
+  public stripQuery(): void {
+    if (window.location.search === '') return;
+    window.history.replaceState(window.history.state, document.title, window.location.pathname);
+  }
+
+  public initialView(
+    param: string | undefined,
+    query: SocialCallbackQuery,
+    starting: boolean
+  ): SocialCallbackView {
+    if (!socialProviderGuard.isSocialProvider(param)) {
+      return { status: 'failed', provider: null, label: '', error: 'unsupported_provider' };
+    }
+    return this.queryView(param, query, starting);
+  }
+
+  public startView(view: SocialStartingView, outcome: SocialStartOutcome): SocialCallbackView {
+    if (outcome.kind !== 'redirect') return this.failedView(view, this.errorOf(outcome));
+    socialSignInFlowSource.saveState({ provider: view.provider, state: outcome.state });
+    return { status: 'leaving', label: view.label, authorizationUrl: outcome.authorizationUrl };
+  }
+
+  public outcomeView(view: SocialPendingView, outcome: SocialSignInOutcome): SocialCallbackView {
+    if (outcome.kind === 'two-factor') {
+      const state = socialSignInFlowSource.takeChallengeState();
+      return { status: 'redirect', label: view.label, to: ROUTE_PATHS.twoFactorChallenge, state };
+    }
+    if (outcome.kind !== 'signed-in') return this.failedView(view, this.errorOf(outcome));
+    const to = socialSignInFlowSource.takeDestination();
+    return { status: 'redirect', label: view.label, to, state: { focusMain: true } };
+  }
+
+  public unavailableView(view: SocialPendingView): SocialCallbackView {
+    return this.failedView(view, 'unavailable');
+  }
+
+  private failedView(view: SocialPendingView, error: SocialSignInErrorKind): SocialCallbackView {
+    return { status: 'failed', provider: view.provider, label: view.label, error };
+  }
+
+  // An aborted relay usually has no page left to show it; a completion a newer sign-in overtook
+  // while its page stayed mounted is an attempt that no longer counts.
+  private errorOf(outcome: SocialSignInOutcome | SocialStartOutcome): SocialSignInErrorKind {
+    return outcome.kind === 'failed' ? outcome.error : 'expired';
+  }
+
+  private queryView(
+    provider: SocialProvider,
+    query: SocialCallbackQuery,
+    starting: boolean
+  ): SocialCallbackView {
+    const label = PROVIDER_LABELS[provider];
+    const error = this.queryError(provider, query, starting);
+    if (error === 'start') return { status: 'starting', provider, label };
+    if (error === null) return { status: 'relaying', provider, label };
+    return { status: 'failed', provider, label, error };
+  }
+
+  // A redirect without its state (or, unless it is a denial, without its code), a state this tab
+  // never started, and a provider-side denial all end here, before user-service is asked anything.
+  // A denial is bound to the tab's state like a code, so a forged one reads as expired.
+  private queryError(
+    provider: SocialProvider,
+    { code, state, error }: SocialCallbackQuery,
+    starting: boolean
+  ): SocialSignInErrorKind | 'start' | null {
+    if (!state || (error === null && !code)) {
+      return starting && error === null ? 'start' : 'missing_parameters';
+    }
+    if (!socialSignInFlowSource.matchesState({ provider, state })) return 'expired';
+    return error === null ? null : 'cancelled';
+  }
+}
+
+const socialCallbackViewMapper = new SocialCallbackViewMapper();
+
+export default socialCallbackViewMapper;

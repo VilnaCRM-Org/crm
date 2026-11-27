@@ -134,7 +134,7 @@ it, and the sign-in challenge at `/sign-in/two-factor` is registered in every en
   kill switch retrofitted onto behaviour that already ships, and that should be rare enough to
   argue for in review.
 - **Boolean only.** Flags are on/off. Anything that needs a value is a configuration setting
-  (`apiBaseUrl`, `graphqlUrl`), not a flag.
+  (`apiBaseUrl`, `graphqlUrl`, `notificationEventsUrl`), not a flag.
 - **No nesting.** Do not gate a flag on another flag; the combinations are untestable.
 - **No flag in a hot loop.** Read it once per component, not per iteration.
 - **Give it an owner and a removal trigger** in the pull request that introduces it — "remove when

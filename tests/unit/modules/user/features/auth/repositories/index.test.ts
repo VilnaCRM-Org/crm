@@ -21,6 +21,7 @@ describe('auth repositories barrel', () => {
       'BaseAPI',
       'GraphQLPasswordRecoveryRepository',
       'GraphQLSignInRepository',
+      'GraphQLSocialSignInRepository',
       'RegistrationAPI',
     ]);
   });

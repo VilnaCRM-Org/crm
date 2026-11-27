@@ -4,13 +4,21 @@ import type { JSX } from 'react';
 import type { HeaderBadgeProps } from '@/components/types/ui-app-header/shell-badge-counts';
 
 import badgeCountGuard from './badge-count-guard';
+import bellStyles from './bell-styles';
 import styles from './styles';
 
-export default function HeaderBadge({ count }: HeaderBadgeProps): JSX.Element | null {
+export default function HeaderBadge({
+  count,
+  tone = 'muted',
+}: HeaderBadgeProps): JSX.Element | null {
   if (!badgeCountGuard.shows(count)) return null;
 
   return (
-    <Box component="span" aria-hidden="true" sx={styles.badge}>
+    <Box
+      component="span"
+      aria-hidden="true"
+      sx={[styles.badge, tone === 'alert' && bellStyles.alertBadge]}
+    >
       {Number(count)}
     </Box>
   );

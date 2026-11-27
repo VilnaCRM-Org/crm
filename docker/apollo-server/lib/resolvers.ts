@@ -2,6 +2,7 @@ import { GraphQLError } from 'graphql';
 import { v4 as uuidv4 } from 'uuid';
 
 import { profileResolvers } from './profile-resolvers';
+import { socialSignInResolvers } from './social-sign-in-resolvers';
 import {
   issueResetToken,
   redeemResetToken,
@@ -135,5 +136,6 @@ export const resolvers = {
     },
     ...profileResolvers.Mutation,
     ...twoFactorResolvers.Mutation,
+    ...socialSignInResolvers.Mutation,
   },
 };

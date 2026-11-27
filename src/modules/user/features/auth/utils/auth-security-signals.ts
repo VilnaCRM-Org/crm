@@ -35,11 +35,20 @@ export default class AuthSecuritySignals {
 
   public loginSettled(result: SignInResult): void {
     if (result.ok) {
-      if (result.value.kind === 'session') this.observability.setUser({ id: uuidv4() });
+      if (result.value.kind === 'session') this.signedIn();
       return;
     }
     if (result.error.aborted) return;
-    this.recorder.authFailure('login', this.reasonOf(result.error));
+    this.loginFailed(result.error);
+  }
+
+  // An opaque per-session id only, never user data (issue #115).
+  public signedIn(): void {
+    this.observability.setUser({ id: uuidv4() });
+  }
+
+  public loginFailed(error: unknown): void {
+    this.recorder.authFailure('login', this.reasonOf(error));
   }
 
   public challengeSettled(result: ChallengeResult): void {

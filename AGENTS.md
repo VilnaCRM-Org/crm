@@ -244,11 +244,13 @@ Every user-facing string is a translated key, and every key exists in **both** l
 per-feature catalogs `src/**/i18n/{en,uk}.json` are the source of truth; the committed
 `src/i18n/localization.json` is the merge of every **eager** catalog, produced by
 `scripts/localization-generator.js` and refreshed with `make i18n-generate`. The build never
-regenerates it. The nine catalogs listed under `lazyCatalogs` in `config/i18n-catalog-policy.json`
-(password recovery, password policy, settings, toast, the app shell `app_shell.*`, coming soon
+regenerates it. The ten catalogs listed under `lazyCatalogs` in `config/i18n-catalog-policy.json`
+(password recovery, password policy, settings, the notification content `ui_notification.*` in
+`components/ui-notification-content`, the app shell `app_shell.*`, coming soon
 `coming_soon.*`, the user menu `user_menu.*`, the two-factor challenge `two_factor.*` in
 `auth/routes/two-factor-catalog` and the low-codes notice `recovery_codes_notice.*` in
-`auth/components/recovery-codes-notice`) are left out of it and registered by their owning chunk; a
+`auth/components/recovery-codes-notice`, and the notification centre `notification_center.*` in
+`modules/user/features/notifications`) are left out of it and registered by their owning chunk; a
 key in one of them resolves only in the files its `owners` list names.
 
 - **Add a string** — add the key to the owning feature's `i18n/en.json` **and** `i18n/uk.json`, run
@@ -857,7 +859,8 @@ top-level interface or alias. The gate fails at those positions:
   `unknown` — `unknown` stays only as the parameter of a method that narrows a caught error, and
   as an `error` / `cause` member;
 - **(e)** an inline `Partial`, `Pick`, `Omit` or `Required` — name the derivation once in a
-  type-only file (`export type ToastDraft = Omit<ToastItem, 'id'>;`) and use the name.
+  type-only file (`export type CallerTextFieldProps = Omit<FormTextFieldProps, ControllerOwnedTextFieldProp>;`)
+  and use the name.
 
 Allowed: single scalars and named literal unions, named third-party types (`ReactNode`,
 `AbortSignal`, `TFunction`), generics over named types (`Promise<RecoveryOutcome>`), callback
@@ -1025,10 +1028,13 @@ Never push the DI container into the auth paint path: do not eager-import
 container-resolved class. Those inside a gated directory (`auth-store-selectors`,
 `response-schemas`, `map-registration-error`, `load-registration-notification`,
 `registration-handlers-factory`, `auth-error-reporter`,
+the social sign-in `social-sign-in-flow-source`, `social-sign-in-navigator` and
+`social-callback-view-mapper`,
 `boundary-error-reporter` (the reporter the paint-path error boundaries receive by prop,
-issue #116), `url-builder`, `locale-formatter-core`, the `security-event-core` and its
+issue #116), `locale-formatter-core`, the `security-event-core` and its
 `auth-failure-monitor` leaf, the observability
-core/correlation-id/sentry-client/sentry-config/pii-scrubber/web-vitals leaves, the app-shell
+core/correlation-id/sentry-client/sentry-config/pii-scrubber/pii-text-scrubber/web-vitals leaves,
+the app-shell
 session (`auth-session-provider`) and the chip's current-user read (`current-user-client`,
 `current-user-source`, issue #362)) are exempt by
 explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,
@@ -1053,7 +1059,11 @@ literal's method, and wiring that registers the wrong implementation behind the 
 
 Per-module / per-infra composition roots (issue #109): tokens and registrations are
 owned by each area, not centralized. `src/config/dependency-injection-config.ts` is a
-thin aggregator that only collects the registrars.
+thin aggregator that only collects the registrars. One registrar sits at a feature root rather
+than under `config/`: `src/modules/user/features/notifications/{di,tokens}.ts`
+(`NOTIFICATION_TOKENS`, issue #391), so the feature can move to its own module unchanged. It is
+not in `.dependency-cruiser.js` `DI_COMPOSITION_ROOTS`, so the boundary rules guard it, not
+`no-di-config-import-outside-composition-root`.
 
 ```typescript
 // 1. Declare the token in the owning area's token module, e.g. src/services/my-area/tokens.ts
@@ -1821,14 +1831,18 @@ build goes red. Know them before you touch a config file:
 - `serve.json` is generated — never edit its `headers` block by hand. Change the policy, run
   `make security-headers-generate`, commit the result; `make lint-security-headers` (in
   `make lint`) fails on drift, and the RSBuild dev server reads the same policy
-- `connect-src` is derived from the API variables the app reads: the build-time
+- `connect-src` is derived from the API variables: the build-time
   `REACT_APP_MOCKOON_URL` / `REACT_APP_GRAPHQL_URL` / `REACT_APP_SENTRY_DSN` origins at
-  generation time, and the runtime `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL` origins
-  appended by the container entrypoint. A new foreign origin is a new environment variable in
-  `connectSrcFromEnv`, never a hard-coded host
+  generation time, and the runtime `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL` /
+  `APP_CONFIG_NOTIFICATION_EVENTS_URL` origins
+  appended by the container entrypoint. The REST pair has no client reader today and stays
+  admitted only until the `apiBaseUrl` setting is decided (`src/config/runtime/README.md`). A new
+  foreign origin is a new environment variable in `connectSrcFromEnv`, never a hard-coded host
 - `make check-security-headers` (the `security headers` job of the `security testing` workflow)
   builds `--target production`, boots it, and asserts every header on the emitted responses,
-  then boots it again with `APP_CONFIG_*` overrides that must reach `connect-src`. The policy
+  then boots it again with the `APP_CONFIG_*` URL overrides, the notification events origin
+  included, that must reach `connect-src`
+  (`scripts/ci/check-security-headers.sh`). The policy
   loader refuses a weakened baseline, so a relaxation is a reviewed change to the floors and
   their tests, never a lone edit that makes a run pass
 
