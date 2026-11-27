@@ -7,10 +7,6 @@ import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i
 import SessionOutlet from '@tests/unit/utils/session-outlet';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
-jest.mock('@/modules/user/features/settings/hooks/use-social-links', () =>
-  jest.requireActual('@tests/unit/utils/social-links-stub')
-);
-
 jest.mock('@/modules/user/features/settings/hooks/use-profile-load', () =>
   jest.requireActual('@tests/unit/utils/loading-profile-load-stub')
 );

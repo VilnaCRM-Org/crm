@@ -167,5 +167,5 @@ Quality floors restate `.claude/react-sdlc.yml` `quality.*` — raise-only:
 
 ## 5. Out of scope
 
-Provider linking in settings (planned 2026-11-23 in `specs/social-account-linking/`), refresh tokens, backend changes, production enablement (D5),
+Provider linking in settings, refresh tokens, backend changes, production enablement (D5),
 new Figma design, Apple/Microsoft providers.

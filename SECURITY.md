@@ -249,10 +249,8 @@ The Content-Security-Policy:
 **Why there is no `Cross-Origin-Opener-Policy`.** Browsers honour COOP only on a potentially
 trustworthy origin (HTTPS or `localhost`) and otherwise ignore it with a console error on every
 document. The Playwright and Lighthouse suites reach the harness at `http://prod:3001`, where that
-error trips the zero-tolerance console gate, and no popup of the app needs opener isolation: the
-one it opens, for linking a social account, keeps its handle so that it can be sent to the provider
-and drops its opener first (`SocialLinkWindowNavigator`). COOP would sever that handle. Revisit it
-with any cross-origin-isolation work
+error trips the zero-tolerance console gate, and the app opens no popup that needs opener
+isolation — `window.open` is always `noopener`. Revisit it with any cross-origin-isolation work
 (`SharedArrayBuffer`, `Cross-Origin-Embedder-Policy`).
 
 **The `style-src` decision.** The app injects styles at runtime: Emotion and MUI write `<style>`

@@ -14,7 +14,7 @@ import {
   assertSingleResponse,
   PINNED_SDL_FIXTURE,
   PROFILE_SDL_FIXTURE,
-  SOCIAL_SDL,
+  SOCIAL_SIGN_IN_SDL,
   REQUEST_RESET,
   type SingleBody,
 } from './mock-schema-fixtures';
@@ -45,7 +45,7 @@ const startServer = async (
       PROFILE_SDL_FIXTURE,
       PENDING_EXTENSION,
       ...TWO_FACTOR_SDL_FIXTURES,
-      ...SOCIAL_SDL,
+      ...SOCIAL_SIGN_IN_SDL,
     ],
     resolvers: serverResolvers,
     formatError,

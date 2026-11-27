@@ -509,9 +509,9 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-Eighteen directives are annotated today, at two mutators. Seventeen are `ArrayDeclaration` on a
-React hook dependency array, and they come in two shapes. Eleven are empty: `ArrayDeclaration`
-rewrites `[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
+Seventeen directives are annotated today, at two mutators. Sixteen are `ArrayDeclaration` on a
+React hook dependency array, and they come in two shapes. Ten are empty: `ArrayDeclaration` rewrites
+`[]` to `["Stryker was here"]`, and React compares deps element-wise with `Object.is`, so a
 constant one-element array is equal on every render and the effect or memo fires exactly as it
 does with `[]`. Six annotate a **non-empty** array, which `ArrayDeclaration` empties instead,
 and each is equivalent for a reason worth stating separately:
@@ -546,7 +546,7 @@ Hoisting any of these literals to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
 array literal, so there is nothing left to change.
 
-The eighteenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
+The seventeenth is an `ObjectLiteral` mutant in `create-new-password-form.tsx` (issue #315), on the
 `{ name: 'newPassword' }` argument of the `useWatch` call in `ConfirmationRecheck`, which
 re-validates the confirmation field when the new password changes once the confirmation is touched
 or the form was submitted. The mutant empties it to `{}`, so `useWatch` subscribes to the whole
@@ -555,7 +555,7 @@ is `confirmPassword` itself, and the effect only triggers in that same armed win
 (`onTouched` mode, react-hook-form's default `onChange` re-validation after a submit) already
 re-validates the confirmation on every change; the extra `trigger('confirmPassword')` recomputes
 the same result and no rendered state differs. Narrowing the watch is what the source should say,
-so the annotation stays rather than the simpler-looking `{}`. Adding a nineteenth needs the same
+so the annotation stays rather than the simpler-looking `{}`. Adding an eighteenth needs the same
 standard of proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
@@ -3228,8 +3228,8 @@ would carry a password-reset token into an access log),
 `Permissions-Policy` (camera, microphone, geolocation, payment, usb disabled),
 `Cross-Origin-Resource-Policy: same-origin`. `Cross-Origin-Opener-Policy` is deliberately absent:
 browsers ignore it on a plain-http, non-localhost origin and log a console error per document,
-which the e2e console gate rejects at `http://prod:3001`, and the one popup the app opens (account
-linking) drops its opener itself and needs its handle, which COOP would sever.
+which the e2e console gate rejects at `http://prod:3001`, and the app opens no popup that needs
+opener isolation.
 
 **`style-src` is the one deliberate relaxation.** Emotion/MUI inject `<style>` elements and
 inline `style` attributes at runtime, and `output.inlineStyles` inlines the global stylesheet

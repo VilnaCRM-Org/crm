@@ -8,7 +8,6 @@ const SHARED_STATE_STUB_CALLS = [
   'withProfileProvider(',
   'withCurrentUserAnswer(',
   'withCurrentUserFailure(',
-  'withNoSocialLinks',
 ];
 
 interface DocsStoryParameters {

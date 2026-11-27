@@ -17,12 +17,6 @@ import {
   saveNameButton,
   text,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
-import {
-  cancelUnlinkButton,
-  openSocialLinks,
-  stubSocialLinks,
-  unlinkButton,
-} from '@tests/e2e/modules/user/features/settings/utils/social-links-page';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import expectNoAxeViolations from '@tests/utils/a11y/expect-no-axe-violations';
@@ -133,38 +127,5 @@ test.describe('WCAG 2.1 AA scans of the settings states (issue #330)', () => {
     const heading = page.getByRole('heading', { level: 2, name: personalHeading, exact: true });
     await expect(heading).toBeFocused();
     await expect(heading).toHaveCSS('outline-style', 'solid');
-  });
-
-  test('linked social accounts have no axe violations', async ({ page }) => {
-    await stubProfile(page);
-    await stubSocialLinks(page, { linked: ['google', 'github'] });
-    await openSocialLinks(page);
-    await expect(unlinkButton(page, 'Google')).toBeVisible();
-    await expectNoAxeViolations(page);
-
-    await unlinkButton(page, 'Google').click();
-    await expect(cancelUnlinkButton(page, 'Google')).toBeFocused();
-    await expectNoAxeViolations(page);
-  });
-
-  test('social accounts that could not be loaded have no axe violations', async ({ page }) => {
-    await stubProfile(page);
-    await stubSocialLinks(page, { listFailures: 1 });
-    await openSocialLinks(page);
-    await expect(page.getByRole('button', { name: tryAgain, exact: true })).toBeVisible();
-
-    await expectNoAxeViolations(page);
-  });
-
-  test('the linking popup has no axe violations', async ({ page }) => {
-    await page.addInitScript(() => {
-      window.close = (): void => undefined;
-    });
-    await page.goto('/auth/callback/google?code=c&state=link.s');
-    await expect(
-      page.getByRole('heading', { level: 1, name: t('auth.social.link_title'), exact: true })
-    ).toBeVisible();
-
-    await expectNoAxeViolations(page);
   });
 });

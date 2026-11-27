@@ -15,7 +15,7 @@ import {
   assertSingleResponse,
   PINNED_SDL_FIXTURE,
   PROFILE_SDL_FIXTURE,
-  SOCIAL_SDL,
+  SOCIAL_SIGN_IN_SDL,
   REQUEST_RESET,
 } from './mock-schema-fixtures';
 import { TWO_FACTOR_SDL_FIXTURES } from './two-factor-fixtures';
@@ -91,7 +91,7 @@ describe('pending schema loading on the mock', () => {
         ...loadTypeDefs(source),
         PROFILE_SDL_FIXTURE,
         ...TWO_FACTOR_SDL_FIXTURES,
-        ...SOCIAL_SDL,
+        ...SOCIAL_SIGN_IN_SDL,
       ],
       resolvers,
       formatError,

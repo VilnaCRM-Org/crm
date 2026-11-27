@@ -161,7 +161,7 @@ feature before settings uses them (D11).
 
 - Avatar upload, crop and removal (D2, G5) and linking, listing or unlinking social accounts
   (G6). The social networks card itself was a non-goal (D2); amended 2026-10-21, it renders
-  UI-only (FR-7a); amended 2026-11-23, it links and unlinks (D2b).
+  UI-only (FR-7a).
 - The app-shell sidebar, header and user menu with its "user settings" entry (D3).
 - Delete account, a sessions list, and the 2FA card itself (2FA bundle, #331).
 - Special handling for OAuth-created users (P2, G4); a `me` query or JWT decoding (D4, G2).
@@ -187,7 +187,6 @@ Settled before this stage; the architecture and epics stages treat them as fixed
 | U7, U10      | Repository conventions bind; decisions in the module README     | research §5.7  |
 | D1, D2       | Name, e-mail, resend, password, toasts, slot; no avatar/socials | research §1    |
 | D2a          | 2026-10-21: social card UI-only, no actions (FR-7a); amends D2  | owner decision |
-| D2b          | 2026-11-23: social tiles link and unlink; supersedes D2a        | owner decision |
 | D3           | No shell menu; one flag-gated home link shared with 2FA         | research §1    |
 | D4, D5       | `users(first: 1)` and its IRI; no schema extension              | research §4.3  |
 | D6, P1       | Current password on every Save; only changed fields are sent    | research §4.4  |
@@ -460,11 +459,6 @@ separator lives in the catalog). The four brand icons move from `@auth/assets/so
 - Given the loaded page, when the list named "Соціальні мережі" is queried, then it holds four
   list items whose accessible names end with the not-available status.
 - Given the card, when it is tabbed through, then it has no focus stop, button, link or handler.
-
-Amendment 2026-11-23 (product owner, D2b): the tiles link and unlink providers. The display-only
-tiles and both criteria above now describe only the state before the list of linked providers
-answers, or after it fails; every other state is specified in
-`specs/social-account-linking/planning-artifacts/`.
 
 ### 5.3 The profile form
 

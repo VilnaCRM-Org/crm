@@ -27,13 +27,6 @@ import {
   text,
   toastClose,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
-import {
-  cancelUnlinkButton,
-  confirmUnlinkButton,
-  linkButton,
-  stubSocialLinks,
-  unlinkButton,
-} from '@tests/e2e/modules/user/features/settings/utils/social-links-page';
 import { burgerOf, drawerOf, shellText } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -320,28 +313,5 @@ test.describe('Settings on touch devices (issue #330)', () => {
     expect((clearBox?.y ?? Infinity) + (clearBox?.height ?? 0)).toBeLessThanOrEqual(
       toastBox?.y ?? 0
     );
-  });
-
-  test('links and unlinks a social account with taps on full-size targets', async ({ page }) => {
-    stub = await stubProfile(page);
-    await stubSocialLinks(page);
-    await openByTap(page);
-    await expectTouchTarget(linkButton(page, 'Google'), 'Google link');
-
-    const opened = page.waitForEvent('popup');
-    await linkButton(page, 'Google').tap();
-    await opened;
-    await expectSuccessToast(page, t('settings.social.linked', { provider: 'Google' }));
-    await expectTouchTarget(unlinkButton(page, 'Google'), 'Google unlink');
-    await unlinkButton(page, 'Google').tap();
-    await expectTouchTarget(confirmUnlinkButton(page, 'Google'), 'Google unlink confirmation');
-    await expectTouchTarget(cancelUnlinkButton(page, 'Google'), 'Google unlink cancel');
-    await page.setViewportSize(NARROW_VIEWPORT);
-    await expectNoHorizontalOverflow(page);
-    await confirmUnlinkButton(page, 'Google').tap();
-
-    await expect(linkButton(page, 'Google')).toBeVisible();
-    await page.setViewportSize(NARROW_VIEWPORT);
-    await expectNoHorizontalOverflow(page);
   });
 });
