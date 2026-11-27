@@ -1,9 +1,15 @@
-import { Page, expect } from '@playwright/test';
+import { type Locator, Page, expect } from '@playwright/test';
 
+import { bellOf } from '@tests/e2e/utils/app-shell';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
-import { PAGES, timeoutDuration } from './constants';
+import { PAGES, SHELL_BADGE_MIN_WIDTH, SEED_UNREAD, timeoutDuration } from './constants';
 import waitForStableDom from './wait-for-stable-dom';
+
+export interface StabilizeOptions {
+  readonly unread?: number;
+  readonly motion?: 'disabled' | 'allowed';
+}
 
 const injectedPages = new WeakSet<Page>();
 
@@ -33,8 +39,31 @@ async function waitForNetworkIdle(page: Page): Promise<void> {
   }
 }
 
-async function stabilizePage(page: Page, url: string): Promise<void> {
-  await disableAnimations(page);
+const shellBadgeOf = (page: Page): Locator => page.getByRole('banner').getByText(/^\d+$/);
+
+export async function waitForShellBell(page: Page, unread: number = SEED_UNREAD): Promise<void> {
+  const width = page.viewportSize()?.width ?? 0;
+  const badge = width >= SHELL_BADGE_MIN_WIDTH ? [String(unread)] : [];
+  await expect(bellOf(page)).toBeEnabled();
+  await expect(bellOf(page)).toHaveAttribute('aria-expanded', 'false');
+  await expect(shellBadgeOf(page)).toHaveText(badge);
+}
+
+async function waitForShellBellIfShown(page: Page, unread: number | undefined): Promise<void> {
+  if ((await page.getByRole('banner').count()) === 0) return;
+
+  await waitForShellBell(page, unread);
+  await waitForStableDom(page);
+}
+
+async function stabilizePage(
+  page: Page,
+  url: string,
+  options: StabilizeOptions = {}
+): Promise<void> {
+  if (options.motion !== 'allowed') {
+    await disableAnimations(page);
+  }
 
   if (url === PAGES.HOME) {
     await seedPreloadedAuthToken(page);
@@ -62,6 +91,7 @@ async function stabilizePage(page: Page, url: string): Promise<void> {
 
   await waitForNetworkIdle(page);
   await waitForStableDom(page);
+  await waitForShellBellIfShown(page, options.unread);
 }
 
 export default stabilizePage;

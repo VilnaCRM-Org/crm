@@ -6,9 +6,9 @@ import type { ProfileEditContext } from '../types/hooks/use-profile-save';
 import useEmailResend from './use-email-resend';
 
 export default function useEmailRow(context: ProfileEditContext, saving: boolean): EmailRowState {
-  const { user, adoption, toasts } = context;
+  const { user, adoption } = context;
   const online = useConnectivity();
-  const { isSubmitting, resend } = useEmailResend(user, adoption, toasts);
+  const { isSubmitting, resend } = useEmailResend(user, adoption);
 
   return {
     confirmed: user.confirmed,

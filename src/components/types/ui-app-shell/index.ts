@@ -1,10 +1,11 @@
-import type { UserMenuSlot } from '@/routes/types/shell-slot';
+import type { ShellSlot, ShellSlotLayout } from '@/routes/types/shell-slot';
 
 import type { SignOutHandler } from '../ui-sidebar';
 
-export type ShellLayout = 'mobile' | 'tablet' | 'desktop';
+export type ShellLayout = ShellSlotLayout;
 
 export interface UIAppShellProps {
   readonly signOut: SignOutHandler;
-  readonly userMenu?: UserMenuSlot | undefined;
+  readonly userMenu?: ShellSlot | undefined;
+  readonly notifications?: ShellSlot | undefined;
 }

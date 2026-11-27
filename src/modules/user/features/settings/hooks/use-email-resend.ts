@@ -1,8 +1,7 @@
 import { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 
-import type { ToastQueue } from '@/components/types/ui-toast';
 import useAbortableSubmit from '@/hooks/use-abortable-submit';
+import useNotifications from '@/hooks/use-notifications';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import type { UserEntity } from '@/modules/user/types/user/user-entity';
 import { useService } from '@/providers/di';
@@ -25,23 +24,22 @@ function applyConfirmed(confirmed: boolean, email: string, adoption: UserEntityA
 
 function settleResend(
   outcome: ProfileResendOutcome,
-  { email, adoption, issued, toasts, t }: ResendSettleContext
+  { email, adoption, issued, raise }: ResendSettleContext
 ): void {
   if (outcome.kind === 'sent') {
     if (adoption.revision() === issued) applyConfirmed(outcome.confirmed, email, adoption);
-    toasts.show({ items: [{ tone: 'success', message: t('settings.toasts.resent') }] });
+    raise({ items: [{ kind: 'success', messageKey: 'settings.toasts.resent' }] });
     return;
   }
-  const key = FAILURE_TOASTS.get(outcome.reason);
-  if (key !== undefined) toasts.show({ items: [{ tone: 'error', message: t(key) }] });
+  const messageKey = FAILURE_TOASTS.get(outcome.reason);
+  if (messageKey !== undefined) raise({ items: [{ kind: 'error', messageKey }] });
 }
 
 export default function useEmailResend(
   user: UserEntity,
-  adoption: UserEntityAdoption,
-  toasts: ToastQueue
+  adoption: UserEntityAdoption
 ): EmailResend {
-  const { t } = useTranslation();
+  const { raise } = useNotifications();
   const provider = useService<ProfileProvider>(AUTH_TOKENS.ProfileProvider);
   const run = useCallback(
     (userId: string, signal: AbortSignal) => provider.resend(userId, signal),
@@ -54,7 +52,7 @@ export default function useEmailResend(
     const issued = adoption.revision();
     const outcome = await submit(user.id);
     if (outcome === null || !adoption.isCurrent(user.email)) return;
-    settleResend(outcome, { email: user.email, adoption, issued, toasts, t });
+    settleResend(outcome, { email: user.email, adoption, issued, raise });
   };
 
   return { isSubmitting, resend };

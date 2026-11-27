@@ -5,7 +5,7 @@ describe('route registry', () => {
   it('collects the module route contracts in composition order with unique ids', () => {
     const ids = registry.items.map((module) => module.id);
 
-    expect(ids).toEqual(['app.shell', 'user.auth', 'user.settings']);
+    expect(ids).toEqual(['app.shell', 'user.auth', 'user.settings', 'user.notifications']);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
@@ -84,6 +84,16 @@ describe('route registry', () => {
     for (const path of comingSoon) {
       expect(routes.find((candidate) => candidate.path === path)?.guard).toBe('protected');
     }
+  });
+
+  it('carries the notifications shell slot from the notifications contract', () => {
+    const notifications = registry.items.find((module) => module.id === 'user.notifications');
+
+    expect(notifications?.routes).toEqual([]);
+    expect(typeof notifications?.shell?.notifications).toBe('function');
+    expect(
+      registry.items.filter((module) => module.shell?.notifications !== undefined)
+    ).toHaveLength(1);
   });
 
   it('declares the auth pages as public routes carrying their title metadata', () => {

@@ -19,6 +19,10 @@ const withFrame: Decorator = function FrameDecorator(Story): JSX.Element {
   );
 };
 
+function StubNotifications(): JSX.Element {
+  return <button type="button">Сповіщення</button>;
+}
+
 const meta: Meta<typeof UIAppShell> = {
   title: 'Shell/UIAppShell',
   component: UIAppShell,
@@ -33,7 +37,7 @@ const meta: Meta<typeof UIAppShell> = {
           'The lazy half of the app shell: the banner and, from 768 px, the sidebar, placed in ' +
           'the header and navigation cells that AppLayout reserves with placeholders. Below ' +
           '768 px the banner carries the burger that opens the navigation drawer. The user ' +
-          'menu slot is optional and renders in the banner.',
+          'menu and the notifications slots are optional and render in the banner.',
       },
       story: { inline: false },
     },
@@ -45,6 +49,11 @@ export default meta;
 type Story = StoryObj<typeof UIAppShell>;
 
 export const Desktop: Story = {
+  globals: { viewport: { value: 'xl', isRotated: false } },
+};
+
+export const WithNotificationsSlot: Story = {
+  args: { notifications: StubNotifications },
   globals: { viewport: { value: 'xl', isRotated: false } },
 };
 

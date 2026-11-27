@@ -14,6 +14,7 @@ const projectRoot = path.resolve(__dirname, '../../..');
 
 const API_BASE_URL_VAR = 'APP_CONFIG_API_BASE_URL';
 const GRAPHQL_URL_VAR = 'APP_CONFIG_GRAPHQL_URL';
+const EVENTS_URL_VAR = 'APP_CONFIG_NOTIFICATION_EVENTS_URL';
 const DEMO_FLAG_VAR = `${FLAG_ENV_PREFIX}DEMO_FLAG`;
 const RETIRED_FLAG_VAR = `${FLAG_ENV_PREFIX}FORGOT_PASSWORD`;
 const UNKNOWN_FLAG_VAR = `${FLAG_ENV_PREFIX}DARK_MODE`;
@@ -115,6 +116,17 @@ describe('scripts/render-app-config.js', () => {
   });
 
   describe('renderAppConfig — URL settings', () => {
+    it('applies the notification events URL and rejects one that is not http(s)', () => {
+      const notificationEventsUrl = buildHttpUrl();
+
+      const rendered = renderAppConfig(defaultShell(), { [EVENTS_URL_VAR]: notificationEventsUrl });
+
+      expect(readBlockConfig(rendered).notificationEventsUrl).toBe(notificationEventsUrl);
+      expect(() =>
+        renderAppConfig(defaultShell(), { [EVENTS_URL_VAR]: 'javascript:alert(1)' })
+      ).toThrow(new RegExp(`^${EVENTS_URL_VAR} must`));
+    });
+
     it('applies both URL settings', () => {
       const apiBaseUrl = buildHttpUrl('/api');
       const graphqlUrl = buildHttpUrl('/graphql');

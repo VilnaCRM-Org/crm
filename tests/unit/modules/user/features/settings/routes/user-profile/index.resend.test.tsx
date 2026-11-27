@@ -19,7 +19,9 @@ import {
 import { answerProfileOperation } from '@tests/integration/mocks/profile-operations';
 import server, { userServiceGraphql } from '@tests/integration/mocks/server';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import OutcomeNoticeHeader from '@tests/unit/utils/outcome-notice-header';
 import SessionOutlet from '@tests/unit/utils/session-outlet';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 jest.mock('@/modules/user/features/settings/hooks/use-social-links', () =>
   jest.requireActual('@tests/unit/utils/social-links-stub')
@@ -54,6 +56,7 @@ const mount = async (node = unconfirmed): Promise<void> => {
   });
   render(
     <I18nextProvider i18n={createSettingsLocaleI18n('uk', ['en'])}>
+      <OutcomeNoticeHeader />
       <main>
         <MemoryRouter>
           <SessionOutlet>
@@ -79,6 +82,7 @@ describe('settings page e-mail resend (page)', () => {
   });
 
   beforeEach(() => {
+    resetClientStores();
     useAuthStore.setState({ ...CLEARED_AUTH_STATE, token: buildToken() });
     useConnectivityStore.setState({ online: true });
   });
@@ -174,7 +178,7 @@ describe('settings page e-mail resend (page)', () => {
     expect(resendLink()).toHaveFocus();
   });
 
-  it('shows the rate-limit toast without an action for a 429', async () => {
+  it('shows the rate-limit notice without an action for a 429', async () => {
     await mount();
     answerResend(() => new HttpResponse(null, { status: 429 }));
 

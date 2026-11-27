@@ -65,13 +65,6 @@ const contextOf = (entity = user): ProfileSectionFormProps['context'] => ({
     isCurrent: (): boolean => true,
     revision: (): number => 0,
   },
-  toasts: {
-    toasts: { items: [] },
-    announcement: '',
-    alert: '',
-    show: jest.fn(),
-    dismiss: jest.fn(),
-  },
   saveRef: createRef<HTMLElement>(),
   headingRef: createRef<HTMLElement>(),
 });

@@ -27,8 +27,9 @@ const meta: Meta<typeof UserProfile> = {
           'stub against that token before the page mounts: `Loaded` answers with a seeded user ' +
           'and echoes a Save back as saved, `LoadFailed` answers every request as a transient ' +
           'failure. The token is shared by every story in one frame, so the docs page renders ' +
-          'each story in its own frame. In the app it renders inside AppLayout, behind ' +
-          'ProtectedRoute.',
+          'each story in its own frame. The page raises its outcomes through the ' +
+          'notifications port, and the bell in the shell header draws them. In the app it ' +
+          'renders inside AppLayout, behind ProtectedRoute.',
       },
       story: { inline: false },
     },

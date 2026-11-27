@@ -5,11 +5,15 @@ import type { JSX, ReactNode } from 'react';
 import * as ReactI18next from 'react-i18next';
 import { I18nextProvider } from 'react-i18next';
 
+import type { NotificationDraft } from '@/lib/notifications/types/notification-draft';
+import type { NotificationOutletState } from '@/lib/notifications/types/notification-outlet-state';
+import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
 import useEmailResend from '@/modules/user/features/settings/hooks/use-email-resend';
 import type { ProfileResendOutcome } from '@/modules/user/features/settings/types/user-profile';
 import { buildUserEntity } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import loadIsolated from '@tests/unit/utils/isolated-module';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 const mockResend = jest.fn();
 const mockProvider = { resend: mockResend };
@@ -37,12 +41,18 @@ const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
 
 const user = buildUserEntity({ confirmed: false });
 
+const draftsOf = (state: NotificationOutletState): NotificationDraft[] =>
+  state.raised.items.map(({ kind, messageKey, action }) => ({ kind, messageKey, action }));
+
+const raised = (): NotificationDraft[] => draftsOf(useNotificationOutletStore.getState());
+
+const raiseCount = (): number => useNotificationOutletStore.getState().revision;
+
 const setup = (): {
   adopt: jest.Mock;
   confirm: jest.Mock;
   isCurrent: jest.Mock;
   revision: jest.Mock;
-  show: jest.Mock;
   result: { current: ReturnType<typeof useEmailResend> };
   rerender: () => void;
   unmount: () => void;
@@ -51,19 +61,15 @@ const setup = (): {
   const confirm = jest.fn();
   const isCurrent = jest.fn(() => true);
   const revision = jest.fn(() => 0);
-  const show = jest.fn();
-  const toasts = { toasts: { items: [] }, announcement: '', alert: '', show, dismiss: jest.fn() };
-  const view = renderHook(
-    () => useEmailResend(user, { adopt, confirm, isCurrent, revision }, toasts),
-    {
-      wrapper,
-    }
-  );
-  return { adopt, confirm, isCurrent, revision, show, ...view };
+  const view = renderHook(() => useEmailResend(user, { adopt, confirm, isCurrent, revision }), {
+    wrapper,
+  });
+  return { adopt, confirm, isCurrent, revision, ...view };
 };
 
 describe('useEmailResend', () => {
   beforeEach(() => {
+    resetClientStores();
     mockResend.mockReset();
     mockSubmitRuns.length = 0;
   });
@@ -95,10 +101,10 @@ describe('useEmailResend', () => {
   });
 
   it.each([true, false])(
-    'confirms with %s and shows the resent toast, never adopting',
+    'confirms with %s and raises the resent draft once, never adopting',
     async (confirmed) => {
       mockResend.mockResolvedValue({ kind: 'sent', confirmed });
-      const { result, adopt, confirm, show } = setup();
+      const { result, adopt, confirm } = setup();
 
       await act(async () => {
         result.current.resend();
@@ -106,15 +112,14 @@ describe('useEmailResend', () => {
 
       expect(confirm).toHaveBeenCalledWith(user.email, confirmed);
       expect(adopt).not.toHaveBeenCalled();
-      expect(show).toHaveBeenCalledWith({
-        items: [{ tone: 'success', message: 'Посилання для підтвердження надіслано повторно' }],
-      });
+      expect(raised()).toEqual([{ kind: 'success', messageKey: 'settings.toasts.resent' }]);
+      expect(raiseCount()).toBe(1);
     }
   );
 
-  it('keeps the toast but drops the flag when a Save settled while the resend ran', async () => {
+  it('keeps the notice but drops the flag when a Save settled while the resend ran', async () => {
     mockResend.mockResolvedValue({ kind: 'sent', confirmed: true });
-    const { result, confirm, revision, show } = setup();
+    const { result, confirm, revision } = setup();
     revision.mockReturnValueOnce(0).mockReturnValue(1);
     const email = document.createElement('input');
     email.id = 'email';
@@ -126,7 +131,8 @@ describe('useEmailResend', () => {
 
     expect(confirm).not.toHaveBeenCalled();
     expect(email).not.toHaveFocus();
-    expect(show).toHaveBeenCalledTimes(1);
+    expect(raiseCount()).toBe(1);
+    expect(raised()).toEqual([{ kind: 'success', messageKey: 'settings.toasts.resent' }]);
     email.remove();
   });
 
@@ -161,67 +167,63 @@ describe('useEmailResend', () => {
   });
 
   it.each([
-    ['rate_limited', 'Забагато спроб. Спробуйте пізніше.'],
-    ['transient', 'Не вдалося надіслати посилання. Спробуйте ще раз.'],
-    ['rejected', 'Не вдалося надіслати посилання. Спробуйте ще раз.'],
-  ] as const)('shows the %s failure as an error toast', async (reason, message) => {
+    ['rate_limited', 'settings.toasts.rate_limited'],
+    ['transient', 'settings.toasts.resend_failed'],
+    ['rejected', 'settings.toasts.resend_failed'],
+  ] as const)('raises the %s failure once as an error', async (reason, messageKey) => {
     mockResend.mockResolvedValue({ kind: 'failed', reason });
-    const { result, confirm, show } = setup();
+    const { result, confirm } = setup();
 
     await act(async () => {
       result.current.resend();
     });
 
-    expect(show).toHaveBeenCalledWith({ items: [{ tone: 'error', message }] });
+    expect(raised()).toEqual([{ kind: 'error', messageKey }]);
+    expect(raiseCount()).toBe(1);
     expect(confirm).not.toHaveBeenCalled();
   });
 
   it.each([
-    ['rate_limited', 'Забагато спроб. Спробуйте пізніше.'],
-    ['transient', 'Не вдалося надіслати посилання. Спробуйте ще раз.'],
-    ['rejected', 'Не вдалося надіслати посилання. Спробуйте ще раз.'],
+    ['rate_limited', 'settings.toasts.rate_limited'],
+    ['transient', 'settings.toasts.resend_failed'],
+    ['rejected', 'settings.toasts.resend_failed'],
   ] as const)(
-    'maps the %s failure to its toast in a hook loaded in the test',
-    async (reason, message) => {
+    'maps the %s failure to its draft in a hook loaded in the test',
+    async (reason, messageKey) => {
       const fresh = await loadIsolated(async () => {
         jest.doMock('react', () => React);
         jest.doMock('react-i18next', () => ReactI18next);
-        return (await import('@/modules/user/features/settings/hooks/use-email-resend')).default;
+        return {
+          hook: (await import('@/modules/user/features/settings/hooks/use-email-resend')).default,
+          store: (await import('@/lib/notifications/use-notification-outlet-store')).default,
+        };
       });
       mockResend.mockResolvedValue({ kind: 'failed', reason });
-      const show = jest.fn();
-      const toasts = {
-        toasts: { items: [] },
-        announcement: '',
-        alert: '',
-        show,
-        dismiss: jest.fn(),
-      };
       const adoption = {
         adopt: jest.fn(),
         confirm: jest.fn(),
         isCurrent: jest.fn(() => true),
         revision: jest.fn(() => 0),
       };
-      const { result } = renderHook(() => fresh(user, adoption, toasts), { wrapper });
+      const { result } = renderHook(() => fresh.hook(user, adoption), { wrapper });
 
       await act(async () => {
         result.current.resend();
       });
 
-      expect(show).toHaveBeenCalledWith({ items: [{ tone: 'error', message }] });
+      expect(draftsOf(fresh.store.getState())).toEqual([{ kind: 'error', messageKey }]);
     }
   );
 
-  it('does nothing when the session ended', async () => {
+  it('raises nothing when the session ended', async () => {
     mockResend.mockResolvedValue({ kind: 'failed', reason: 'session_ended' });
-    const { result, confirm, show } = setup();
+    const { result, confirm } = setup();
 
     await act(async () => {
       result.current.resend();
     });
 
-    expect(show).not.toHaveBeenCalled();
+    expect(raiseCount()).toBe(0);
     expect(confirm).not.toHaveBeenCalled();
   });
 
@@ -236,7 +238,7 @@ describe('useEmailResend', () => {
       const field = document.createElement('input');
       field.id = 'email';
       document.body.appendChild(field);
-      const { result, confirm, isCurrent, show } = setup();
+      const { result, confirm, isCurrent } = setup();
       act(() => {
         result.current.resend();
       });
@@ -246,7 +248,7 @@ describe('useEmailResend', () => {
 
       expect(isCurrent).toHaveBeenCalledWith(user.email);
       expect(confirm).not.toHaveBeenCalled();
-      expect(show).not.toHaveBeenCalled();
+      expect(raiseCount()).toBe(0);
       expect(field).not.toHaveFocus();
       expect(result.current.isSubmitting).toBe(false);
       field.remove();
@@ -256,7 +258,7 @@ describe('useEmailResend', () => {
   it('publishes nothing when the component unmounts while the request is in flight', async () => {
     let settle: (outcome: ProfileResendOutcome) => void = () => undefined;
     mockResend.mockReturnValue(new Promise((resolve) => (settle = resolve)));
-    const { result, confirm, show, unmount } = setup();
+    const { result, confirm, unmount } = setup();
     act(() => {
       result.current.resend();
     });
@@ -266,7 +268,7 @@ describe('useEmailResend', () => {
     await act(async () => settle({ kind: 'sent', confirmed: true }));
 
     expect(signal.aborted).toBe(true);
-    expect(show).not.toHaveBeenCalled();
+    expect(raiseCount()).toBe(0);
     expect(confirm).not.toHaveBeenCalled();
   });
 });

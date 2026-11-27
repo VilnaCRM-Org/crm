@@ -46,6 +46,9 @@ export const replyWithSaved = (overrides: Partial<typeof PROFILE_NODE> = {}): Re
   return (route) => json(route, 200, { data: { updateUser: { user } } });
 };
 
+export const replyWithUnparsedUpdate: Reply = (route) =>
+  json(route, 200, { data: { updateUser: { user: null } } });
+
 export const replyWithResent = (): Reply => (route) =>
   json(route, 200, { data: { resendEmailToUser: { user: { ...PROFILE_NODE } } } });
 
