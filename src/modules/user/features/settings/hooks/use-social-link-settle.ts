@@ -1,6 +1,6 @@
-import { useTranslation } from 'react-i18next';
-
-import type { ToastQueue, ToastTone } from '@/components/types/ui-toast';
+import useNotifications from '@/hooks/use-notifications';
+import type { NotificationMessageKey } from '@/lib/notifications/types/notification-draft';
+import type { NotificationKind } from '@/lib/notifications/types/notification-kind';
 
 import type { SocialLinkFailureKind } from '../types/social-link/outcome';
 import type {
@@ -34,17 +34,16 @@ function settleOutcome(
   show('success', `settings.social.${intent}`);
 }
 
-export default function useSocialLinkSettle(
-  adopt: SocialLinkAdopt,
-  toasts: ToastQueue
-): SocialLinkSettle {
-  const { t } = useTranslation();
+export default function useSocialLinkSettle(adopt: SocialLinkAdopt): SocialLinkSettle {
+  const { raise } = useNotifications();
 
   return (settlement: SocialLinkSettlement): void => {
-    const { label, controlRef } = settlement.target;
-    const show = (tone: ToastTone, key: string): void =>
-      toasts.show({
-        items: [{ tone, message: t(key, { provider: label }), returnFocusRef: controlRef }],
+    const provider = settlement.target.label;
+    const show = (kind: NotificationKind, messageKey: NotificationMessageKey): void =>
+      raise({
+        items: [
+          { kind, messageKey, messageValues: { items: [{ name: 'provider', value: provider }] } },
+        ],
       });
     settleOutcome(settlement, adopt, show);
   };

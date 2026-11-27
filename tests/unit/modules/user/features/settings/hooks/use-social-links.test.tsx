@@ -2,11 +2,13 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import type { JSX, ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
+import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import useSocialLinks from '@/modules/user/features/settings/hooks/use-social-links';
 import type { SocialLinks } from '@/modules/user/features/settings/types/social-link/social-links';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
 import FakeBroadcastChannel from '@tests/unit/utils/fake-broadcast-channel';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 import { github, google } from './social-link-test-deps';
 
@@ -23,8 +25,6 @@ jest.mock('@/providers/di', () => ({
   useService: (token: symbol): object => mockUseService(token),
 }));
 
-const show = jest.fn();
-const toasts = { toasts: { items: [] }, announcement: '', alert: '', show, dismiss: jest.fn() };
 const i18n = createSettingsLocaleI18n('en', []);
 
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
@@ -32,7 +32,7 @@ const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
 );
 
 const setup = async (): Promise<{ result: { current: SocialLinks }; unmount: () => void }> => {
-  const view = renderHook(() => useSocialLinks(toasts), { wrapper });
+  const view = renderHook(() => useSocialLinks(), { wrapper });
   await act(async () => undefined);
   return view;
 };
@@ -41,7 +41,7 @@ describe('useSocialLinks', () => {
   beforeEach(() => {
     Object.values(mockProvider).forEach((method) => method.mockReset());
     mockUseService.mockClear();
-    show.mockReset();
+    resetClientStores();
     mockProvider.linked.mockResolvedValue({ items: ['github'] });
   });
 
@@ -97,7 +97,7 @@ describe('useSocialLinks', () => {
   it('ignores the read StrictMode aborted', async () => {
     const answers: ((linked: unknown) => void)[] = [];
     mockProvider.linked.mockImplementation(() => new Promise((resolve) => answers.push(resolve)));
-    const { result } = renderHook(() => useSocialLinks(toasts), { wrapper, reactStrictMode: true });
+    const { result } = renderHook(() => useSocialLinks(), { wrapper, reactStrictMode: true });
 
     expect(answers).toHaveLength(2);
     await act(async () => {
@@ -116,7 +116,7 @@ describe('useSocialLinks', () => {
     await act(() => result.current.unlink(google));
 
     expect(result.current.linked).toEqual({ items: ['github'] });
-    expect(show).toHaveBeenCalledTimes(1);
+    expect(useNotificationOutletStore.getState().raised.items).toHaveLength(1);
   });
 
   it('is busy while a provider is unlinked, and unlinks nothing else meanwhile', async () => {

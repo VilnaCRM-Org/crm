@@ -89,4 +89,52 @@ describe('BroadcastEventParser', () => {
   it.each(['not json', 'null', '"text"', '[]'])('drops the frame %s', (text) => {
     expect(parser.parse(text)).toBeNull();
   });
+
+  it('carries the string values the event sends for its message', () => {
+    const values = { window: '02:00–04:00', product: 'CRM' };
+
+    expect(parse({ data: { code: 'maintenance_planned', values } })).toMatchObject({
+      draft: {
+        messageKey: 'notification_center.broadcast.maintenance_planned',
+        messageValues: {
+          items: [
+            { name: 'window', value: '02:00–04:00' },
+            { name: 'product', value: 'CRM' },
+          ],
+        },
+      },
+    });
+  });
+
+  it('keeps an empty set of values', () => {
+    expect(parse({ data: { code: 'new_version', values: {} } })).toMatchObject({
+      draft: { messageValues: { items: [] } },
+    });
+  });
+
+  it('adds no values when the event sends none', () => {
+    const parsed = parse({ data: { code: 'new_version' } });
+
+    expect(parsed).toMatchObject({
+      draft: { messageKey: 'notification_center.broadcast.new_version' },
+    });
+    expect(parsed).not.toHaveProperty('draft.messageValues');
+  });
+
+  it.each([
+    ['null', null],
+    ['text', 'Google'],
+    ['a number', 7],
+    ['a list of text', ['Google']],
+    ['a number among the values', { provider: 'Google', count: 2 }],
+    ['an object among the values', { provider: { name: 'Google' } }],
+    ['a missing value', { provider: null }],
+  ])('keeps the event but drops values that are %s', (_name, values) => {
+    const parsed = parse({ data: { code: 'new_version', values } });
+
+    expect(parsed).toMatchObject({
+      draft: { messageKey: 'notification_center.broadcast.new_version' },
+    });
+    expect(parsed).not.toHaveProperty('draft.messageValues');
+  });
 });

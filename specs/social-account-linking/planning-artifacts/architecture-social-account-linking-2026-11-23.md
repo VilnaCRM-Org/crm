@@ -42,7 +42,7 @@ sequenceDiagram
 | Transformer      | settings `GraphQLSocialLinkTransformer`; zod results, `error_code` to failure kind           |
 | Data provider    | settings `SocialLinkProvider`: `linked`, `start`, `complete`, `unlink`                       |
 | Hooks            | `use-social-links`, `use-social-link-attempt`, `use-social-unlink`, `use-social-link-settle` |
-| View             | `social-networks` card and `social-tile`; toasts through the page's `ToastQueue`             |
+| View             | `social-networks` card and `social-tile`; notifications through `useNotifications().raise`   |
 | Popup return     | auth `social-link-return-view` and `use-social-link-return`, chosen by the `link.` prefix    |
 | Local mock       | `docker/apollo-server/lib/social-link-resolvers.ts`                                          |
 
@@ -62,8 +62,8 @@ sequenceDiagram
 
 ## 4. Differences from the prototype
 
-`crm-worktrees/social-account-linking` proved the flow. Changed here: toasts instead of #392's
-notifications; the prefix instead of `isPopup()`; no cross-window storage; FR1, FR6, FR7 and the split
+`crm-worktrees/social-account-linking` proved the flow. Changed here: results raise #392's
+notifications, recorded in the bell history; the prefix instead of `isPopup()`; no cross-window storage; FR1, FR6, FR7 and the split
 `already_linked` / `provider_linked` kinds.
 
 ## 5. Upstream

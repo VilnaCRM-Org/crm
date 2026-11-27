@@ -5,10 +5,10 @@ import {
   stubProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
-  expectErrorToast,
-  expectSuccessToast,
+  expectErrorOutcome,
+  expectSuccessOutcome,
+  noticeClose,
   text,
-  toastClose,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
 import {
   cancelUnlinkButton,
@@ -53,7 +53,7 @@ test.describe('Social account linking', () => {
 
     await link(page);
 
-    await expectSuccessToast(page, t('settings.social.linked', GOOGLE));
+    await expectSuccessOutcome(page, t('settings.social.linked', GOOGLE));
     await expect(unlinkButton(page, 'Google')).toBeVisible();
     await expect(linkButton(page, 'GitHub')).toBeVisible();
     await expect(page).toHaveURL(/\/settings$/);
@@ -63,17 +63,19 @@ test.describe('Social account linking', () => {
     ]);
   });
 
-  test('keeps the keyboard on the tile, and on it again once the toast closes', async ({
+  test('keeps the keyboard on the tile, and on the heading once the notification closes', async ({
     page,
   }) => {
     await open(page);
 
     await link(page);
+    await expectSuccessOutcome(page, t('settings.social.linked', GOOGLE));
     await expect(unlinkButton(page, 'Google')).toBeFocused();
-    await toastClose(page).focus();
+    await noticeClose(page).focus();
     await page.keyboard.press('Enter');
 
-    await expect(unlinkButton(page, 'Google')).toBeFocused();
+    await expect(noticeClose(page)).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1, name: text.heading })).toBeFocused();
   });
 
   test('explains a cancelled consent and completes nothing', async ({ page }) => {
@@ -81,7 +83,7 @@ test.describe('Social account linking', () => {
 
     await link(page);
 
-    await expectErrorToast(page, failureOf('cancelled'));
+    await expectErrorOutcome(page, failureOf('cancelled'));
     await expect(linkButton(page, 'Google')).toBeVisible();
     expect(countOf(calls, 'CompleteSocialLink')).toBe(0);
   });
@@ -91,7 +93,7 @@ test.describe('Social account linking', () => {
 
     await link(page);
 
-    await expectErrorToast(page, failureOf('already_linked'));
+    await expectErrorOutcome(page, failureOf('already_linked'));
     await expect(linkButton(page, 'Google')).toBeVisible();
   });
 
@@ -103,7 +105,7 @@ test.describe('Social account linking', () => {
 
     await linkButton(page, 'Google').click();
 
-    await expectErrorToast(page, failureOf('blocked'));
+    await expectErrorOutcome(page, failureOf('blocked'));
     expect(countOf(calls, 'InitiateSocialLink')).toBe(0);
   });
 
@@ -113,7 +115,7 @@ test.describe('Social account linking', () => {
     await unlinkButton(page, 'Google').click();
     await confirmUnlinkButton(page, 'Google').click();
 
-    await expectSuccessToast(page, t('settings.social.unlinked', GOOGLE));
+    await expectSuccessOutcome(page, t('settings.social.unlinked', GOOGLE));
     await expect(linkButton(page, 'Google')).toBeFocused();
     await expect(unlinkButton(page, 'GitHub')).toBeVisible();
     expect(calls.at(-1)?.input).toMatchObject({ provider: 'google' });
@@ -133,7 +135,7 @@ test.describe('Social account linking', () => {
     await expectNextTabStop(page, { locator: confirmUnlinkButton(page, 'Google') });
     await page.keyboard.press('Enter');
 
-    await expectSuccessToast(page, t('settings.social.unlinked', GOOGLE));
+    await expectSuccessOutcome(page, t('settings.social.unlinked', GOOGLE));
     await expect(linkButton(page, 'Google')).toBeFocused();
     expect(countOf(calls, 'UnlinkSocialProvider')).toBe(1);
   });
@@ -144,7 +146,7 @@ test.describe('Social account linking', () => {
     await unlinkButton(page, 'Google').click();
     await confirmUnlinkButton(page, 'Google').click();
 
-    await expectErrorToast(page, failureOf('last_method'));
+    await expectErrorOutcome(page, failureOf('last_method'));
     await expect(unlinkButton(page, 'Google')).toBeFocused();
   });
 

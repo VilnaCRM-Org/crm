@@ -14,9 +14,12 @@ module so that any page can use it:
 
 - `src/lib/notifications/`: the container-free Zustand outlet store
   (`use-notification-outlet-store.ts`), the actions that raise and dismiss
-  (`notification-outlet-actions.ts`, `notification-raise-builder.ts`) and the port types in
-  `types/` (`NotificationDraftSet`, `NotificationView`, `ShownNotification`,
-  `NotificationOutletState` and the others).
+  (`notification-outlet-actions.ts`, `notification-raise-builder.ts`) and the port types in `types/`
+  (`NotificationDraftSet`, `NotificationView`, `ShownNotification`, `NotificationOutletState` and
+  the others). A `NotificationDraft` is `{ kind, messageKey, messageValues?, action? }`; the
+  optional `messageValues` (`{ items: [{ name, value }] }`) are interpolated into the key wherever
+  it is translated (`notification-values-adapter.ts`), stored with the record and shown in the
+  history.
 - `src/hooks/use-notifications.ts`: `useNotifications()` returns the `NotificationsPort`
   (`src/hooks/types/notifications-port.ts`): `raise`, `dismiss`, `dismissAll`,
   `publishFocus` and `clear`.
@@ -38,9 +41,10 @@ operations, and each one returns a promise:
 | `markAllRead()`  | nothing; every record is read afterwards    |
 | `claim(owner)`   | nothing; another owner starts from the seed |
 
-A `NotificationRecord` holds only `id`, `kind`, `messageKey`, `createdAt` (epoch milliseconds) and
-`read`. It stores an i18n key, never translated text, and carries no action, e-mail, name,
-password, token or user id.
+A `NotificationRecord` holds only `id`, `kind`, `messageKey`, the optional `messageValues` the key
+interpolates (named string values such as `provider: Google`), `createdAt` (epoch milliseconds) and
+`read`. It stores an i18n key and its values, never translated text, and carries no action, e-mail,
+name, password, token or user id.
 
 ## The in-memory adapter and its seed
 
@@ -140,12 +144,15 @@ meant for one user on the topic. The owner therefore decided on 2026-11-23 that 
 notifications wait for authorized subscriptions there and for user-service #526 and #527.
 
 - **Contract (ours, to be agreed with the service):** event type `crm.broadcast`, envelope
-  `{ id, type, occurredAt, data: { code } }`. `BroadcastEventParser` accepts the codes
+  `{ id, type, occurredAt, data: { code, values? } }`. `BroadcastEventParser` accepts the codes
   `maintenance_planned` and `new_version` and maps each to a `notification_center.broadcast.*` key
-  of this catalog. Text in an event is never shown. An event with any other code, or with an
-  `occurredAt` that is not an ISO 8601 date and time with seconds and a zone (`Z` or an offset) on a
-  day that exists, is dropped. A broadcast records the kind `success`, the only kind beside `error`;
-  a history row draws no icon, so the kind is not shown.
+  of this catalog. The optional `data.values` is an object of string values the key interpolates
+  (`{{name}}`), kept as the record's `messageValues` (`{ items: [{ name, value }] }`); values that
+  are not such an object, or hold anything but strings, are dropped while the event is kept. No
+  other text in an event is shown, and the catalog key is always ours. An event with any other code,
+  or with an `occurredAt` that is not an ISO 8601 date and time with seconds and a zone (`Z` or an
+  offset) on a day that exists, is dropped. A broadcast records the kind `success`, the only kind
+  beside `error`; a history row draws no icon, so the kind is not shown.
 - **Delivery:** `BroadcastEventClient` follows the service's streaming protocol over SSE. It drops
   repeated envelope ids (the newest 500), lets the browser reconnect an interrupted stream, and
   reopens a closed one after the last event id, with a delay that doubles up to 30 s and has a

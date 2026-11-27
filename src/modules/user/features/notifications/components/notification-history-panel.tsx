@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import type { NotificationHistoryCopy } from '@/components/types/ui-notification-history';
 import UINotificationHistory from '@/components/ui-notification-history';
+import notificationValuesAdapter from '@/lib/notifications/notification-values-adapter';
 import type {
   NotificationView,
   NotificationViewSet,
@@ -16,7 +17,7 @@ function toView(record: NotificationRecord, t: TFunction): NotificationView {
   return {
     id: record.id,
     kind: record.kind,
-    message: t(record.messageKey),
+    message: t(record.messageKey, notificationValuesAdapter.options(record.messageValues)),
     time: t('notification_center.time', { value: record.createdAt }),
   };
 }

@@ -57,9 +57,9 @@ Every story also meets NFR1 and carries its own direct tests.
 
 - FR9 with the L6 row; one row at a time; nothing is sent before it is confirmed; the last-method refusal is explained.
 
-### S3.3 Toasts — dependent on S3.1
+### S3.3 Notifications — dependent on S3.1
 
-- One toast per FR11 result in both locales, announced by the existing live regions.
+- One notification per FR11 result in both locales, announced by the existing live regions.
 
 ## Epic 4 — Verification
 

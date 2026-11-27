@@ -258,4 +258,31 @@ describe('useNotificationRecorder', () => {
     expect(mockRepository.record).not.toHaveBeenCalled();
     listeners.mockRestore();
   });
+
+  it('carries the message values of a raise into its record drafts', async () => {
+    renderHook(() => useRecorder(report));
+
+    await act(async () => {
+      actions.raise(
+        {
+          items: [
+            buildNotificationDraft({
+              messageKey: 'settings.social.unlinked',
+              messageValues: { items: [{ name: 'provider', value: 'Twitter' }] },
+            }),
+          ],
+        },
+        identity
+      );
+    });
+
+    expect(mockRepository.record.mock.calls[0]?.[0].items).toEqual([
+      {
+        kind: 'success',
+        messageKey: 'settings.social.unlinked',
+        messageValues: { items: [{ name: 'provider', value: 'Twitter' }] },
+        createdAt: RAISED_AT,
+      },
+    ]);
+  });
 });

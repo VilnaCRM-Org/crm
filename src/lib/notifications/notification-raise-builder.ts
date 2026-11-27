@@ -64,7 +64,7 @@ class NotificationRaiseBuilder {
   ): string {
     return items
       .filter((item) => item.kind === kind)
-      .map((item) => translate(item.messageKey))
+      .map((item) => translate(item.messageKey, item.messageValues))
       .join(SPOKEN_SEPARATOR);
   }
 

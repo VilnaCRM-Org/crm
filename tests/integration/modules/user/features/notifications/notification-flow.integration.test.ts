@@ -69,6 +69,26 @@ describe('notification flow from a raised outcome into the history', () => {
     });
   });
 
+  it('records the message values of an outcome beside its key', async () => {
+    const before = await inMemoryNotificationRepository.countUnread();
+    const flow = mount();
+    const linked: NotificationDraft = {
+      kind: 'success',
+      messageKey: 'settings.social.linked',
+      messageValues: { items: [{ name: 'provider', value: 'GitHub' }] },
+    };
+
+    act(() => flow.current.port.raise({ items: [linked, saved] }));
+
+    await unreadBecomes(flow, 2, before);
+    const [first, second] = flow.current.history.records.items;
+    expect([first, second].map((record) => record?.messageValues)).toEqual([
+      { items: [{ name: 'provider', value: 'GitHub' }] },
+      undefined,
+    ]);
+    expect(second).not.toHaveProperty('messageValues');
+  });
+
   it('announces a failure assertively and repeats it with the alternating mark', async () => {
     const before = await inMemoryNotificationRepository.countUnread();
     const flow = mount();

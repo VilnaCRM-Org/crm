@@ -263,7 +263,7 @@ test.describe('Settings on touch devices (issue #330)', () => {
     const opened = page.waitForEvent('popup');
     await linkButton(page, 'Google').tap();
     await opened;
-    await expectSuccessToast(page, t('settings.social.linked', { provider: 'Google' }));
+    await expectSuccessOutcome(page, t('settings.social.linked', { provider: 'Google' }));
     await expectTouchTarget(unlinkButton(page, 'Google'), 'Google unlink');
     await unlinkButton(page, 'Google').tap();
     await expectTouchTarget(confirmUnlinkButton(page, 'Google'), 'Google unlink confirmation');

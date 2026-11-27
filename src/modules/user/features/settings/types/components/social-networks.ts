@@ -1,6 +1,5 @@
 import type { ComponentType, Ref, RefObject, SVGProps } from 'react';
 
-import type { ToastQueue } from '@/components/types/ui-toast';
 import type { SocialLinkProviderId } from '@/modules/user/types/social-link/social-link-callback';
 
 import type {
@@ -9,10 +8,6 @@ import type {
   SocialLinkStep,
   UnlinkConfirmation,
 } from '../social-link/social-links';
-
-export interface SocialNetworksProps {
-  readonly toasts: ToastQueue;
-}
 
 export interface SocialListProps {
   readonly links: SocialLinks;

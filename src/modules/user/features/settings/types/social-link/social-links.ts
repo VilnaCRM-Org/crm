@@ -1,6 +1,7 @@
 import type { RefObject } from 'react';
 
-import type { ToastTone } from '@/components/types/ui-toast';
+import type { NotificationMessageKey } from '@/lib/notifications/types/notification-draft';
+import type { NotificationKind } from '@/lib/notifications/types/notification-kind';
 import type {
   SocialLinkProviderId,
   SocialLinkWindow,
@@ -87,7 +88,7 @@ export type SocialLinkSettle = (settlement: SocialLinkSettlement) => void;
 
 export type SocialLinkAdopt = (id: SocialLinkProviderId, intent: SocialLinkIntent) => void;
 
-export type SocialLinkShow = (tone: ToastTone, key: string) => void;
+export type SocialLinkShow = (kind: NotificationKind, key: NotificationMessageKey) => void;
 
 export interface SocialBusy {
   readonly busy: boolean;

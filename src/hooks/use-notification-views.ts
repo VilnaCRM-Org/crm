@@ -2,6 +2,7 @@ import type { TFunction } from 'i18next';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import notificationValuesAdapter from '@/lib/notifications/notification-values-adapter';
 import type { NotificationMessageKey } from '@/lib/notifications/types/notification-draft';
 import type {
   NotificationView,
@@ -22,7 +23,7 @@ function toView(
   return {
     id: String(item.id),
     kind: item.kind,
-    message: t(item.messageKey),
+    message: t(item.messageKey, notificationValuesAdapter.options(item.messageValues)),
     action:
       item.action === undefined
         ? undefined

@@ -50,6 +50,31 @@ describe('broadcast events into the notification history', () => {
     expect(FakeEventSource.last().readyState).toBe(FakeEventSource.CLOSED);
   });
 
+  it('records the string values a broadcast sends and drops values that are not text', async () => {
+    writeConfigBlock(JSON.stringify({ notificationEventsUrl: 'https://events.example' }));
+    const record = jest.spyOn(inMemoryNotificationRepository, 'record');
+    const { result, unmount } = renderHook(() => useBroadcastEvents(jest.fn()));
+    const values = { window: '02:00' };
+
+    act(() =>
+      FakeEventSource.last().send(frame({ data: { code: 'maintenance_planned', values } }))
+    );
+    [[7], null, 'Google', { window: 2 }].forEach((dropped) =>
+      act(() =>
+        FakeEventSource.last().send(frame({ data: { code: 'new_version', values: dropped } }))
+      )
+    );
+    await waitFor(() => expect(result.current).toBe(5));
+
+    const drafts = record.mock.calls.map(([set]) => set.items[0]);
+    expect(drafts[0]).toMatchObject({
+      messageValues: { items: [{ name: 'window', value: '02:00' }] },
+    });
+    drafts.slice(1).forEach((draft) => expect(draft).not.toHaveProperty('messageValues'));
+    expect(drafts).toHaveLength(5);
+    unmount();
+  });
+
   it('drops unknown, repeated and unreadable events and resumes a closed stream', () => {
     jest.useFakeTimers();
     jest.spyOn(Math, 'random').mockReturnValue(0);

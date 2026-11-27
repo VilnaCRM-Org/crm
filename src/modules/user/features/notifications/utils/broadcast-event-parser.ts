@@ -1,6 +1,7 @@
 import type { NotificationMessageKey } from '@/lib/notifications/types/notification-draft';
 
 import type { BroadcastEvent, BroadcastEventReader } from '../types/broadcast-event';
+import type { NotificationRecordDraft } from '../types/notification-record';
 
 const MESSAGE_KEYS = new Map<unknown, NotificationMessageKey>([
   ['maintenance_planned', 'notification_center.broadcast.maintenance_planned'],
@@ -22,14 +23,24 @@ export default class BroadcastEventParser implements BroadcastEventReader {
 
   private eventOf(value: unknown): BroadcastEvent | null {
     const { id, type, occurredAt, data } = Object(value) as Record<string, unknown>;
-    const messageKey = MESSAGE_KEYS.get(Object(data).code);
+    const body = Object(data);
+    const messageKey = MESSAGE_KEYS.get(body.code);
     const time = String(occurredAt);
     if (type !== this.type || time !== occurredAt) return null;
     const createdAt = this.instantOf(time);
     if (typeof id !== 'string' || id === '') return null;
     return messageKey === undefined || Number.isNaN(createdAt)
       ? null
-      : { id, draft: { kind: 'success', messageKey, createdAt } };
+      : { id, draft: { kind: 'success', messageKey, createdAt, ...this.valuesOf(body.values) } };
+  }
+
+  private valuesOf(values: unknown): Pick<NotificationRecordDraft, 'messageValues'> {
+    if (values === null || typeof values !== 'object' || Array.isArray(values)) return {};
+    const entries = Object.entries(values);
+
+    return entries.every((entry): entry is [string, string] => typeof entry[1] === 'string')
+      ? { messageValues: { items: entries.map(([name, value]) => ({ name, value })) } }
+      : {};
   }
 
   private instantOf(occurredAt: string): number {

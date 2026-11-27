@@ -128,4 +128,23 @@ describe('useNotificationViews', () => {
 
     expect(result.current.items[0]?.message).toBe(expected);
   });
+
+  it('interpolates the values a shown item carries into its message', () => {
+    const set: ShownNotificationSet = {
+      items: [
+        {
+          kind: 'success',
+          messageKey: 'settings.social.linked',
+          messageValues: { items: [{ name: 'provider', value: 'GitHub' }] },
+          id: 7,
+          raisedAt: RAISED_AT,
+        },
+      ],
+    };
+    const { result } = renderHook(() => useNotificationViews(set), {
+      wrapper: wrapperFor(createSettingsLocaleI18n('en', [])),
+    });
+
+    expect(result.current.items[0]?.message).toBe('You have linked GitHub');
+  });
 });

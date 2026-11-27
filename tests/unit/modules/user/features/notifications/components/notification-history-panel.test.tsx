@@ -140,4 +140,23 @@ describe('NotificationHistoryPanel', () => {
 
     expect(findLiveRegions(container)).toEqual([]);
   });
+
+  it('interpolates the message values a record carries', () => {
+    const set: NotificationRecordSet = {
+      items: [
+        {
+          id: 'notification-1',
+          kind: 'success',
+          messageKey: 'settings.social.linked',
+          messageValues: { items: [{ name: 'provider', value: 'Google' }] },
+          createdAt: Date.parse('2026-11-20T08:00:00Z'),
+          read: false,
+        },
+      ],
+    };
+
+    render(<Host locale="en" set={set} />);
+
+    expect(screen.getByText('You have linked Google')).toBeVisible();
+  });
 });

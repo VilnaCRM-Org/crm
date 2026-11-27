@@ -1,6 +1,5 @@
 import { type Dispatch, useEffect, useReducer } from 'react';
 
-import type { ToastQueue } from '@/components/types/ui-toast';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import type { SocialLinkProviderId } from '@/modules/user/types/social-link/social-link-callback';
 import { useService } from '@/providers/di';
@@ -54,7 +53,7 @@ async function load(
   dispatch(linked === null ? { type: 'failed' } : { type: 'loaded', linked });
 }
 
-export default function useSocialLinks(toasts: ToastQueue): SocialLinks {
+export default function useSocialLinks(): SocialLinks {
   const provider = useService<SocialLinkProvider>(AUTH_TOKENS.SocialLinkProvider);
   const [{ status, linked, reload }, dispatch] = useReducer(reduceLinks, INITIAL_STATE);
   useEffect(() => {
@@ -62,9 +61,8 @@ export default function useSocialLinks(toasts: ToastQueue): SocialLinks {
     void load(provider, controller.signal, dispatch);
     return (): void => controller.abort();
   }, [provider, reload]);
-  const settle = useSocialLinkSettle(
-    (id, intent): void => dispatch({ type: 'changed', id, intent }),
-    toasts
+  const settle = useSocialLinkSettle((id, intent): void =>
+    dispatch({ type: 'changed', id, intent })
   );
   const busy = useSocialBusy();
   const link = useSocialLinkAttempt({ provider, settle, busy });

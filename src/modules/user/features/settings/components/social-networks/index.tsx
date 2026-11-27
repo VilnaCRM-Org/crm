@@ -15,7 +15,6 @@ import type {
   SocialListProps,
   SocialLoadStatusProps,
   SocialNetworksCardProps,
-  SocialNetworksProps,
   SocialTileProvider,
   SocialUnlinkRowProps,
 } from '../../types/components/social-networks';
@@ -112,6 +111,6 @@ export function SocialNetworksCard({ links }: SocialNetworksCardProps): JSX.Elem
   );
 }
 
-export default function SocialNetworks({ toasts }: SocialNetworksProps): JSX.Element {
-  return <SocialNetworksCard links={useSocialLinks(toasts)} />;
+export default function SocialNetworks(): JSX.Element {
+  return <SocialNetworksCard links={useSocialLinks()} />;
 }

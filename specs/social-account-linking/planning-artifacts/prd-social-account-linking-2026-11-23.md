@@ -37,7 +37,9 @@ Linking is not a sign-in: it never issues, replaces or ends a session.
   page uses the prefix only to choose the flow, so the popup needs no storage of its own: browsers
   drop `window.opener`, and cross-window `sessionStorage` writes, on some returns from a provider.
   Trust comes from the settings tab comparing the full `state`.
-- **L5 — Toasts.** Results use the settings toast queue, as Figma `315:11754` draws them.
+- **L5 — Notifications.** Results raise the notifications port (`useNotifications().raise`), as Figma
+  `315:11754` draws them, with the provider name as a message value; they are recorded in the bell
+  history and never sent to the notification service.
 - **L6 — Inline unlink confirmation (owner, 2026-11-23).** Figma draws none and #520 asks for none.
   The bin asks first, in one row under the tiles, because a phone tile is too narrow for a question.
 - **L7 — Last sign-in method.** user-service refuses to unlink the last way to sign in. The SPA
@@ -71,7 +73,7 @@ Linking is not a sign-in: it never issues, replaces or ends a session.
 - **FR9** The bin shows the L6 row, named for its provider, with focus on Cancel. Cancel and Escape
   close it and focus the bin; confirming closes it, focuses the bin and calls `unlinkSocialProviderUser(provider)` once.
 - **FR10** After a tile changes state, keyboard focus moves to the tile's new control.
-- **FR11** Success and failure each show one toast, announced by the settings live regions:
+- **FR11** Success and failure each raise one notification, announced by the settings live regions:
 
   | Source                                             | Failure kind           |
   | -------------------------------------------------- | ---------------------- |

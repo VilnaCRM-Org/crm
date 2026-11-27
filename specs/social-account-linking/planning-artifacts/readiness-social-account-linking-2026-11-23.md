@@ -17,13 +17,13 @@ inputDocuments:
 
 ## Verdict: **CONCERNS** (upstream contract open)
 
-| Check                                      | Result   | Evidence                                                              |
-| ------------------------------------------ | -------- | --------------------------------------------------------------------- |
-| Every FR is owned by a story               | PASS     | FR1-FR12 in S1.1-S4.1                                                 |
-| Design reference for each surface          | CONCERNS | `315:11754` for tiles and toasts; L6 is drawn from the settings pills |
-| No contradiction with an upstream decision | PASS     | Amendments dated 2026-11-23 in both older bundles                     |
-| Error outcomes complete                    | PASS     | FR11                                                                  |
-| Backend can serve it                       | CONCERNS | user-service #520 is open and shaped differently                      |
+| Check                                      | Result   | Evidence                                                                     |
+| ------------------------------------------ | -------- | ---------------------------------------------------------------------------- |
+| Every FR is owned by a story               | PASS     | FR1-FR12 in S1.1-S4.1                                                        |
+| Design reference for each surface          | CONCERNS | `315:11754` for tiles and notifications; L6 is drawn from the settings pills |
+| No contradiction with an upstream decision | PASS     | Amendments dated 2026-11-23 in both older bundles                            |
+| Error outcomes complete                    | PASS     | FR11                                                                         |
+| Backend can serve it                       | CONCERNS | user-service #520 is open and shaped differently                             |
 
 | Id  | Warning                                                                    | Handling                                     |
 | --- | -------------------------------------------------------------------------- | -------------------------------------------- |

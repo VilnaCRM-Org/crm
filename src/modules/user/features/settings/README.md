@@ -149,7 +149,7 @@ UserProfile [component]<route>          title, useProfileLoad
   │ │     └ ProfileSectionForm password     UIForm key=saved, submitRef, onInvalid, ClearButton
   │ │       ├ ChangePassword key=cleared: h2 "Пароль", both passwords, policy rules
   │ │       └ UIServerFieldError per field, p role=status
-  │ ├ SocialNetworks                    h2 "Соціальні мережі", four tiles, toasts
+  │ ├ SocialNetworks                    h2 "Соціальні мережі", four tiles, notifications
   │ └ TwoFactorSettings                 section, useTwoFactorSettings; reports inside its card
   │   └ TwoFactorPanel                  CardHeader (key=view) + one view, ArrivalContext
   │     ├ OffView                       off: UIForm "Почати налаштування", OffGuide, banner
@@ -304,8 +304,9 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   in the click, asks `initiateSocialLinkUser` for an authorization URL and a `link.…` state, and
   waits on the `crm.socialLink` `BroadcastChannel`. `/auth/callback/:provider` sees the mark,
   posts the query and closes; the settings tab completes only the exact state it was issued. A
-  result changes its own provider's tile alone, shows one toast, and leaves the keyboard on the
-  tile. Until `linkedSocialProviders` answers, and after it fails, the tiles offer nothing to
+  result changes its own provider's tile alone, raises one notification through
+  `useNotifications().raise` (the provider name travels as `messageValues`, and the result is
+  recorded in the bell history), and leaves the keyboard on the tile. Until `linkedSocialProviders` answers, and after it fails, the tiles offer nothing to
   press. A linked tile is `315:11754`, bin included (owner, 2026-11-23: every colour follows
   Figma; the bin is under 3:1 until #276). The bin asks first in one row under the tiles (PRD L6);
   Figma draws none.

@@ -17,7 +17,7 @@ const mockUseSocialLinks = jest.fn();
 
 jest.mock('@/modules/user/features/settings/hooks/use-social-links', () => ({
   __esModule: true,
-  default: (toasts: unknown): unknown => mockUseSocialLinks(toasts),
+  default: (...args: unknown[]): unknown => mockUseSocialLinks(...args),
 }));
 
 const PROVIDERS = ['Google', 'Facebook', 'GitHub', 'Twitter'];
@@ -38,23 +38,16 @@ const LINK_GOOGLE = 'Google: підключити обліковий запис 
 const LOAD_FAILED = 'Не вдалося завантажити підключені облікові записи';
 
 describe('SocialNetworks', () => {
-  it('hands the page toast queue to the links', () => {
-    const toasts = {
-      toasts: { items: [] },
-      announcement: '',
-      alert: '',
-      show: jest.fn(),
-      dismiss: jest.fn(),
-    };
+  it('renders the card from the links hook', () => {
     mockUseSocialLinks.mockReturnValue(buildSocialLinks());
 
     render(
       <I18nextProvider i18n={createSettingsLocaleI18n('uk', [])}>
-        <SocialNetworks toasts={toasts} />
+        <SocialNetworks />
       </I18nextProvider>
     );
 
-    expect(mockUseSocialLinks).toHaveBeenCalledWith(toasts);
+    expect(mockUseSocialLinks).toHaveBeenCalledWith();
     expect(screen.getByRole('list', { name: 'Соціальні мережі' })).toBeInTheDocument();
   });
 });
