@@ -6,6 +6,7 @@ import container from '@/config/dependency-injection-config';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import RegistrationAPI from '@/modules/user/features/auth/repositories/registration-api';
 import { ApiError, ConflictError } from '@/modules/user/lib/api-errors';
+import type UserServiceErrorTransformer from '@/modules/user/transformers';
 import HttpErrorGuard from '@/services/https-client/http-error-guard';
 import ApiErrorFactory from '@auth/repositories/api-error-factory';
 import ApiStatusErrorFactory from '@auth/repositories/api-status-error-factory';
@@ -128,6 +129,25 @@ describe('RegistrationAPI Integration', () => {
       await expect(registrationAPI.register(credentials)).rejects.toBeInstanceOf(ConflictError);
     });
 
+    it('maps a 200 already-registered violation to a ConflictError', async () => {
+      const message = 'This email address is already registered';
+      server.use(
+        http.post(GRAPHQL_URL, () =>
+          HttpResponse.json({
+            data: { createUser: null },
+            errors: [
+              {
+                message: `email: ${message}`,
+                extensions: { status: 422, violations: [{ path: 'email', message }] },
+              },
+            ],
+          })
+        )
+      );
+
+      await expect(registrationAPI.register(credentials)).rejects.toBeInstanceOf(ConflictError);
+    });
+
     it('throws an ApiError on a GraphQL error response without a status', async () => {
       server.use(
         http.post(GRAPHQL_URL, () =>
@@ -144,7 +164,8 @@ describe('RegistrationAPI Integration', () => {
         .mockRejectedValue(new ApolloError({ graphQLErrors: [{ message: 'no status' } as never] }));
       const api = new RegistrationAPI(
         { mutate } as unknown as ApolloClientLike,
-        new ApiErrorFactory(new ApiStatusErrorFactory(), new HttpErrorGuard())
+        new ApiErrorFactory(new ApiStatusErrorFactory(), new HttpErrorGuard()),
+        container.resolve<UserServiceErrorTransformer>(AUTH_TOKENS.UserServiceErrorTransformer)
       );
 
       await expect(api.register(credentials)).rejects.toBeInstanceOf(ApiError);

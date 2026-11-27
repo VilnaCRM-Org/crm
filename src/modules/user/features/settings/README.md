@@ -356,15 +356,15 @@ Deliberate differences, each for a reason a frame cannot show:
   regenerate button, which no frame draws, stacks under it in the same text column.
 - **Copying gives visible feedback**: the glyph becomes a check on success and the manual instruction
   appears on failure, because an icon-only button has no label to change.
-- **Copying the recovery codes shows a line, not a new button** (owner decision of 2026-11-18): "Скопіювати
-  коди" keeps its label, size and colours. "Коди скопійовано" shows above it for 3 s and fades out over
-  0.4 s (at once with `prefers-reduced-motion: reduce`, and a new copy restarts the 3 s); the manual
-  instruction shows in the same place on failure and stays until the next copy. Both lines use the
-  key's failure-line type (Inter 14 px, #404142) and are `aria-hidden`, because the polite status
-  region still carries the announcement. They sit in a 16 px slot that replaces the list's 16 px
-  bottom margin, so nothing moves at rest or on success; the shortened failure line stays on one
-  line down to 320 px, and if text spacing or zoom ever wraps it, it pushes the button down rather
-  than overlap the codes (WCAG 1.4.10, 1.4.12).
+- **Copying the recovery codes changes the button's own text** (owner decision of 2026-11-23,
+  superseding the separate line of 2026-11-18): "Скопіювати коди" reads "Коди скопійовано" for 3 s and
+  returns. Both texts share one grid cell and the one not shown is hidden, so the button keeps its
+  size. A new copy restarts the 3 s and a failed one drops the copied text at once. The polite status
+  region still carries the announcement. Only the manual instruction shows above the button, on
+  failure and until the next copy, in the key's failure-line type (Inter 14 px, #404142) and
+  `aria-hidden`. It sits in a 16 px slot that replaces the list's 16 px bottom margin, so nothing moves
+  at rest; the shortened line stays on one line down to 320 px, and if text spacing or zoom ever wraps
+  it, it pushes the button down rather than overlap the codes (WCAG 1.4.10, 1.4.12).
 
 The tooltip has no frame at 1025 to 1439 px, where the card is narrower than it: there it aligns to
 the step's right edge without an arrow, and on a phone it fills the step, so it can never add

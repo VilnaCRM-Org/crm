@@ -273,8 +273,8 @@ banner, main and footer lose their roles), the scroll lock and Escape are MUI's;
 or Popover API. The dialog holds the drawn 56 px header with aria-hidden copies of the logo, bell,
 list and avatar and the one operable `x-close` button, and a panel under that header that spans the
 whole viewport width down to the bottom edge with no shadow, holding the disabled drawer search and
-the same `UINavigationList` as the sidebar in 60 px rows (the Settings header is 48 px while the
-group is open, as drawn). Both the 768 px breakpoint and the viewport-wide panel are the owner
+the same `UINavigationList` as the sidebar in 60 px rows (the Settings header is the drawn
+48 px, open or collapsed). Both the 768 px breakpoint and the viewport-wide panel are the owner
 decision of 2026-11-05, confirmed 2026-11-10 (see the amendment banner of
 [the app-shell PRD](../../../specs/app-shell-navigation/planning-artifacts/prd-app-shell-navigation-2026-10-22.md));
 until then the drawer served everything below 1024 px as a 313×622 panel at 62,56,
@@ -351,8 +351,8 @@ What Figma leaves open, and how it was built:
   monogram stands in for it exactly as it does in the header. Until the slot chunk loads, or when
   it fails, the drawer keeps its own 40 px `#E1E7EA` circle with the 24 px person glyph in
   `#1A1C1E`, the same size, so nothing shifts.
-- The collapsed Settings header is 60 px (as the other rows) and its chevron is centred on it; the
-  open header is the drawn 48 px.
+- The Settings header is the drawn 48 px open and collapsed, with the chevron 12 px from its top in
+  both, so closing the group moves neither (the collapsed row was 60 px until 2026-11-23).
 - The drawer's page behind is measured with the temporary local `AppLayout` mount of Story 2.2.
 
 ### Measured against Figma (user chip and menu)

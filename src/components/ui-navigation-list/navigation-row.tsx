@@ -25,16 +25,12 @@ const iconStyleOf = ({ layout, variant, id, shape }: NavigationRowProps): SxProp
 const actionOf = (layout: NavigationRowProps['layout']): SxProps<Theme> =>
   layout === 'drawer' ? styles.actionDrawer : styles.action;
 
-const sxOf = ({ layout, variant, id, shape, open }: NavigationRowProps): SxProps<Theme> =>
+const sxOf = ({ layout, variant, id, shape }: NavigationRowProps): SxProps<Theme> =>
   ({
     item:
       id === 'signOut'
         ? actionOf(layout)
-        : {
-            ...styles.row[layout],
-            ...styles.rowById[layout][id],
-            ...(open ? styles.rowOpen[layout] : {}),
-          },
+        : { ...styles.row[layout], ...styles.rowById[layout][id] },
     sub: styles.sub[layout],
     rail: railStyles.rail[shape ?? 'desktop'],
   })[variant];

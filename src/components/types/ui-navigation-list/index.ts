@@ -36,7 +36,6 @@ export interface NavigationRowProps {
   readonly current?: boolean | undefined;
   readonly onActivate?: ActivateHandler | undefined;
   readonly shape?: RailShape | undefined;
-  readonly open?: boolean | undefined;
   readonly grouped?: boolean | undefined;
 }
 

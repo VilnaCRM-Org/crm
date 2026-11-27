@@ -9,6 +9,8 @@ export interface CopyAnnouncementRequest {
   readonly failedText: string;
 }
 
+export type CopiedHoldRequest = Pick<CopyAnnouncement, 'status' | 'message'>;
+
 export interface CopyAnnouncement {
   readonly status: ClipboardCopyStatus;
   readonly message: string;

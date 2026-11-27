@@ -7,7 +7,6 @@ import { I18nextProvider } from 'react-i18next';
 import Copy from '@/modules/user/features/settings/components/two-factor-settings/copy-button';
 import { buildTotpSecret } from '@tests/builders';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
-import stubMotionPreference from '@tests/unit/utils/stub-motion-preference';
 
 const LABEL = 'Скопіювати коди';
 const COPIED = 'Коди скопійовано';
@@ -52,6 +51,11 @@ const press = async (
   await act(() => jest.advanceTimersByTimeAsync(0));
 };
 
+const copyOf = (name: string): HTMLElement => screen.getByRole('button', { name });
+
+const textOf = (text: string): HTMLElement =>
+  screen.getByText(text, { selector: 'span[aria-hidden]' });
+
 const lineOf = (text: string): HTMLElement | null => screen.queryByText(text, { selector: 'p' });
 
 const elapse = (ms: number): void => {
@@ -69,130 +73,154 @@ describe('CopyButton visible copy feedback', () => {
     jest.useRealTimers();
     window.getSelection()?.removeAllRanges();
     Reflect.deleteProperty(navigator, 'clipboard');
-    Reflect.deleteProperty(window, 'matchMedia');
   });
 
-  it('shows no line before a copy', () => {
+  it('offers the copy and shows no line before a copy', () => {
     mount();
 
-    expect(lineOf(COPIED)).not.toBeInTheDocument();
+    expect(copyOf(LABEL)).toBeInTheDocument();
     expect(lineOf(FAILED)).not.toBeInTheDocument();
   });
 
-  it('shows the copied line above an unchanged button, hidden from assistive tech', async () => {
+  it('turns the text of the same button into the copied text, with no separate line', async () => {
     const actor = user();
     installClipboard(jest.fn().mockResolvedValue(undefined));
     mount();
-    const button = screen.getByRole('button', { name: LABEL });
+    const button = copyOf(LABEL);
 
     await press(actor, button);
 
-    const line = lineOf(COPIED);
-    expect(line).toHaveAttribute('aria-hidden', 'true');
-    expect(line?.compareDocumentPosition(button)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(screen.getByRole('button', { name: LABEL })).toBe(button);
-    expect(button).toHaveTextContent(LABEL);
-    expect(button).toHaveTextContent(new RegExp(`^${LABEL}$`, 'u'));
+    expect(copyOf(COPIED)).toBe(button);
+    expect(button).toHaveFocus();
     expect(button).toHaveClass('MuiButton-outlinedPill');
+    expect(lineOf(COPIED)).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent(COPIED);
   });
 
-  it('keeps the copied line for 3 s plus the 0.4 s fade, then removes it', async () => {
+  it('holds both texts in one cell and hides the one not shown', async () => {
     const actor = user();
     installClipboard(jest.fn().mockResolvedValue(undefined));
     mount();
+    const shown = { visibility: 'visible', gridArea: '1/1' };
+    const hidden = { visibility: 'hidden', gridArea: '1/1' };
 
-    await press(actor, screen.getByRole('button', { name: LABEL }));
-    elapse(3399);
-    expect(lineOf(COPIED)).toBeInTheDocument();
-    elapse(1);
+    expect(textOf(LABEL)).toHaveAttribute('aria-hidden', 'false');
+    expect(textOf(LABEL)).toHaveStyle(shown);
+    expect(textOf(COPIED)).toHaveAttribute('aria-hidden', 'true');
+    expect(textOf(COPIED)).toHaveStyle(hidden);
 
-    expect(lineOf(COPIED)).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: LABEL })).toHaveTextContent(LABEL);
+    await press(actor, copyOf(LABEL));
+
+    expect(textOf(LABEL)).toHaveAttribute('aria-hidden', 'true');
+    expect(textOf(LABEL)).toHaveStyle(hidden);
+    expect(textOf(COPIED)).toHaveAttribute('aria-hidden', 'false');
+    expect(textOf(COPIED)).toHaveStyle(shown);
   });
 
-  it('removes the copied line at 3 s with no fade under reduced motion', async () => {
-    stubMotionPreference(true);
+  it('returns to the copy text after 3 s', async () => {
     const actor = user();
     installClipboard(jest.fn().mockResolvedValue(undefined));
     mount();
 
-    await press(actor, screen.getByRole('button', { name: LABEL }));
+    await press(actor, copyOf(LABEL));
     elapse(2999);
-    expect(lineOf(COPIED)).toBeInTheDocument();
+    expect(copyOf(COPIED)).toBeInTheDocument();
     elapse(1);
 
-    expect(lineOf(COPIED)).not.toBeInTheDocument();
-  });
-
-  it('keeps the fade when motion is not reduced', async () => {
-    stubMotionPreference(false);
-    const actor = user();
-    installClipboard(jest.fn().mockResolvedValue(undefined));
-    mount();
-
-    await press(actor, screen.getByRole('button', { name: LABEL }));
-    elapse(3000);
-
-    expect(lineOf(COPIED)).toBeInTheDocument();
+    expect(copyOf(LABEL)).toBeInTheDocument();
   });
 
   it('restarts the 3 s hold on a new copy', async () => {
     const actor = user();
     installClipboard(jest.fn().mockResolvedValue(undefined));
     mount();
-    const button = screen.getByRole('button', { name: LABEL });
+    const button = copyOf(LABEL);
 
     await press(actor, button);
     elapse(2000);
     await press(actor, button);
-    elapse(3000);
-    expect(lineOf(COPIED)).toBeInTheDocument();
-    elapse(400);
+    elapse(2999);
+    expect(copyOf(COPIED)).toBe(button);
+    elapse(1);
 
-    expect(lineOf(COPIED)).not.toBeInTheDocument();
+    expect(copyOf(LABEL)).toBe(button);
   });
 
-  it('shows the copied line again after it expired', async () => {
+  it('keeps the copied text for at most 3 s while a repeat copy never settles', async () => {
+    const actor = user();
+    installClipboard(
+      jest
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockReturnValueOnce(new Promise<void>(() => undefined))
+    );
+    mount();
+    const button = copyOf(LABEL);
+
+    await press(actor, button);
+    elapse(2900);
+    await press(actor, button);
+    elapse(2999);
+    expect(copyOf(COPIED)).toBe(button);
+    elapse(1);
+
+    expect(copyOf(LABEL)).toBe(button);
+  });
+
+  it('shows the copied text again after it returned', async () => {
     const actor = user();
     installClipboard(jest.fn().mockResolvedValue(undefined));
     mount();
-    const button = screen.getByRole('button', { name: LABEL });
+    const button = copyOf(LABEL);
 
     await press(actor, button);
-    elapse(3400);
+    elapse(3000);
     await press(actor, button);
 
-    expect(lineOf(COPIED)).toBeInTheDocument();
+    expect(copyOf(COPIED)).toBe(button);
   });
 
-  it('shows the failure line in the same place and keeps it until the next copy', async () => {
+  it('drops the copied text at once when a repeat copy fails', async () => {
+    const actor = user();
+    installClipboard(
+      jest.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('refused'))
+    );
+    mount();
+    const button = copyOf(LABEL);
+
+    await press(actor, button);
+    await press(actor, button);
+
+    expect(copyOf(LABEL)).toBe(button);
+    expect(lineOf(FAILED)).toBeInTheDocument();
+  });
+
+  it('shows the failure line above the button and keeps it until the next copy', async () => {
     const actor = user();
     installClipboard(
       jest.fn().mockRejectedValueOnce(new Error('refused')).mockResolvedValueOnce(undefined)
     );
     mount();
-    const button = screen.getByRole('button', { name: LABEL });
+    const button = copyOf(LABEL);
 
     await press(actor, button);
     const line = lineOf(FAILED);
     expect(line).toHaveAttribute('aria-hidden', 'true');
     expect(line?.compareDocumentPosition(button)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(lineOf(COPIED)).not.toBeInTheDocument();
     elapse(60_000);
     expect(lineOf(FAILED)).toBeInTheDocument();
 
     await press(actor, button);
 
     expect(lineOf(FAILED)).not.toBeInTheDocument();
-    expect(lineOf(COPIED)?.compareDocumentPosition(button)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(copyOf(COPIED)).toBe(button);
   });
 
   it('clears the hold timer on unmount', async () => {
     const actor = user();
     installClipboard(jest.fn().mockResolvedValue(undefined));
     const { unmount } = mount();
-    await press(actor, screen.getByRole('button', { name: LABEL }));
+    await press(actor, copyOf(LABEL));
     elapse(1000);
     expect(jest.getTimerCount()).toBe(1);
 

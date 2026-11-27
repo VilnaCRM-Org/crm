@@ -25,11 +25,7 @@ export default function NavigationGroupToggle({
         expanded ? 'app_shell.settings_group.collapse' : 'app_shell.settings_group.expand'
       )}
       onClick={onToggle}
-      sx={{
-        ...groupStyles.toggleBase,
-        ...groupStyles.toggle[layout],
-        ...(layout === 'drawer' && !expanded ? groupStyles.toggleDrawerCollapsed : {}),
-      }}
+      sx={{ ...groupStyles.toggleBase, ...groupStyles.toggle[layout] }}
     >
       <Box
         component={ChevronIcon}

@@ -271,7 +271,7 @@ describe('UINavigationList in the drawer', () => {
     });
   });
 
-  it('draws 60 px rows, a 48 px open Settings header and a 60 px collapsed one', () => {
+  it('draws 60 px rows and the same 48 px Settings header open and collapsed', () => {
     const { unmount } = renderList({ layout: 'drawer' }, '/settings');
 
     expect(screen.getByRole('link', { name: 'Boards' })).toHaveStyle({ minHeight: '60px' });
@@ -281,7 +281,7 @@ describe('UINavigationList in the drawer', () => {
 
     renderList({ layout: 'drawer' }, '/');
 
-    expect(screen.getByRole('link', { name: 'Settings' })).toHaveStyle({ minHeight: '60px' });
+    expect(screen.getByRole('link', { name: 'Settings' })).toHaveStyle({ minHeight: '48px' });
   });
 
   it('calls signOut and keeps working the Settings chevron like the sidebar', async () => {

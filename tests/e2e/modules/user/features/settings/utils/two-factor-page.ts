@@ -104,6 +104,9 @@ export const codeListOf = (page: Page): Locator =>
 export const copyCodesOf = (page: Page): Locator =>
   sectionOf(page).getByRole('button', { name: twoFactorText.copyCodes, exact: true });
 
+export const copiedCodesOf = (page: Page): Locator =>
+  sectionOf(page).getByRole('button', { name: twoFactorText.codesCopied, exact: true });
+
 export const copyLineOf = (page: Page, text: string): Locator =>
   sectionOf(page).locator('p[aria-hidden="true"]', { hasText: text });
 

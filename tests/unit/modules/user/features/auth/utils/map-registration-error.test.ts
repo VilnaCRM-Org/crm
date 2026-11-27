@@ -16,6 +16,32 @@ describe('mapRegistrationError', () => {
     });
   });
 
+  describe('registrationErrorMapper.displayText', () => {
+    it('names the used e-mail for a conflict', () => {
+      expect(
+        registrationErrorMapper.displayText({
+          kind: 'conflict',
+          displayMessage: 'Resource already exists',
+          retryable: false,
+        })
+      ).toBe(EMAIL_ALREADY_USED_KEY);
+    });
+
+    it('keeps the message of any other error', () => {
+      expect(
+        registrationErrorMapper.displayText({
+          kind: 'server',
+          displayMessage: 'Internal server error',
+          retryable: true,
+        })
+      ).toBe('Internal server error');
+    });
+
+    it('has no text without an error', () => {
+      expect(registrationErrorMapper.displayText(null)).toBeNull();
+    });
+  });
+
   describe('registrationErrorMapper.map', () => {
     describe('email already exists errors', () => {
       it('should return EMAIL_ALREADY_USED_KEY for error with "email" and "exists"', () => {

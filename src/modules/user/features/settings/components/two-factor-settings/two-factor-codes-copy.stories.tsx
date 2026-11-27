@@ -5,8 +5,8 @@ import { withAcceptingClipboard, withRefusingClipboard } from '@stories/clipboar
 import { SECRET } from '@stories/two-factor-story-fixtures';
 import waitForText from '@stories/wait-for-text';
 
-import CopiedLine from './copied-line';
 import CopyButton from './copy-button';
+import CopyLabel from './copy-label';
 
 const meta: Meta<typeof CopyButton> = {
   title: 'Settings/TwoFactorSettings/CodesCopy',
@@ -16,9 +16,9 @@ const meta: Meta<typeof CopyButton> = {
     docs: {
       description: {
         component:
-          'The recovery-codes copy button. It never changes; the result shows as a line above it ' +
-          '(Inter 14 px #404142, hidden from assistive technology) while the polite live region ' +
-          'carries the announcement.',
+          'The recovery-codes copy button. A copy turns its text into the copied text for 3 s; ' +
+          'a refused copy shows a line above it (Inter 14 px #404142, hidden from assistive ' +
+          'technology). The polite live region carries both announcements.',
       },
       story: { inline: false },
     },
@@ -44,13 +44,14 @@ const renderCodesCopy = (): JSX.Element => (
 
 export const Copy: Story = { render: renderCodesCopy };
 
-const copyResultStory = (decorator: Decorator, expected: string, story: string): Story => ({
+const copyResultStory = (decorator: Decorator, region: string, story: string): Story => ({
   render: renderCodesCopy,
   decorators: [decorator],
   play: async ({ canvasElement, userEvent }): Promise<void> => {
     const copy = canvasElement.querySelector<HTMLButtonElement>('button');
     if (copy !== null) await userEvent.click(copy);
-    await waitForText(canvasElement, expected);
+    const status = canvasElement.querySelector<HTMLElement>('[role="status"]');
+    if (status !== null) await waitForText(status, region);
   },
   parameters: { docs: { description: { story } } },
 });
@@ -58,19 +59,15 @@ const copyResultStory = (decorator: Decorator, expected: string, story: string):
 export const Copied: Story = copyResultStory(
   withAcceptingClipboard(),
   CODES_COPIED,
-  'The codes were copied: "Коди скопійовано" shows above the unchanged button for 3 s ' +
-    'and fades out over 0.4 s (at once with reduced motion); the live region announces it.'
+  'The codes were copied: the button reads "Коди скопійовано" for 3 s, keeps its width and ' +
+    'returns to "Скопіювати коди"; the live region announces it.'
 );
 
-export const CopiedNotice: Story = {
-  render: () => <CopiedLine text={CODES_COPIED} />,
+export const CopiedLabel: Story = {
+  render: () => <CopyLabel label="Скопіювати коди" copiedText={CODES_COPIED} copied />,
   parameters: {
     docs: {
-      description: {
-        story:
-          'The copied line on its own: Inter 14 px #404142, hidden from assistive technology, ' +
-          'removed after 3 s plus the 0.4 s fade.',
-      },
+      description: { story: 'The button text on its own, while it reads "Коди скопійовано".' },
     },
   },
 };

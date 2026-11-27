@@ -29,7 +29,6 @@ export default function NavigationGroup({
         icon={group.icon}
         href={group.href}
         current={currentId === group.id}
-        open={expanded}
         grouped
       />
       <NavigationGroupToggle
