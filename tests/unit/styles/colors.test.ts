@@ -43,6 +43,14 @@ const loadCustomColors = (): Promise<CustomColors> =>
 
 const loadColors = (): Promise<ColorsModule> => loadIsolated(async () => import('@/styles/colors'));
 
+describe('surface tokens', () => {
+  it('names the page surface and the Figma linked-tile tint', async () => {
+    const { surface } = await loadCustomColors();
+
+    expect(surface).toEqual({ page: '#FBFBFB', brandTint: '#E8F7FF' });
+  });
+});
+
 describe('shell tokens', () => {
   it('holds the Figma values the palette had no token for, exactly as drawn', async () => {
     const { shell } = await loadCustomColors();

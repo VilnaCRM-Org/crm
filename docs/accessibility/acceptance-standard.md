@@ -186,6 +186,15 @@ it stays visible under SC 2.4.7. No axe rule tests either, so no exception entry
 the owner put them under #276 on 2026-11-18, and they are resolved when it closes.
 The challenge's "Назад" takes the Figma `#969B9D` (2.81:1) under the twelfth allowlist entry.
 
+A linked tile of the settings "Соціальні мережі" card takes Figma `315:11754` on the owner's
+decision of 2026-11-23 (every colour follows Figma): a `#1EAEFF` border and a `#1EAEFF` unlink bin
+on the `#E8F7FF` fill. The bin is 2.24:1 on the fill, and the border 2.24:1 on the fill and 2.46:1
+on the white card, all under the 3:1 of SC 1.4.11; with the fill they are the only visual signs
+that a tile is linked. The tile's accessible name ends with ", підключено" (", linked") and the bin
+is named "Відключити {provider}", so assistive technology does not rely on them, and the bin's
+focus ring is the shared 2 px `#1A1C1E` outline. No axe rule tests non-text contrast, so no
+exception entry exists; the gap is tracked in #276 and is resolved when it closes.
+
 The sign-in two-factor challenge submits on its sixth digit with no advance notice, which departs
 from WCAG 3.2.2 On Input: entering a value changes context, and a person who has not been told so
 can be surprised by it, most of all on a screen reader. The owner chose it on 2026-11-04 and declined

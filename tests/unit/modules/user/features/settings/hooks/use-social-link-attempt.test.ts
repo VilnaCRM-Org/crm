@@ -14,10 +14,12 @@ import {
 
 interface FakePopup {
   opener: unknown;
+  closed: boolean;
   readonly location: { readonly replace: jest.Mock };
   readonly close: jest.Mock;
 }
 
+const CHANNEL = 'crm.socialLink';
 const authorizationUrl = 'https://provider.example/authorize';
 const state = `link.${buildToken()}`;
 const code = buildToken();
@@ -27,9 +29,12 @@ const answered = { provider: 'google', state, code, error: null };
 
 const buildPopup = (): FakePopup => ({
   opener: null,
+  closed: false,
   location: { replace: jest.fn() },
   close: jest.fn(),
 });
+
+const cancelled = { kind: 'failed', reason: 'cancelled' } as const;
 
 const render = (
   test: SocialLinkTestDeps
@@ -50,7 +55,11 @@ describe('useSocialLinkAttempt', () => {
     open = jest.spyOn(window, 'open').mockReturnValue(popup as unknown as Window);
   });
 
-  afterEach(() => FakeBroadcastChannel.uninstall());
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+    FakeBroadcastChannel.uninstall();
+  });
 
   const begin = async (test: SocialLinkTestDeps): Promise<ReturnType<typeof render>> => {
     test.start.mockResolvedValue(started);
@@ -80,6 +89,7 @@ describe('useSocialLinkAttempt', () => {
     await begin(test);
 
     expect(popup.location.replace.mock.calls).toEqual([[authorizationUrl]]);
+    expect(popup.close).not.toHaveBeenCalled();
     expect(FakeBroadcastChannel.opened[0]?.closed).toBe(false);
     expect(test.hold).toHaveBeenCalledTimes(1);
     expect(test.complete).not.toHaveBeenCalled();
@@ -90,7 +100,7 @@ describe('useSocialLinkAttempt', () => {
     const test = buildSocialLinkDeps();
     await begin(test);
 
-    FakeBroadcastChannel.deliver(answered);
+    FakeBroadcastChannel.deliver(answered, CHANNEL);
     await flush();
 
     expect(test.complete.mock.calls).toEqual([
@@ -102,19 +112,69 @@ describe('useSocialLinkAttempt', () => {
     ]);
   });
 
+  it('closes the popup and stops listening once its answer arrives', async () => {
+    const test = buildSocialLinkDeps();
+    await begin(test);
+
+    FakeBroadcastChannel.deliver(answered, CHANNEL);
+    await flush();
+
+    expect(popup.close).toHaveBeenCalledTimes(1);
+    expect(FakeBroadcastChannel.opened[0]?.closed).toBe(true);
+  });
+
   it.each([
     ['a provider refusal', { code, error: 'access_denied' }, 'cancelled'],
     ['an answer without a code', { code: null, error: null }, 'expired'],
+    ['an answer with an empty code', { code: '', error: null }, 'expired'],
+    ['a malformed answer', { code: 7, error: null }, 'generic'],
   ])('settles %s without completing', async (_name, answer, reason) => {
     const test = buildSocialLinkDeps();
     await begin(test);
 
-    FakeBroadcastChannel.deliver({ ...answered, ...answer });
+    FakeBroadcastChannel.deliver({ ...answered, ...answer }, CHANNEL);
     await flush();
 
     expect(test.complete).not.toHaveBeenCalled();
+    expect(popup.close).toHaveBeenCalledTimes(1);
     expect(test.settle.mock.calls).toEqual([
       [{ target: google, intent: 'linked', outcome: { kind: 'failed', reason } }],
+    ]);
+  });
+
+  it('keeps waiting for its answer when the popup reads closed at the provider', async () => {
+    const test = buildSocialLinkDeps();
+    await begin(test);
+    jest.useFakeTimers();
+    popup.closed = true;
+
+    jest.advanceTimersByTime(60_000);
+    await flush();
+    expect(test.settle).not.toHaveBeenCalled();
+    expect(popup.close).not.toHaveBeenCalled();
+    expect(FakeBroadcastChannel.opened[0]?.closed).toBe(false);
+    FakeBroadcastChannel.deliver(answered, CHANNEL);
+    await flush();
+
+    expect(test.settle.mock.calls).toEqual([
+      [{ target: google, intent: 'linked', outcome: changed }],
+    ]);
+  });
+
+  it('cancels, without leaving, when the popup closed while the link was starting', async () => {
+    const test = buildSocialLinkDeps();
+    let start: (outcome: unknown) => void = () => undefined;
+    test.start.mockReturnValue(new Promise((resolve) => (start = resolve)));
+    const pending = render(test).link(google);
+
+    popup.closed = true;
+    start(started);
+    await pending;
+
+    expect(popup.location.replace).not.toHaveBeenCalled();
+    expect(FakeBroadcastChannel.opened).toHaveLength(0);
+    expect(test.settle.mock.calls).toEqual([
+      [{ target: google, intent: 'linked', outcome: cancelled }],
     ]);
   });
 
@@ -164,25 +224,57 @@ describe('useSocialLinkAttempt', () => {
     void view.link(github);
     await flush();
 
-    expect(popup.close).not.toHaveBeenCalled();
+    expect(popup.close).toHaveBeenCalledTimes(1);
     expect(second.close).not.toHaveBeenCalled();
     expect(test.start.mock.calls[0]?.[1].aborted).toBe(true);
-    FakeBroadcastChannel.deliver(answered);
-    FakeBroadcastChannel.deliver({ ...answered, provider: 'github', state: nextState });
+    FakeBroadcastChannel.deliver(answered, CHANNEL);
+    FakeBroadcastChannel.deliver({ ...answered, provider: 'github', state: nextState }, CHANNEL);
     await flush();
     expect(test.complete.mock.calls.map(([id]) => id)).toEqual(['github']);
     expect(test.settle.mock.calls.map(([{ target }]) => target.id)).toEqual(['github']);
   });
 
-  it('stops listening when the card goes away, leaving the popup at the provider', async () => {
+  it('ignores the old answer when the same provider is tried again', async () => {
     const test = buildSocialLinkDeps();
     const view = await begin(test);
-
-    view.unmount();
+    const second = buildPopup();
+    open.mockReturnValue(second as unknown as Window);
+    const nextState = `link.${buildToken()}-again`;
+    const nextCode = `${buildToken()}-again`;
+    test.start.mockResolvedValue({ ...started, state: nextState });
+    void view.link(google);
     await flush();
 
-    expect(popup.close).not.toHaveBeenCalled();
+    FakeBroadcastChannel.deliver(answered, CHANNEL);
+    await flush();
+    expect(test.complete).not.toHaveBeenCalled();
+    expect(test.settle).not.toHaveBeenCalled();
+    expect(second.close).not.toHaveBeenCalled();
+    FakeBroadcastChannel.deliver({ ...answered, state: nextState, code: nextCode }, CHANNEL);
+    await flush();
+
+    expect(test.complete.mock.calls).toEqual([
+      ['google', { code: nextCode, state: nextState }, test.start.mock.calls[1]?.[1]],
+    ]);
+    expect(test.settle.mock.calls).toEqual([
+      [{ target: google, intent: 'linked', outcome: changed }],
+    ]);
+    expect(second.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the popup and stops listening when the card goes away', async () => {
+    const test = buildSocialLinkDeps();
+    test.start.mockResolvedValue(started);
+    const view = render(test);
+    const pending = view.link(google);
+    await flush();
+
+    view.unmount();
+
+    await expect(pending).resolves.toBeUndefined();
+    expect(popup.close).toHaveBeenCalledTimes(1);
     expect(FakeBroadcastChannel.opened[0]?.closed).toBe(true);
+    expect(test.complete).not.toHaveBeenCalled();
     expect(test.settle).not.toHaveBeenCalled();
   });
 
@@ -208,7 +300,7 @@ describe('useSocialLinkAttempt', () => {
     let complete: (outcome: unknown) => void = () => undefined;
     const view = await begin(test);
     test.complete.mockReturnValue(new Promise((resolve) => (complete = resolve)));
-    FakeBroadcastChannel.deliver(answered);
+    FakeBroadcastChannel.deliver(answered, CHANNEL);
     await flush();
 
     view.unmount();

@@ -75,6 +75,16 @@ const refused = (errorCode: string): Response =>
 
 const failed = (reason: SocialLinkFailureKind): object => ({ kind: 'failed', reason });
 
+const listedOf = (items: readonly string[]): object => ({ kind: 'listed', linked: { items } });
+
+const unavailable = { kind: 'failed', reason: 'unavailable' };
+
+const unauthorized = (): Response =>
+  new HttpResponse('{}', {
+    status: 401,
+    headers: { 'WWW-Authenticate': 'Bearer', 'Content-Type': 'application/problem+json' },
+  });
+
 describe('SocialLinkProvider over the container client (integration)', () => {
   const token = buildToken();
 
@@ -100,8 +110,8 @@ describe('SocialLinkProvider over the container client (integration)', () => {
     const write = jest.spyOn(client.cache, 'write');
     const answered = answerList(() => listed(['github', 'apple']));
 
-    await expect(provider.linked(signal)).resolves.toEqual({ items: ['github'] });
-    await expect(provider.linked(signal)).resolves.toEqual({ items: ['github'] });
+    await expect(provider.linked(signal)).resolves.toEqual(listedOf(['github']));
+    await expect(provider.linked(signal)).resolves.toEqual(listedOf(['github']));
 
     expect(answered).toEqual([`Bearer ${token}`, `Bearer ${token}`]);
     expect(write).not.toHaveBeenCalled();
@@ -115,18 +125,28 @@ describe('SocialLinkProvider over the container client (integration)', () => {
     const second = provider.linked(signal);
     controller.abort();
 
-    await expect(first).resolves.toBeNull();
-    await expect(second).resolves.toEqual({ items: ['github'] });
+    await expect(first).resolves.toEqual(unavailable);
+    await expect(second).resolves.toEqual(listedOf(['github']));
   });
 
   it.each([
     ['a network failure', (): Response => HttpResponse.error()],
     ['a GraphQL error', (): Response => refused('anything')],
     ['a malformed list', (): Response => HttpResponse.json({ data: {} })],
-  ])('answers null for %s', async (_name, respond) => {
+  ])('answers unavailable for %s', async (_name, respond) => {
     answerList(respond);
 
-    await expect(provider.linked(signal)).resolves.toBeNull();
+    await expect(provider.linked(signal)).resolves.toEqual(unavailable);
+  });
+
+  it('ends the session and answers session_ended for a list read refused with a 401', async () => {
+    answerList(unauthorized);
+
+    await expect(provider.linked(signal)).resolves.toEqual({
+      kind: 'failed',
+      reason: 'session_ended',
+    });
+    expect(useAuthStore.getState().token).toBeNull();
   });
 
   it('starts, completes and unlinks, writing no cache', async () => {
@@ -195,14 +215,7 @@ describe('SocialLinkProvider over the container client (integration)', () => {
     });
 
     it('ends the session and shows nothing for a transport 401', async () => {
-      answer(
-        operation,
-        () =>
-          new HttpResponse('{}', {
-            status: 401,
-            headers: { 'WWW-Authenticate': 'Bearer', 'Content-Type': 'application/problem+json' },
-          })
-      );
+      answer(operation, unauthorized);
 
       await expect(run(operation)).resolves.toEqual({ kind: 'aborted' });
       expect(useAuthStore.getState().token).toBeNull();
@@ -223,6 +236,15 @@ describe('SocialLinkProvider over the container client (integration)', () => {
 
       await expect(run(operation, controller.signal)).resolves.toEqual({ kind: 'aborted' });
     });
+  });
+
+  it.each([
+    ['CompleteSocialLink', 'completeSocialLinkUser'],
+    ['UnlinkSocialProvider', 'unlinkSocialProviderUser'],
+  ] as const)('answers an unsuccessful %s as generic', async (operation, field) => {
+    answer(operation, () => HttpResponse.json({ data: { [field]: { user: { success: false } } } }));
+
+    await expect(run(operation)).resolves.toEqual(failed('generic'));
   });
 
   it.each([

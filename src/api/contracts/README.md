@@ -165,12 +165,26 @@ codegen` and `make codegen-check`), fails when that header is missing or no long
 `src/api/contracts/pending/social-account-linking.graphql` (`specs/social-account-linking/`):
 
 - **Pending against:** `v2.8.0`.
-- **Upstream source:** none yet; user-service #520 is open and shaped differently (it finishes a
-  link in a REST redirect). The list query and the initiate, complete and unlink mutations are
-  declared here in the API Platform style. A link `state` starts with `link.`, and the refusals are
-  `identity_linked_to_other_user`, `provider_already_linked` and `last_sign_in_method`.
-- **Mock answers:** `docker/apollo-server/lib/social-link-resolvers.ts` keeps the links in memory,
-  one set for every client, and uses the same consent page as sign-in.
+- **Upstream source:** none yet; this is a provisional local contract, not a copy of a
+  user-service schema, and user-service has not agreed to it. user-service #520 is open and shaped
+  differently (it finishes a link in a REST redirect), so the query and the mutations may change
+  before production. The list query and the initiate, complete and unlink mutations are declared
+  here in the API Platform style, for user-service to add. A link `state` starts with `link.`.
+- **Refusals:** a schema file cannot declare error codes, so this contract carries them, as the
+  sign-in one does, in `extensions.error_code`: `identity_linked_to_other_user`,
+  `provider_already_linked` and `last_sign_in_method`. The mock answers the first two only,
+  because the mock's user always has a password. `last_sign_in_method` is exercised by the unit
+  tests of the transformer and the provider (`graphql-social-link-transformer.test.ts`,
+  `data-providers/social-link-provider.test.ts`), the msw stubs of the integration suite and the
+  `page.route` stubs of the browser lanes.
+- **Mock answers:** `docker/apollo-server/lib/social-link-resolvers.ts` keeps the links in memory
+  and uses the same consent page as sign-in. Every linking request carries the session's
+  `Authorization: Bearer <token>` (`SessionLinkFactory`), but the mock never reads it: its server
+  context is `{}` (`docker/apollo-server/lib/server.ts`) and it serves one seeded account, so it
+  keeps one set of links for every client. A link `state` follows rules
+  like the sign-in ones (its own refusal codes): used once, for its own provider, refused with a blank `code` (left unused),
+  expired after ten minutes, the newest 1000 kept. A completion for a provider that is already
+  linked is refused with `provider_already_linked`, as a second initiate is.
 - **Removed by:** the contract pin bump to the first user-service release that declares them.
 
 The mock is stateless by default: `requestPasswordResetUser` and `confirmPasswordResetUser`

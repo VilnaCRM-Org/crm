@@ -24,17 +24,28 @@ export default class FakeBroadcastChannel {
       FakeBroadcastChannel.original as unknown as typeof BroadcastChannel;
   }
 
-  public static deliver(data: unknown): void {
-    FakeBroadcastChannel.opened
-      .filter(({ closed }) => !closed)
-      .forEach((channel) => channel.onmessage?.({ data }));
+  public static deliver(data: unknown, name: string): void {
+    FakeBroadcastChannel.listenersOf(name).forEach((channel) => channel.receive(data));
+  }
+
+  private static listenersOf(name: string, sender?: FakeBroadcastChannel): FakeBroadcastChannel[] {
+    return FakeBroadcastChannel.opened.filter(
+      (channel) => channel !== sender && !channel.closed && channel.name === name
+    );
   }
 
   public postMessage(data: unknown): void {
+    if (this.closed) throw new DOMException('The channel is closed.', 'InvalidStateError');
     this.posted.push(data);
+    const listeners = FakeBroadcastChannel.listenersOf(this.name, this);
+    void Promise.resolve().then(() => listeners.forEach((channel) => channel.receive(data)));
   }
 
   public close(): void {
     this.closed = true;
+  }
+
+  private receive(data: unknown): void {
+    if (!this.closed) this.onmessage?.({ data });
   }
 }

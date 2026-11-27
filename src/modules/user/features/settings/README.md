@@ -70,7 +70,8 @@ decisions are recorded in `## User Settings decisions` of the [user module READM
 - `repositories/` — `GraphQLProfileRepository` and its three GraphQL document seams, and
   `GraphQLTwoFactorSettingsRepository` with its four (`setup`, `confirm`, `disable` and
   `regenerate-recovery-codes` mutations, each a `.graphql` document beside its typed
-  mutation), and `GraphQLSocialLinkRepository` with one query and three mutations (pending, see
+  mutation), and `GraphQLSocialLinkRepository` with one query and three mutations (a provisional
+  local contract that user-service #520 has not agreed to, so they may change; see
   `src/api/contracts/README.md`).
 - `utils/` — `ProfileChangeDetector`, `TileFocusHandler`, the zod `response-schemas`, and the
   container-free chip read: `currentUserSource`, `CurrentUserClient`, `CurrentUserResponseParser`.
@@ -186,8 +187,9 @@ reaches a Repository, a Transformer or a Data provider; a hook reaches the Data 
 | State                 | `useAuthStore`, read by the link and by `ProtectedRoute`         |
 
 No file names a controller, a service or a handler: the board has none. Gaps that remain gaps: the
-board draws no popup or callback for linking a social account (`specs/social-account-linking`). The
-header menu with the "Log-out" edge is now drawn (the app-shell user menu in
+board draws no popup or callback for linking a social account (see the
+[social account linking PRD](../../../../../specs/social-account-linking/planning-artifacts/prd-social-account-linking-2026-11-23.md)).
+The header menu with the "Log-out" edge is now drawn (the app-shell user menu in
 `components/user-menu/`, declared as `shell.userMenu` in `routes/index.ts`, issue #362) and is no
 longer one of them, nor is the two-factor card (#331), whose layers are in the rows above. The
 session link reads and resets `useAuthStore` without a Repository → State edge on the board.
@@ -299,17 +301,34 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   desktop against 23 px at the top, icon-only tiles below 768 px that fill the columns first
   (Google and GitHub on top, as on the sign-in provider grid), and the Figma heading copy
   "Социальные сети" translated to "Соціальні мережі" / "Social networks".
-- **The tiles link and unlink through a popup** (2026-11-23, `specs/social-account-linking`). The
-  token lives in memory, so the settings tab never leaves: `useSocialLinkAttempt` opens the popup
-  in the click, asks `initiateSocialLinkUser` for an authorization URL and a `link.…` state, and
-  waits on the `crm.socialLink` `BroadcastChannel`. `/auth/callback/:provider` sees the mark,
-  posts the query and closes; the settings tab completes only the exact state it was issued. A
-  result changes its own provider's tile alone, raises one notification through
+- **The tiles link and unlink through a popup** (2026-11-23, against the provisional contract
+  `src/api/contracts/pending/social-account-linking.graphql`, which user-service #520 has not
+  agreed to; the plan is the
+  [social account linking PRD](../../../../../specs/social-account-linking/planning-artifacts/prd-social-account-linking-2026-11-23.md)).
+  The token lives in memory, so the settings tab never leaves: `useSocialLinkAttempt` opens the
+  popup in the click, asks `initiateSocialLinkUser` for an authorization URL and a `link.…`
+  state, and waits on the `crm.socialLink` `BroadcastChannel`. `/auth/callback/:provider` sees
+  the mark, posts the query and closes; the settings tab completes only the exact state it was
+  issued. An attempt ends on its answer, on the next click, or when the card goes away. A popup
+  closed before it leaves for the provider settles `cancelled`, as a provider `error` does;
+  `popup.closed` is read only then, while the popup is still the tab's `about:blank`. It is not
+  watched at the provider: a provider page that sends `Cross-Origin-Opener-Policy` moves the popup
+  to another browsing-context group, where the reference reads closed while the user is still on
+  the consent page, and the callback still arrives over the channel. Every ending asks the popup
+  to close, which is certain only on `about:blank`; once the popup has been at the provider, the
+  browser can ignore it, the callback page closes itself, and a window abandoned at the provider is
+  the user's to close. The tiles are not held while
+  the popup waits.
+  A result changes its own provider's tile alone, raises one notification through
   `useNotifications().raise` (the provider name travels as `messageValues`, and the result is
-  recorded in the bell history), and leaves the keyboard on the tile. Until `linkedSocialProviders` answers, and after it fails, the tiles offer nothing to
-  press. A linked tile is `315:11754`, bin included (owner, 2026-11-23: every colour follows
-  Figma; the bin is under 3:1 until #276). The bin asks first in one row under the tiles (PRD L6);
-  Figma draws none.
+  recorded in the bell history), and leaves the keyboard on the tile. Until
+  `linkedSocialProviders` answers, and after it fails, the tiles offer nothing to press; a list
+  read refused with a 401 shows nothing, as `session_ended` does on the profile card.
+  `SocialLinkProvider` reports a failure that never reached the link through
+  `UnseenFailureReporter` (`source: 'settings:social-link'`), as `ProfileProvider` does. A linked
+  tile is `315:11754`, bin and border included (owner, 2026-11-23: every colour follows Figma;
+  the bin and the border are under 3:1 until #276, and the tile's name carries ", linked"). The
+  bin asks first in one row under the tiles (PRD L6); Figma draws none.
 - **Card padding is the Figma inset minus the 1 px border.** The card declares the inline
   insets as `--settings-card-inset-start` / `--settings-card-inset-end`, and the section
   titles and the divider above Save and "Очистити" bleed through them to the card edges.

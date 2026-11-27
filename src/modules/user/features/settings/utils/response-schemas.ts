@@ -1,4 +1,5 @@
 import { z } from '@/config/zod';
+import type { SocialLinkProviderId } from '@/modules/user/types/social-link/social-link-callback';
 
 const UserNodeSchema = z.object({
   id: z.string(),
@@ -61,13 +62,22 @@ export const RegenerateRecoveryCodesResultSchema = z
   })
   .nullish();
 
-const ProviderSchema = z.enum(['google', 'facebook', 'github', 'twitter']);
+const PROVIDER_IDS = {
+  google: 'google',
+  facebook: 'facebook',
+  github: 'github',
+  twitter: 'twitter',
+} as const satisfies { readonly [Id in SocialLinkProviderId]: Id };
+
+const ProviderSchema = z.enum(PROVIDER_IDS);
 
 const ProvidersSchema = z
   .array(z.string())
   .transform((names) => names.flatMap((name) => ProviderSchema.safeParse(name).data ?? []));
 
-const ChangedUserSchema = z.object({ user: z.object({ success: z.literal(true) }) });
+const ChangedUserSchema = z
+  .object({ user: z.object({ success: z.boolean() }).nullable() })
+  .nullable();
 
 export const LinkedSocialProvidersResultSchema = z.object({
   linkedSocialProviders: ProvidersSchema,
@@ -79,19 +89,25 @@ const LINK_STATE = /^link\../;
 
 const LinkAuthorizationUrlSchema = z.url({ protocol: HTTP_PROTOCOL });
 
-export const InitiateSocialLinkResultSchema = z.object({
-  initiateSocialLinkUser: z.object({
-    user: z.object({
-      authorizationUrl: LinkAuthorizationUrlSchema,
-      state: z.string().regex(LINK_STATE),
-    }),
-  }),
-});
+export const InitiateSocialLinkResultSchema = z
+  .object({
+    initiateSocialLinkUser: z
+      .object({
+        user: z
+          .object({
+            authorizationUrl: LinkAuthorizationUrlSchema,
+            state: z.string().regex(LINK_STATE),
+          })
+          .nullable(),
+      })
+      .nullable(),
+  })
+  .nullable();
 
-export const CompleteSocialLinkResultSchema = z.object({
-  completeSocialLinkUser: ChangedUserSchema,
-});
+export const CompleteSocialLinkResultSchema = z
+  .object({ completeSocialLinkUser: ChangedUserSchema })
+  .nullable();
 
-export const UnlinkSocialProviderResultSchema = z.object({
-  unlinkSocialProviderUser: ChangedUserSchema,
-});
+export const UnlinkSocialProviderResultSchema = z
+  .object({ unlinkSocialProviderUser: ChangedUserSchema })
+  .nullable();

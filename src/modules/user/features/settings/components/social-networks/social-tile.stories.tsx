@@ -1,24 +1,18 @@
-import type { Decorator, Meta, StoryObj } from '@storybook/react-webpack5';
-import type { JSX } from 'react';
+import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
 import { ReactComponent as Google } from '@/assets/icons/social/google-color.svg';
+import { withStoryList } from '@stories/list-decorators';
 import { noopAsync } from '@stories/story-callbacks';
 
 import SocialTile from './social-tile';
 
-const inList: Decorator = function ListDecorator(Story): JSX.Element {
-  return (
-    <ul aria-label="Social networks">
-      <Story />
-    </ul>
-  );
-};
+const DESKTOP_TILE_WIDTH = 304;
 
 const meta: Meta<typeof SocialTile> = {
   title: 'Settings/SocialTile',
   component: SocialTile,
   tags: ['autodocs'],
-  decorators: [inList],
+  decorators: [withStoryList(DESKTOP_TILE_WIDTH)],
   args: {
     tile: { id: 'google', label: 'Google', Icon: Google },
     linked: false,
@@ -44,6 +38,8 @@ export default meta;
 type Story = StoryObj<typeof SocialTile>;
 
 export const NotLinked: Story = {};
+
+export const NotLinkedBusy: Story = { args: { busy: true } };
 
 export const Linked: Story = { args: { linked: true } };
 

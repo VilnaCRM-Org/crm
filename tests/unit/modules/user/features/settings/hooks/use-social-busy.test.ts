@@ -31,6 +31,23 @@ describe('useSocialBusy', () => {
     expect(result.current.isHeld()).toBe(false);
   });
 
+  it('lets go of a hold whose work fails, and hands the failure on', async () => {
+    const { result } = renderHook(() => useSocialBusy());
+    const failure = new Error('boom');
+    let held: Promise<never> = Promise.resolve() as never;
+
+    act(() => {
+      held = result.current.hold(Promise.reject(failure));
+    });
+    await act(async () => {
+      await held.catch(() => undefined);
+    });
+
+    await expect(held).rejects.toBe(failure);
+    expect(result.current.busy).toBe(false);
+    expect(result.current.isHeld()).toBe(false);
+  });
+
   it('stays busy until the last of two overlapping holds ends', async () => {
     const { result } = renderHook(() => useSocialBusy());
     const ends: (() => void)[] = [];

@@ -1,5 +1,5 @@
-import { renderHook } from '@testing-library/react';
-import type { JSX, ReactNode } from 'react';
+import { render, renderHook } from '@testing-library/react';
+import { type JSX, type ReactNode, useEffect } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 
 import useSocialLinkReturn from '@auth/hooks/use-social-link-return';
@@ -17,14 +17,29 @@ const query = { code: 'c-1', state: 'link.s', error: null };
 
 const posted = (): unknown[] => FakeBroadcastChannel.opened.flatMap((channel) => channel.posted);
 
+function SearchProbe({ seen }: { seen: string[] }): null {
+  useEffect(() => {
+    seen.push(window.location.search);
+  }, [seen]);
+  return null;
+}
+
+function ReturningPopup({ seen }: { seen: string[] }): JSX.Element {
+  useSocialLinkReturn(query);
+  return <SearchProbe seen={seen} />;
+}
+
 describe('useSocialLinkReturn', () => {
+  let close: jest.SpyInstance;
+
   beforeEach(() => {
     FakeBroadcastChannel.install();
-    jest.spyOn(window, 'close').mockImplementation(() => undefined);
+    close = jest.spyOn(window, 'close').mockImplementation(() => undefined);
     window.history.replaceState(null, '', '/auth/callback/github?code=c-1&state=link.s');
   });
 
   afterEach(() => {
+    close.mockRestore();
     FakeBroadcastChannel.uninstall();
     window.history.replaceState(null, '', '/');
   });
@@ -35,7 +50,22 @@ describe('useSocialLinkReturn', () => {
 
     expect(posted()).toEqual([{ provider: 'github', ...query }]);
     expect(window.location.search).toBe('');
-    expect(window.close).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('posts and closes once under StrictMode, whose effects run twice', () => {
+    renderHook(() => useSocialLinkReturn(query), { wrapper, reactStrictMode: true });
+
+    expect(posted()).toEqual([{ provider: 'github', ...query }]);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('strips the query before the first paint, ahead of every passive effect', () => {
+    const seen: string[] = [];
+
+    render(<ReturningPopup seen={seen} />, { wrapper });
+
+    expect(seen).toEqual(['']);
   });
 
   it('posts again for another query', () => {

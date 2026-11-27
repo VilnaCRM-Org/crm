@@ -19,13 +19,24 @@ const VISUALLY_HIDDEN = {
   border: 0,
 };
 
-const LINKED_FILL = '#E8F7FF';
-
 const FOCUS_RING = { outline: `2px solid ${customColors.text.dark}`, outlineOffset: '2px' };
 
 const FORCED_COLORS = '@media (forced-colors: active)';
 
 const DISABLED = '&[aria-disabled="true"]';
+
+const ENABLED_HOVER = '&:hover:not([aria-disabled="true"])';
+
+const DIMMED = { cursor: 'default', opacity: 0.6 };
+
+const DIMMED_BUTTON = {
+  ...DIMMED,
+  '&:hover': { backgroundColor: paletteColors.background.default },
+};
+
+const GRAYED_OUT = { borderColor: 'GrayText', color: 'GrayText', opacity: 1 };
+
+const FORCED_GRAYED_OUT = { [DISABLED]: GRAYED_OUT };
 
 export default {
   card: {
@@ -93,18 +104,15 @@ export default {
   link: {
     padding: 0,
     cursor: 'pointer',
-    '&:hover': { backgroundColor: customColors.surface.page },
+    [ENABLED_HOVER]: { backgroundColor: customColors.surface.page },
     '&:focus-visible': FOCUS_RING,
-    [DISABLED]: { cursor: 'default', opacity: 0.6 },
-    [FORCED_COLORS]: {
-      borderColor: 'ButtonText',
-      [DISABLED]: { borderColor: 'GrayText', color: 'GrayText', opacity: 1 },
-    },
+    [DISABLED]: DIMMED,
+    [FORCED_COLORS]: { borderColor: 'ButtonText', [DISABLED]: GRAYED_OUT },
   },
   linked: {
     justifyContent: 'space-between',
     paddingInline: '1.4375rem 0.9375rem',
-    backgroundColor: LINKED_FILL,
+    backgroundColor: customColors.surface.brandTint,
     borderColor: customColors.brand.blue,
     [SETTINGS_TABLET]: { justifyContent: 'center', paddingInline: 0 },
   },
@@ -121,9 +129,9 @@ export default {
     background: 'none',
     cursor: 'pointer',
     color: customColors.brand.blue,
-    '&:hover': { color: paletteColors.primary.hover },
+    [ENABLED_HOVER]: { color: paletteColors.primary.hover },
     '&:focus-visible': FOCUS_RING,
-    [DISABLED]: { cursor: 'default', opacity: 0.6 },
+    [DISABLED]: DIMMED,
     [FORCED_COLORS]: {
       color: 'ButtonText',
       [DISABLED]: { color: 'GrayText', opacity: 1 },
@@ -190,14 +198,8 @@ export default {
   confirmationButton: {
     '&&': {
       minHeight: '2.75rem',
-      [DISABLED]: {
-        cursor: 'default',
-        opacity: 0.6,
-        '&:hover': { backgroundColor: paletteColors.background.default },
-      },
-      [FORCED_COLORS]: {
-        [DISABLED]: { borderColor: 'GrayText', color: 'GrayText', opacity: 1 },
-      },
+      [DISABLED]: DIMMED_BUTTON,
+      [FORCED_COLORS]: FORCED_GRAYED_OUT,
     },
   },
   retryButton: {
@@ -205,6 +207,8 @@ export default {
       ...SETTINGS_OUTLINED_PILL,
       width: '100%',
       height: '3.125rem',
+      [DISABLED]: DIMMED_BUTTON,
+      [FORCED_COLORS]: FORCED_GRAYED_OUT,
       [SETTINGS_TABLET]: { ...SETTINGS_PILL_FROM_TABLET, width: 'auto', minWidth: '11.25rem' },
     },
   },

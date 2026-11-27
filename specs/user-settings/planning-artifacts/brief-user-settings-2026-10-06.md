@@ -4,7 +4,7 @@ workflowType: product-brief
 stepsCompleted: [1, 2, 3, 4, 5, 6]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-05
+revised: 2026-11-27
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'analyst (Mary), autonomous run'
@@ -34,6 +34,15 @@ inputDocuments:
 > - **Unconfirmed e-mail row (Figma, 2026-11-04).** Frames `386:27830`, `386:27945` and `386:28059`
 >   draw the status and the resend control 8 px apart with no separator, so the "·" quoted in FR-15,
 >   Story 3.6 and the brief, and the separator in architecture §7.2, are not drawn.
+
+> **Owner decision of 2026-11-23 (D2b), written into this brief on 2026-11-27.** The "Соціальні
+> мережі" tiles link a provider through a popup and unlink it after an inline confirmation, as
+> planned in
+> [`specs/social-account-linking/`](../../social-account-linking/planning-artifacts/prd-social-account-linking-2026-11-23.md).
+> user-service has no linking API yet: G6 is user-service #520, still open and shaped differently,
+> so the tiles run against a provisional pending contract and the local mock, and that contract is
+> agreed with #520, and the pin bumped, before linking reaches production. §4, §6, follow-ups 2
+> and 4 and decisions D2a, D2b and D5 say so in place.
 
 Predecessor: [research](./research-user-settings-2026-10-06.md), the evidence base, cited as
 "research §N". Ids `U1`-`U11` (user, binding), `D1`-`D18` and `R1`-`R28` (main agent) and
@@ -182,9 +191,12 @@ Every control works by touch, and focus moves to the first field in error, scrol
   D9a) that stay until closed, a localized close button and at most three visible (D9). Amended
   2026-10-21: no toast carries a role; two always-mounted regions announce success (polite) and
   errors (assertive).
-- A UI-only "Соціальні мережі" card (added 2026-10-21, product owner): Figma-exact, Google,
-  Facebook, GitHub and Twitter tiles, each saying that linking is not available yet; no actions,
-  because user-service cannot link, list or unlink (G6).
+- A "Соціальні мережі" card (added 2026-10-21, product owner): Figma-exact Google, Facebook,
+  GitHub and Twitter tiles. Since 2026-11-23 (D2b) a tile links its provider through a popup and
+  a linked tile unlinks it after an inline confirmation; until the list of linked providers
+  answers, and after it fails, each tile is display-only and says that linking is not available.
+  The operations are a provisional pending contract that user-service #520 (G6) has not agreed
+  yet, so linking runs only against the local mock until it does.
 
 ### Outcomes the User Can See
 
@@ -313,15 +325,17 @@ existing baseline renders a field error.
   check; every error shape is stubbed in the tests (U4; P6 superseded by R28).
 - Contrast fixed at its source: greeting, resend link, app-wide field-error text (D15, R8); the
   greeting part was superseded 2026-10-21 (`#969B9D` kept under one scoped exception).
-- The social networks card, UI-only with no actions (added 2026-10-21, product owner).
+- The social networks card (added 2026-10-21, product owner). Its link and unlink actions (D2b,
+  2026-11-23) are planned and built by the social-account-linking bundle, not by this one.
 - `uk` and `en` copy; unit, integration, e2e, touch, a11y, keyboard and visual coverage;
   route-coverage rows; the decisions recorded in the user module README, no ADR (U10).
 
 ### Out of Scope for v1
 
-- Avatar upload, crop and removal (D2, G5), and social networks link, list and unlink (G6): no
-  backend anywhere. The social networks card was "not rendered at all" (D2); amended 2026-10-21
-  by the product owner, it renders UI-only (§6 In Scope).
+- Avatar upload, crop and removal (D2, G5): no backend anywhere.
+- Production linking of social networks: the social-account-linking bundle runs it against a
+  provisional contract and the local mock until user-service serves link, list and unlink (G6,
+  user-service #520).
 - The app-shell sidebar, header and user menu with its "user settings" entry (D3).
 - Delete account and a sessions list: neither designed nor planned.
 - The 2FA card itself (2FA bundle); special handling for OAuth-created users (P2).
@@ -330,10 +344,12 @@ existing baseline renders a field error.
 
 1. Production enablement of `userSettings` once user-service releases `main`'s authentication
    surface (G1, widening #513 or a sibling) and the release is deployed.
-2. Contract pin bump to that release; no schema change is expected (D5).
+2. Contract pin bump to that release; no schema change is expected for the profile card (D5).
 3. Avatar upload once user-service stores avatars (G5).
-4. Social networks link, list and unlink once user-service serves them (G6), wired into the
-   UI-only card that ships in v1 (2026-10-21).
+4. Social networks link, list and unlink in production once user-service serves them (G6,
+   user-service #520): the tiles link and unlink against a provisional pending contract since
+   2026-11-23 (D2b), and that contract is agreed with #520, and the pin bumped to the release that
+   declares it, before production.
 5. App-shell navigation: a user-menu entry replacing the home link (D3).
 6. OAuth-created users and password-free profile changes, once user-service allows (P1, P2, G4).
 7. Client throttling of "Надіслати повторно", tied to the upstream limiter (P4, #470).
@@ -403,11 +419,11 @@ readiness; nothing already tracked (research §4.9) is filed again.
 | U11      | Accessibility overrides design: text under 4.5:1 is overridden, not copied           |
 | D1       | v1: `/settings` card with name, e-mail and resend, password, toasts, 2FA slot        |
 | D2       | No avatar or social networks (social part superseded 2026-10-21, D2a); monogram      |
-| D2a      | 2026-10-21: the social networks card renders UI-only, no actions; amends D2          |
-| D2b      | 2026-11-23: the social tiles link and unlink; supersedes D2a                         |
+| D2a      | Superseded 2026-11-23 by D2b: the social networks card renders UI-only, no actions   |
+| D2b      | 2026-11-23: the tiles link and unlink; provisional contract, agreed with #520 first  |
 | D3       | No app-shell menu; one flag-gated home link, shared with 2FA                         |
 | D4       | Current user from `users(first: 1)`; its `id` addresses both mutations               |
-| D5       | No schema extension: all three operations are in pinned v2.8.0                       |
+| D5       | No schema extension for the profile card (v2.8.0); D2b's linking contract is pending |
 | D6       | Current password on every Save; only changed fields; e-mail by normalised diff       |
 | D7       | One success toast per changed aspect; form re-reads the result, clears passwords     |
 | D8, R3   | Errors become field errors or toasts in crm copy; wrong password known by text       |

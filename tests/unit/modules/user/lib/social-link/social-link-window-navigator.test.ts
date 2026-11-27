@@ -11,6 +11,8 @@ describe('socialLinkWindowNavigator', () => {
     );
   });
 
+  afterEach(() => jest.restoreAllMocks());
+
   it('opens an empty sized popup that cannot reach the settings tab', () => {
     const popup = { opener: window } as unknown as Window;
     const open = jest.spyOn(window, 'open').mockReturnValue(popup);
@@ -27,7 +29,7 @@ describe('socialLinkWindowNavigator', () => {
   });
 
   it('sends the popup to the provider without a history entry to come back to', () => {
-    const popup = { location: { replace: jest.fn() }, close: jest.fn() };
+    const popup = { closed: false, location: { replace: jest.fn() }, close: jest.fn() };
 
     socialLinkWindowNavigator.leave(popup, 'https://provider.example/authorize');
 

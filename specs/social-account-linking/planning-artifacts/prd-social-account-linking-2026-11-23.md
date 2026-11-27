@@ -4,6 +4,11 @@ workflowType: 'prd'
 bmadCommand: 'create-prd'
 project_name: 'crm'
 date: '2026-11-23'
+revised: '2026-11-27'
+iteration: 3
+revisionPasses:
+  - '2026-11-27 review: FR1, FR4, FR6, FR11 — how an attempt ends, the popup return, the list after a 401'
+  - '2026-11-27 review: FR8, NFR2 — the linked border is under 3:1, owner-accepted'
 slug: 'social-account-linking'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/prd-social-sign-in-2026-11-18.md'
@@ -12,6 +17,18 @@ inputDocuments:
 ---
 
 # PRD: Social Account Linking in Settings
+
+> **Revision 2026-11-27 — how an attempt ends.** FR6 now names how an attempt ends. A popup the user
+> closes before it leaves for the provider ends the attempt as `cancelled`; once it is at the
+> provider the tab does not watch it, because `popup.closed` cannot be trusted there, so the wait
+> ends on an answer, the next click or leaving the card. Every ending asks the popup to close,
+> which is certain only before it leaves for the provider (FR6). A list read refused with a 401 shows nothing, and a
+> retry shows the loading message (FR1). The popup reads the query of each history entry, strips
+> it before the return view first paints and hands it over once (FR4). FR11 now names an empty or
+> blank `code`, a
+> malformed callback and `success: false`. FR8 and NFR2 record that the linked tile's border,
+> like its bin, is under 3:1 (owner-accepted, #276). The linking API (user-service #520) does not
+> exist yet, so the contract stays provisional (L3).
 
 ## 1. Goal
 
@@ -49,43 +66,64 @@ Linking is not a sign-in: it never issues, replaces or ends a session.
 
 - **FR1** `linkedSocialProviders` is read when the card mounts, never from the Apollo cache. Until it
   answers, and if it fails, every tile stays display-only, so the card never offers to link a
-  provider that may already be linked. A failure shows a localized message and "Try again".
+  provider that may already be linked. A failure shows a localized message and "Try again"; while
+  the retry runs, the message says the list is loading. A read refused with a 401 shows nothing:
+  the session ends and `ProtectedRoute` redirects.
 - **FR2** An unlinked tile is a button. Activating it opens the popup synchronously, then calls
   `initiateSocialLinkUser(provider)`; only an http(s) `authorizationUrl` is followed. A blocked popup
   shows the `blocked` message and calls nothing.
 - **FR3** The popup returns to `/auth/callback/:provider`. A `state` that starts with `link.` never
   reaches `completeSocialSignInUser`, whatever is in storage.
-- **FR4** The popup strips the query, hands `code`, `state` and `error` to the settings tab over a
-  same-origin `BroadcastChannel`, and closes. If it cannot close itself, it tells the user to return
-  to settings; it offers no retry.
+- **FR4** The popup reads the query of the history entry it is shown for, so a new entry on the
+  same route is read again. It strips the query from the address bar before the return view first
+  paints, hands
+  `code`, `state` and `error` to the settings tab once over a same-origin `BroadcastChannel`, and
+  closes. If it cannot close itself, it tells the user to return to settings; it offers no retry.
 - **FR5** The settings tab ignores a message whose provider or `state` is not its own attempt's, and
   treats every other field as untrusted. It then calls `completeSocialLinkUser` once. A `state` that
   `initiateSocialLinkUser` did not mark is refused. The popup has no opener once it leaves.
-- **FR6** After an attempt ends (a new attempt, or leaving the page), nothing it later answers
-  changes the card, even when it ends while `initiateSocialLinkUser` is in flight. Its popup closes
-  if it has not left for the provider yet; a window already there has no opener and is the user's
-  to close, and its return closes itself.
+- **FR6** An attempt ends when `initiateSocialLinkUser` answers with a failure, when its answer
+  arrives, when another one starts, or when the card goes away; nothing it later answers changes the card, even when it ends while
+  `initiateSocialLinkUser` is in flight. Ending stops the channel listener and asks the popup to
+  close. That is certain only while the popup is still the tab's blank page. Once it has been on the
+  provider's page, the tab has disowned it (no opener), and a provider that sends
+  `Cross-Origin-Opener-Policy` detaches the tab's reference for the rest of the popup's life, so
+  the browser can ignore the request even on the callback page. The callback page closes itself
+  (FR4); a window abandoned at the provider is the user's to close. A popup the user closes before it leaves for the
+  provider ends the attempt as `cancelled`: the tab reads `popup.closed` once, just before it sends
+  the popup on, while the popup is still its own blank page and the flag is reliable. It does not
+  watch the popup after that. A provider page that sends `Cross-Origin-Opener-Policy` moves the
+  popup to another browsing-context group, and the tab's reference then reads `closed` as `true`
+  while the user is still on the consent page; a watch would settle `cancelled` and drop the
+  callback that arrives later over the channel, which still reaches the tab. A timeout would cut
+  off a user still at the provider in the same way, so there is none. A popup closed at the
+  provider therefore leaves the wait open until the next click or leaving the card; the tiles are
+  not held while it waits, so no tile stays pending. The next click and leaving the card are
+  aborts (FR12).
 - **FR7** A refusal that the provider is already linked shows the tile as linked. A result changes only its own provider's tile, so answers that arrive out of order, or an
   older list answer, never undo it.
 - **FR8** A linked tile shows Figma `315:11754` (fill `#E8F7FF`, border `#1EAEFF`) and an unlink
-  button named for its provider. The bin is Figma's `#1EAEFF` (owner, 2026-11-23: every colour follows Figma). At
-  2.2:1 on the fill it stays under the 3:1 of SC 1.4.11, accepted until issue #276.
+  button named for its provider. The bin and the border are Figma's `#1EAEFF` (owner, 2026-11-23:
+  every colour follows Figma). The bin is 2.2:1 on the fill; the border is 2.2:1 on the fill and
+  2.5:1 on the white card. Both are under the 3:1 of SC 1.4.11, and they, with the fill, are the
+  only visual signs that a tile is linked; the owner accepts that until issue #276. The tile's
+  accessible name carries the state (", linked"), so assistive technology does not rely on them.
 - **FR9** The bin shows the L6 row, named for its provider, with focus on Cancel. Cancel and Escape
   close it and focus the bin; confirming closes it, focuses the bin and calls `unlinkSocialProviderUser(provider)` once.
 - **FR10** After a tile changes state, keyboard focus moves to the tile's new control.
 - **FR11** Success and failure each raise one notification, announced by the settings live regions:
 
-  | Source                                             | Failure kind           |
-  | -------------------------------------------------- | ---------------------- |
-  | popup blocked                                      | `blocked`              |
-  | provider `error`                                   | `cancelled`            |
-  | no `code`, `invalid_state`, `state_expired`        | `expired`              |
-  | `identity_linked_to_other_user` (409)              | `already_linked`       |
-  | `provider_already_linked` (409)                    | `provider_linked`      |
-  | `last_sign_in_method` (409)                        | `last_method`          |
-  | `provider_unavailable`, network, timeout, 5xx, 429 | `unavailable`          |
-  | HTTP 401                                           | none: the session ends |
-  | anything else, including a malformed answer        | `generic`              |
+  | Source                                                  | Failure kind           |
+  | ------------------------------------------------------- | ---------------------- |
+  | popup blocked                                           | `blocked`              |
+  | provider `error`, popup closed before it leaves         | `cancelled`            |
+  | no or a blank `code`, `invalid_state`, `state_expired`  | `expired`              |
+  | `identity_linked_to_other_user` (409)                   | `already_linked`       |
+  | `provider_already_linked` (409)                         | `provider_linked`      |
+  | `last_sign_in_method` (409)                             | `last_method`          |
+  | `provider_unavailable`, network, timeout, 5xx, 429      | `unavailable`          |
+  | HTTP 401                                                | none: the session ends |
+  | anything else, a malformed callback or `success: false` | `generic`              |
 
 - **FR12** An aborted attempt shows nothing.
 
@@ -93,7 +131,8 @@ Linking is not a sign-in: it never issues, replaces or ends a session.
 
 - **NFR1** 100% unit and integration coverage, Stryker `break` 100, no suppression.
 - **NFR2** WCAG 2.1 AA: names, focus order, visible focus, 44 px targets, 375 px without sideways
-  scroll, forced colours; no new axe exception. The bin's contrast is the one accepted gap (FR8).
+  scroll, forced colours; no new axe exception. The linked tile's bin and border contrast are the
+  one accepted gap (FR8); no axe rule tests non-text contrast.
 - **NFR3** `code`, `state` and provider identifiers never reach logs, Sentry, the DOM or the history
   of the settings tab.
 - **NFR4** No growth of the auth page's eager path beyond the 1 kB gzip already allowed.

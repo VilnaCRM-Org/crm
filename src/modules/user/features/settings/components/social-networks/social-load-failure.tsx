@@ -25,13 +25,14 @@ export default function SocialLoadFailure({
   return (
     <Box sx={styles.failure}>
       <Box component="p" id={messageId} sx={styles.failureMessage}>
-        {t('settings.social.load_failed')}
+        {retrying ? t('settings.social.loading') : t('settings.social.load_failed')}
       </Box>
       <UIButton
         ref={handOver}
         variant="outlined"
         aria-describedby={messageId}
         aria-disabled={retrying}
+        disableRipple={retrying}
         sx={styles.retryButton}
         onClick={onRetry}
       >

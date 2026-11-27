@@ -3,8 +3,8 @@ status: complete
 workflowType: epics-and-stories
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-17
-iteration: 9
+revised: 2026-11-27
+iteration: 11
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'pm (John), autonomous run'
@@ -21,8 +21,10 @@ inputDocuments:
 **Author:** BMad (Product Manager) **Date:** 2026-10-06, revised 2026-10-08, reconciled
 2026-10-16, amended 2026-10-19, 2026-10-20, 2026-10-21, 2026-11-04 (owner decisions and Figma
 correction below), 2026-11-05 (FR/NFR reconciliation), 2026-11-16 (Stories 3.4 and 4.4, the
-per-section reveal and collapse) and 2026-11-17 (Story 3.5's focus criteria marked; the
-flag-removal commit cited as 62ddc565) **Feature:** `user-settings`
+per-section reveal and collapse), 2026-11-17 (Story 3.5's focus criteria marked; the
+flag-removal commit cited as 62ddc565), 2026-11-23 (owner decision D2b: the social tiles link and
+unlink) and 2026-11-27 (D2b written into FR-7a, UX-DR-5, Story 3.1 and Follow-up 5.5 in place)
+**Feature:** `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
 > supersede this document's text where the two differ; the earlier text is kept as the record of the
@@ -49,6 +51,14 @@ flag-removal commit cited as 62ddc565) **Feature:** `user-settings`
 > - **Unconfirmed e-mail row (Figma, 2026-11-04).** Frames `386:27830`, `386:27945` and `386:28059`
 >   draw the status and the resend control 8 px apart with no separator, so the "·" quoted in FR-15,
 >   Story 3.6 and the brief, and the separator in architecture §7.2, are not drawn.
+
+> **Owner decision of 2026-11-23 (D2b, social tiles link and unlink).** The "Соціальні мережі"
+> tiles link a provider through a popup and unlink it after an inline confirmation; the
+> [social-account-linking epics](../../social-account-linking/planning-artifacts/epics-social-account-linking-2026-11-23.md)
+> hold those stories. user-service has no signed-in link, list or unlink yet (G6, user-service
+> #520), so they run against a provisional pending contract and the local mock, and that contract
+> is agreed with #520 before linking reaches production. FR-7a, UX-DR-5, Story 3.1 and Follow-up
+> 5.5 say so in place.
 
 Predecessors: [research](./research-user-settings-2026-10-06.md),
 [brief](./brief-user-settings-2026-10-06.md), [PRD](./prd-user-settings-2026-10-06.md) and
@@ -315,8 +325,10 @@ used by settings alone (R16).
   superseded 2026-10-21: the Figma grey `#969B9D` stays, under a scoped exception). Amended
   2026-10-21: the name line greets with the first name and surname only, taken from the ПІБ
   (three or more words show the second word then the first), and the monogram follows it.
-- FR-7a (added 2026-10-21; superseded 2026-11-23 by `specs/social-account-linking/`): a UI-only "Соціальні мережі" card, Figma-exact, four tiles in a
-  labelled list, each with a hidden "linking not available yet" status; no actions (G6).
+- FR-7a (added 2026-10-21; actions 2026-11-23, D2b): a "Соціальні мережі" card, Figma-exact,
+  four tiles in a labelled list. Until the list of linked providers answers, and after it fails,
+  each tile carries a hidden "linking not available yet" status and no action; otherwise the tiles
+  link and unlink against a provisional contract (G6, user-service #520).
 - FR-8: one form, two `h2` sections, labelled fields with `autocomplete`, eye toggles, Save and
   Clear; Enter submits. Amended 2026-10-21: the name is a row above "Особисті дані", labelled
   "Ваше ПІБ" (`settings.profile.full_name`), so that `h2` heads only the e-mail.
@@ -476,10 +488,11 @@ used by settings alone (R16).
   2026-10-21: it keeps the Figma grey `#969B9D` under a scoped `#settings-greeting` exception.
 - UX-DR-5: no photo or social networks card (D2); the monogram is decorative. Amended 2026-10-21:
   it carries the Figma pencil badge (`315:11418`) as decoration only, with no role, handler or
-  focus stop. Amended 2026-10-21 again (product owner): the social networks card renders UI-only,
+  focus stop. Amended 2026-10-21 again (product owner): the social networks card renders
   Figma-exact (desktop `476:46530`, tablet `386:27239`, mobile `386:27457`), "Соціальні мережі"
-  with Google, Facebook, GitHub and Twitter, no working action (PRD FR-7a); "no social networks
-  card" is superseded.
+  with Google, Facebook, GitHub and Twitter, display-only until the list of linked providers
+  answers (PRD FR-7a), then linking and unlinking (D2b, 2026-11-23); "no social networks card" is
+  superseded.
 - UX-DR-6: every user-facing story runs the `figma-design-check` gate through the Figma MCP before
   UI code is written; an unreachable MCP reports `BLOCKED`, never a skip.
 
@@ -1424,7 +1437,7 @@ the profile card.
 
 - Given the Figma design gate on the header of `313:10242`, when it runs before code, then the monogram, greeting and name follow the frame without the photo, and the pencil badge (amended 2026-10-21) is drawn as decoration; an unreachable MCP reports `BLOCKED`.
 - Given the name "Олена Петренко", when the header renders, then the monogram shows "ОП"; "Admin" shows "A"; "Олена Іванівна Петренко" shows "ОІ"; an empty name shows a decorative person glyph; letters are upper-cased with `toUpperCase`, never a `toLocale*` call. Superseded 2026-10-21 (product owner): the name line under "Вітаємо!" shows the first name and surname only, because the field holds a ПІБ (surname, first name, patronymic); three or more words show the second word then the first, one or two words show as typed, and the monogram is built from the greeted name. The cases are: "Петренко Олена Іванівна" greets "Олена Петренко" with "ОП"; "Олена Петренко" greets "Олена Петренко" with "ОП"; "Маслова Евгения Олеговна" greets "Евгения Маслова" with "ЕМ"; "Admin" shows "A"; an empty name shows the decorative person glyph.
-- Given the page grid (FR-7a, added 2026-10-21, product owner), when the loaded page renders, then a UI-only "Соціальні мережі" card follows the profile card, Figma-exact (desktop `476:46530`, tablet `386:27239`, mobile `386:27457`): a `<ul role="list">` labelled by the heading holds four list items, Google, Facebook, GitHub and Twitter, with the icons from `src/assets/icons/social/`, each with a visually hidden status from `settings.social.*` (", linking not available yet" / ", підключення поки недоступне", the separator in the catalog); no tile is a button, link or focus stop, and jest-axe reports no violation.
+- Given the page grid (FR-7a, added 2026-10-21, product owner), when the loaded page renders, then a "Соціальні мережі" card follows the profile card, Figma-exact (desktop `476:46530`, tablet `386:27239`, mobile `386:27457`): a `<ul role="list">` labelled by the heading holds four list items, Google, Facebook, GitHub and Twitter, with the icons from `src/assets/icons/social/`, each with a visually hidden status from `settings.social.*` (", linking not available yet" / ", підключення поки недоступне", the separator in the catalog) until the list of linked providers answers, and after it fails; in that state no tile is a button, link or focus stop, and jest-axe reports no violation. Once the list answers, the tiles link and unlink as the social-account-linking epics specify (D2b, 2026-11-23).
 - Given the monogram, when the accessibility tree is read, then it is `aria-hidden="true"`, and "Вітаємо!" and the name are plain text with no heading or image role and no control.
 - Given the computed styles, when they are read, then the greeting is `#969B9D` (the Figma grey the product owner kept on 2026-10-21 under a scoped exception; the planned `#57595B` is superseded) and the monogram letters are `#1A1C1E` on a `#E1E7EA` disc (13.69:1).
 - Given the header, when it renders, then no photo, upload control or file input exists, and the pencil badge (amended 2026-10-21) is decoration inside the `aria-hidden` monogram with no role, handler or focus stop.
@@ -1969,11 +1982,14 @@ As a signed-in user,
 I want to see, link and unlink my social accounts,
 So that I can sign in with them.
 
-**Dispatch:** Not dispatched. **Status:** Blocked upstream (G6).
+**Dispatch:** Planned and built by the social-account-linking bundle (owner, 2026-11-23, D2b).
+**Status:** The tiles link, list and unlink against a provisional pending contract and the local
+mock; production is blocked upstream (G6, user-service #520).
 
 **Acceptance Criteria:**
 
-- Given signed-in link, list and unlink operations released upstream, when the follow-up is planned, then the Figma social networks card and its success toasts get a PRD amendment that reuses the toast primitive. Amended 2026-10-21 (product owner): the card itself already renders UI-only (PRD FR-7a, Story 3.1), so the follow-up wires link, list and unlink and their toasts into that card; no PRD amendment is needed first for the card, only for the actions.
+- Given the card of PRD FR-7a and Story 3.1, when the follow-up is planned, then link, list and unlink and their results are wired into that card under their own PRD (`specs/social-account-linking/`), not a PRD amendment here; results raise the settings notifications. Amended 2026-10-21 (product owner): the card itself already renders (PRD FR-7a, Story 3.1), so only the actions needed planning.
+- Given user-service releasing signed-in link, list and unlink (#520), when the contract pin moves to that release, then the provisional contract is reconciled with it before linking reaches production.
 
 ### Follow-up 5.6: Reach settings from app-shell navigation (D3)
 

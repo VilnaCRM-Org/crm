@@ -3,7 +3,7 @@ status: complete
 workflowType: autonomous-planning
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-05
+revised: 2026-11-27
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 ---
@@ -136,11 +136,11 @@ the 2026-10-08 Miro layer contract (M2 is rule TB-1).
 | U11  | Accessibility overrides design: text under 4.5:1 is overridden, not copied                                           |
 | D1   | v1 scope: `/settings` profile card (name, e-mail + resend, password), toasts, 2FA slot                               |
 | D2   | Superseded 2026-10-21 for the social card (D2a): no avatar upload or social networks section; decorative monogram    |
-| D2a  | 2026-10-21: the social networks card renders UI-only with no actions (PRD FR-7a); linking stays out (G6)             |
-| D2b  | 2026-11-23: the social tiles link and unlink (`specs/social-account-linking/`); supersedes D2a                       |
+| D2a  | Superseded 2026-11-23 by D2b: the social networks card renders UI-only with no actions (PRD FR-7a); no linking       |
+| D2b  | 2026-11-23: the social tiles link and unlink (`specs/social-account-linking/`) on a provisional, unagreed contract   |
 | D3   | No app-shell navigation; one flag-gated home link to `/settings`, shared with 2FA                                    |
 | D4   | Current user from `users(first: 1)`; its IRI `id` addresses both mutations                                           |
-| D5   | No pending schema extension: every operation used is in pinned v2.8.0                                                |
+| D5   | No pending schema extension for the profile card: its operations are in pinned v2.8.0 (D2b adds linking)             |
 | D6   | Current password on every Save; only changed fields; e-mail by normalised diff                                       |
 | D7   | One success toast per changed aspect; the form adopts the returned user                                              |
 | D8   | Errors become crm field errors or toasts; never server text verbatim                                                 |
@@ -209,7 +209,7 @@ the 2026-10-08 Miro layer contract (M2 is rule TB-1).
 | us #517        | Current password checked against the new-password rules | no     |
 | us #518        | Profile changes without the password; social-only users | no     |
 | us #519        | Avatar storage and upload (G5)                          | no     |
-| us #520        | Link, list and unlink social providers (G6)             | no     |
+| us #520        | Link, list and unlink social providers (G6, D2b)        | Prod   |
 | us #521        | GraphQL `updateUser` and `deleteUser` skip the limiters | no     |
 | us #522        | Stable `extensions.code` on GraphQL errors (G8, 2FA)    | no     |
 
@@ -600,3 +600,13 @@ in place, keeping the superseded text visible; one requirement remains for each.
 
 Story 2.2's `buildUserNode` delegating to `buildGraphqlUser` is unchanged: the code is brought to
 the requirement, not the other way round.
+
+## Amendment 2026-11-23 (owner decision D2b)
+
+The owner made the "Соціальні мережі" tiles working controls: a tile links its provider through a
+popup and a linked tile unlinks it after an inline confirmation. The plan is its own bundle,
+[`specs/social-account-linking/`](../../social-account-linking/planning-artifacts/prd-social-account-linking-2026-11-23.md),
+and D2b supersedes D2a. user-service has no linking API yet: #520 (G6) is open and shaped
+differently, so the tiles run against a provisional pending contract and the local mock, and #520
+now blocks production linking ("Prod" above). D5 holds for the profile card only. The brief, the
+PRD, the architecture and the epics carry the decision in place, written on 2026-11-27.

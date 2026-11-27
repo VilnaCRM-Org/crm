@@ -3,8 +3,8 @@ status: complete
 workflowType: prd
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-18
-iteration: 9
+revised: 2026-11-27
+iteration: 11
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'pm (John), autonomous run'
@@ -18,8 +18,10 @@ inputDocuments:
 **Author:** pm (John), autonomous run **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16,
 2026-10-20, 2026-10-21 (twice), 2026-11-04 (owner decisions and Figma correction below),
 2026-11-05 (FR/NFR reconciliation, and the owner decision that splits the profile card),
-2026-11-16 (FR-12 and FR-13, the shipped per-section reveal and collapse) and 2026-11-17 (FR-13's
-focus sentence marked and a collapse criterion added; the flag-removal commit cited as 62ddc565)
+2026-11-16 (FR-12 and FR-13, the shipped per-section reveal and collapse), 2026-11-17 (FR-13's
+focus sentence marked and a collapse criterion added; the flag-removal commit cited as 62ddc565),
+2026-11-23 (owner decision D2b: the social tiles link and unlink) and 2026-11-27 (D2b written into
+§2, §3, §4, FR-7a, §8, §9, §10, §12 and §13 in place, with its provisional contract)
 **Feature:** `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
@@ -56,6 +58,15 @@ focus sentence marked and a collapse criterion added; the flag-removal commit ci
 > toasts in order when every aspect changes (journey step 5, FR-8, FR-11 to FR-14), the split
 > supersedes it; that text is kept as the record of the plan as approved. The two-factor PRD and
 > the app-shell PRD carry the matching owner decisions of 2026-11-05.
+
+> **Owner decision of 2026-11-23 (D2b, social tiles link and unlink).** The "Соціальні мережі"
+> tiles link a provider through a popup and unlink it after an inline confirmation; the
+> requirements are the
+> [social-account-linking PRD](../../social-account-linking/planning-artifacts/prd-social-account-linking-2026-11-23.md).
+> user-service has no signed-in link, list or unlink yet (G6, user-service #520, open and shaped
+> differently), so the tiles run against a provisional pending contract and the local mock, and
+> that contract is agreed with #520 before linking reaches production; G6 blocks the production
+> enablement of linking only (§8). §2, §3, §4, FR-7a, §8, §9, §10, §12 and §13 say so in place.
 
 Predecessors: [research](./research-user-settings-2026-10-06.md), the evidence base cited as
 "research §N", and [brief](./brief-user-settings-2026-10-06.md), the vision, journeys, scope and
@@ -159,9 +170,11 @@ feature before settings uses them (D11).
 
 ### Non-goals
 
-- Avatar upload, crop and removal (D2, G5) and linking, listing or unlinking social accounts
-  (G6). The social networks card itself was a non-goal (D2); amended 2026-10-21, it renders
-  UI-only (FR-7a); amended 2026-11-23, it links and unlinks (D2b).
+- Avatar upload, crop and removal (D2, G5).
+- Production linking of social accounts until user-service serves link, list and unlink (G6,
+  user-service #520). The social networks card is a goal (FR-7a), and its tiles link and unlink
+  against a provisional contract and the local mock (D2b), as the social-account-linking PRD
+  specifies; that bundle, not this one, builds the actions.
 - The app-shell sidebar, header and user menu with its "user settings" entry (D3).
 - Delete account, a sessions list, and the 2FA card itself (2FA bundle, #331).
 - Special handling for OAuth-created users (P2, G4); a `me` query or JWT decoding (D4, G2).
@@ -186,10 +199,10 @@ Settled before this stage; the architecture and epics stages treat them as fixed
 | U6           | Secrets: no cache, minimal fields, abort check, no retry        | research §6.1  |
 | U7, U10      | Repository conventions bind; decisions in the module README     | research §5.7  |
 | D1, D2       | Name, e-mail, resend, password, toasts, slot; no avatar/socials | research §1    |
-| D2a          | 2026-10-21: social card UI-only, no actions (FR-7a); amends D2  | owner decision |
-| D2b          | 2026-11-23: social tiles link and unlink; supersedes D2a        | owner decision |
+| D2a          | Superseded 2026-11-23 by D2b: social card UI-only, no actions   | owner decision |
+| D2b          | 2026-11-23: tiles link, unlink; contract provisional until #520 | owner decision |
 | D3           | No shell menu; one flag-gated home link shared with 2FA         | research §1    |
-| D4, D5       | `users(first: 1)` and its IRI; no schema extension              | research §4.3  |
+| D4, D5       | `users(first: 1)` and its IRI; no profile schema extension      | research §4.3  |
 | D6, P1       | Current password on every Save; only changed fields are sent    | research §4.4  |
 | D7, P3       | One success toast per changed aspect; form adopts the payload   | brief §3       |
 | D8, R3       | Errors map to crm copy; wrong password known by message         | research §6.2  |
@@ -234,8 +247,9 @@ only stacking and toast placement change.
    then the `h2` "Особисті дані" over the prefilled e-mail (amended 2026-10-21, FR-8); the `h2`
    "Пароль" over the empty current and new password with eye toggles, the four policy rules
    shown while the new password has focus or a value (FR-10); then "Зберегти зміни" and
-   "Очистити". The 2FA column sits to the right when its flag is on, and the UI-only "Соціальні
-   мережі" card follows (FR-7a, amended 2026-10-21).
+   "Очистити". The 2FA column sits to the right when its flag is on, and the "Соціальні мережі"
+   card follows, whose tiles link and unlink a provider against the provisional contract (FR-7a,
+   amended 2026-10-21; D2b, 2026-11-23).
 3. Name, then current password, then Save: the spinner shows, "Збереження…" is announced, the
    toast "Зміни збережено" appears bottom-right, the header shows the new name, both password
    fields empty and the form is pristine.
@@ -444,27 +458,30 @@ amendment below. A successful name change updates it from the payload. Amended 2
 > name shows the decorative person glyph. The assumption above applies to the greeted name, not
 > to the raw field value.
 
-#### FR-7a — Social networks card, UI only (added 2026-10-21)
+#### FR-7a — Social networks card, link and unlink (added 2026-10-21, actions 2026-11-23)
 
 Amendment 2026-10-21 (product owner; supersedes the §2 non-goal and D2's "no social networks
 card"): a second card "Соціальні мережі" renders Figma-exact (desktop `476:46530`, tablet
-`386:27239`, mobile `386:27457`) with four tiles, Google, Facebook, GitHub and Twitter. It has no
-working action, because user-service has no signed-in link, list or unlink (G6); linking stays
-out of scope until it does (Follow-up 5.5). The tiles are the items of a `<ul role="list">`
-labelled by the card's heading, and each carries a visually hidden status from the
-`settings.social.*` keys, ", linking not available yet" / ", підключення поки недоступне" (the
+`386:27239`, mobile `386:27457`) with four tiles, Google, Facebook, GitHub and Twitter. Until the
+list of linked providers answers, and after it fails, it has no working action; otherwise its
+tiles link and unlink (D2b, 2026-11-23) as the social-account-linking PRD specifies, against a
+provisional contract, because user-service has no signed-in link, list or unlink yet (G6,
+user-service #520; Follow-up 5.5). The tiles are the items of a `<ul role="list">` labelled by
+the card's heading. While they have no working action, each carries a visually hidden status from
+the `settings.social.*` keys, ", linking not available yet" / ", підключення поки недоступне" (the
 separator lives in the catalog). The four brand icons move from `@auth/assets/social-links/` to
 `src/assets/icons/social/` and are shared with the sign-in and sign-up OAuth buttons
 (`oauth-providers.ts`).
 
-- Given the loaded page, when the list named "Соціальні мережі" is queried, then it holds four
-  list items whose accessible names end with the not-available status.
-- Given the card, when it is tabbed through, then it has no focus stop, button, link or handler.
+- Given the loaded page before the list of linked providers answers, or after it fails, when the
+  list named "Соціальні мережі" is queried, then it holds four list items whose accessible names
+  end with the not-available status.
+- Given the card in that same state, when it is tabbed through, then its tiles have no focus
+  stop, button, link or handler; a failed list adds only its retry button.
 
-Amendment 2026-11-23 (product owner, D2b): the tiles link and unlink providers. The display-only
-tiles and both criteria above now describe only the state before the list of linked providers
-answers, or after it fails; every other state is specified in
-`specs/social-account-linking/planning-artifacts/`.
+Amendment 2026-11-23 (product owner, D2b): once the list answers, every tile is a working control
+that links its provider or, when linked, unlinks it after an inline confirmation; those states are
+specified in `specs/social-account-linking/planning-artifacts/`.
 
 ### 5.3 The profile form
 
@@ -1408,9 +1425,13 @@ Filed against user-service after readiness, never during planning; nothing alrea
 | G3  | Own unchanged e-mail rejected by `UniqueEmail`; regression test      | nothing         |
 | G4  | Profile update without the current password; OAuth users             | nothing         |
 | G5  | Avatar field, upload and storage                                     | nothing         |
-| G6  | Signed-in social link, list and unlink                               | nothing         |
+| G6  | Signed-in social link, list and unlink                               | linking in prod |
 | G7  | GraphQL `updateUser` and `deleteUser` bypass the limiters            | nothing         |
 | G8  | Machine-readable `extensions.code` on domain errors, shared with 2FA | nothing         |
+
+G6 (user-service #520) blocks only the production enablement of social linking (D2b): the FR-7a
+tiles link and unlink against a provisional contract and the local mock until #520 agrees it, so
+no implementation work, in this feature or in the social-account-linking bundle, waits on it.
 
 G8 is one issue for both bundles; whichever session files first, the other comments. G9 and G10
 belong to other work; G11 is tracked upstream and G12 is noted in research §4.8.
@@ -1422,9 +1443,11 @@ Not dispatched with this feature; no story waits for them.
 1. Enable `userSettings` in production once G1 ships and is deployed, and either user-service
    CORS admits `Authorization`, `X-Request-Id` and `X-Correlation-Id` (#514, research §4.5) or
    the API is served same-origin.
-2. Bump the contract pin to that release; no schema change is expected (D5).
-3. Avatar upload (G5) and social networks link, list and unlink (G6) once user-service has them;
-   the UI-only card of FR-7a (2026-10-21) is what gets wired.
+2. Bump the contract pin to that release; no schema change is expected for the profile (D5).
+3. Avatar upload once user-service has it (G5). Social networks link, list and unlink reach
+   production once user-service serves them (G6, user-service #520): the FR-7a tiles link and
+   unlink against a provisional contract since 2026-11-23 (D2b), and that contract is agreed with
+   #520, and the pin bumped to the release that declares it, first.
 4. App-shell navigation with a user-menu entry replacing the home link (D3).
 5. OAuth-created users and password-free profile changes once upstream allows (P1, P2, G4).
 6. Client throttling of "Надіслати повторно" tied to the upstream limiter (P4, #470).
@@ -1451,7 +1474,7 @@ None blocks v1; each default holds until the design owner answers (research §8.
 | Monogram and pencil badge        | decorative (badge amended 2026-10-21), hidden from AT |
 | Optional hint under the password | FR-10 text, visually hidden (amended 2026-10-21)      |
 | Toast timing                     | no timer; close, action or overflow only (FR-20)      |
-| Social networks card             | UI-only, no actions (FR-7a, amended 2026-10-21)       |
+| Social networks card             | tiles link and unlink, provisional contract (D2b)     |
 
 ## 11. Traceability
 
@@ -1507,7 +1530,8 @@ Drafts for FR-28, `uk` then `en`; "reused" strings come from the sign-up, auth o
   password equal to the current one.
 - Social networks card (added 2026-10-21, FR-7a): "Соціальні мережі" with Google, Facebook,
   GitHub and Twitter, each with the hidden status ", підключення поки недоступне" / ", linking not
-  available yet" (`settings.social.*`).
+  available yet" (`settings.social.*`) until the list of linked providers answers, and after it
+  fails. The copy of the link and unlink states is in the social-account-linking PRD (D2b).
 - "Зберегти зміни" / "Save changes"; "Очистити" / "Clear"; "Збереження…" / "Saving…"; "Немає змін
   для збереження" / "There are no changes to save"; "Закрити сповіщення" / "Close notification".
 - Row "E-mail не підтверджено" / "E-mail not confirmed"; "Надіслати повторно" / "Send again".
@@ -1536,9 +1560,10 @@ The boundary Ralph builds within; §2 "Non-goals" and §9 "Follow-ups" give the 
 Follow-ups 5.1 to 5.13 hold the deferred work. Appended last so the section numbers the epics and
 architecture cite do not move.
 
-- Avatar upload, crop and removal (D2, G5; Follow-up 5.4) and social networks link, list and
-  unlink (G6; Follow-up 5.5). The card itself renders UI-only since the 2026-10-21 amendment
-  (FR-7a), with no working action.
+- Avatar upload, crop and removal (D2, G5; Follow-up 5.4).
+- Production social networks link, list and unlink (G6, user-service #520; Follow-up 5.5). The
+  card renders since the 2026-10-21 amendment (FR-7a), and its tiles link and unlink against a
+  provisional contract since 2026-11-23 (D2b), built by the social-account-linking bundle.
 - The app-shell sidebar, header and user menu with its "user settings" entry (D3; Follow-up 5.6);
   the home link of FR-4 is the only entry point.
 - The two-factor authentication sign-in challenge: it is #331's own page (Figma `72:4846`, "Назад",

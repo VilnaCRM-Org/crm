@@ -23,6 +23,22 @@ const page = (headingRef: RefObject<HTMLElement | null>, shown = true): JSX.Elem
 );
 
 describe('SocialLoadFailure', () => {
+  it.each([
+    [false, 'Your linked accounts could not be loaded', 'false'],
+    [true, 'Loading your linked accounts…', 'true'],
+  ])('says, while retrying is %s, %s', (retrying, message, disabled) => {
+    render(
+      <I18nextProvider i18n={i18n}>
+        <View retrying={retrying} headingRef={first} onRetry={jest.fn()} />
+      </I18nextProvider>
+    );
+
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    expect(screen.getByText(message)).toBeInTheDocument();
+    expect(retry).toHaveAccessibleDescription(message);
+    expect(retry).toHaveAttribute('aria-disabled', disabled);
+  });
+
   it('hands its focus to the heading it was last given', () => {
     const { rerender } = render(page(first));
     rerender(page(second));

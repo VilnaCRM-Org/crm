@@ -4,6 +4,11 @@ workflowType: 'epics-and-stories'
 bmadCommand: 'create-epics-stories'
 project_name: 'crm'
 date: '2026-11-23'
+revised: '2026-11-27'
+iteration: 3
+revisionPasses:
+  - '2026-11-27 review: S2.1, S2.3, S3.1 follow PRD FR1, FR6 and FR11'
+  - '2026-11-27 review: S2.2 owns FR4 — the query per history entry, the fallback when the popup cannot close'
 slug: 'social-account-linking'
 inputDocuments:
   - 'specs/social-account-linking/planning-artifacts/prd-social-account-linking-2026-11-23.md'
@@ -11,6 +16,13 @@ inputDocuments:
 ---
 
 # Epics: Social Account Linking in Settings
+
+> **Revision 2026-11-27 — how an attempt ends.** S2.1, S2.3 and S3.1 carry the PRD revision of
+> the same date: a popup closed before it leaves for the provider cancels the attempt, the tab
+> does not watch the popup once it is at the provider, every ending asks the popup to close (a
+> provider's page may refuse), and a list read refused with a 401 shows nothing. S2.2 now owns
+> FR4: the popup reads each history entry's query, strips it before the return view first paints,
+> posts it once, and tells the user to return to settings when it cannot close itself.
 
 Every story also meets NFR1 and carries its own direct tests.
 
@@ -34,23 +46,34 @@ Every story also meets NFR1 and carries its own direct tests.
 
 ### S2.1 State guard, channel and window leaves — independent
 
-- A message of another shape or for another attempt is ignored.
+- A message of another shape or for another attempt is ignored. A message for the attempt whose
+  `code` or `error` is not text reads as malformed, and an empty or whitespace-only `code` as
+  missing (FR11).
+- The window navigator drops the opener and sends the popup on without a history entry; it never
+  watches `popup.closed`, which a provider page can make read `true` while the user is still
+  there (FR6).
 - The wait resolves for a signal that was already aborted.
 
 ### S2.2 Return view — dependent on S2.1
 
-- `link.`: the callback is posted, the query stripped, the window closed; no retry is offered.
+- `link.`: the query of each history entry is read, so a new entry on the same route is read again;
+  it is stripped before the return view first paints and posted once, StrictMode included (FR4). The window
+  closes when it can, and otherwise tells the user to return to settings; no retry is offered.
 - A `link.` state never reaches `completeSocialSignInUser` (FR3), unit and E2E.
 
 ### S2.3 Attempt hook — dependent on S1.2, S2.1
 
-- FR2, FR5, FR6 and FR12, including an abort during `initiate` and a second click.
+- FR2, FR5, FR6 and FR12, including an abort during `initiate`, a second click, and a popup closed
+  during `initiate`. Every ending asks the popup to close; that is relied on only while the popup
+  is the blank page; after the provider, the callback page closes itself (FR4). A popup that reads closed while it
+  waits does not end the attempt, and its later answer still completes the link.
 
 ## Epic 3 — Card
 
 ### S3.1 Tiles and list state — dependent on S1.2
 
-- Display-only until the list answers; retry on failure (FR1); FR7, FR8 and FR10.
+- Display-only until the list answers; retry on failure, the loading message while it runs, and
+  nothing after a 401 (FR1); FR7, FR8 and FR10.
 - A story per tile state; accessibility-lead review before the edit; Figma check `315:11754`.
 
 ### S3.2 Unlink — dependent on S3.1

@@ -27,6 +27,12 @@ jest.mock('@/providers/di', () => ({
 
 const i18n = createSettingsLocaleI18n('en', []);
 
+const listed = (items: readonly string[]): object => ({ kind: 'listed', linked: { items } });
+
+const UNAVAILABLE = { kind: 'failed', reason: 'unavailable' };
+
+const CHANNEL = 'crm.socialLink';
+
 const wrapper = ({ children }: { children: ReactNode }): JSX.Element => (
   <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
 );
@@ -42,8 +48,10 @@ describe('useSocialLinks', () => {
     Object.values(mockProvider).forEach((method) => method.mockReset());
     mockUseService.mockClear();
     resetClientStores();
-    mockProvider.linked.mockResolvedValue({ items: ['github'] });
+    mockProvider.linked.mockResolvedValue(listed(['github']));
   });
+
+  afterEach(() => jest.restoreAllMocks());
 
   it('reads the list once through the injected provider', async () => {
     mockProvider.linked.mockReturnValue(new Promise(() => undefined));
@@ -60,8 +68,18 @@ describe('useSocialLinks', () => {
     expect(result.current).toMatchObject({ status: 'ready', linked: { items: ['github'] } });
   });
 
+  it('shows no failure for a read that ended the session', async () => {
+    mockProvider.linked.mockResolvedValue({ kind: 'failed', reason: 'session_ended' });
+    const { result } = await setup();
+
+    expect(result.current.status).toBe('loading');
+    act(() => result.current.retry());
+    expect(result.current.status).toBe('loading');
+    expect(mockProvider.linked).toHaveBeenCalledTimes(1);
+  });
+
   it('reads again only after a failure, and recovers', async () => {
-    mockProvider.linked.mockResolvedValueOnce(null);
+    mockProvider.linked.mockResolvedValueOnce(UNAVAILABLE);
     const { result } = await setup();
     expect(result.current.status).toBe('failed');
 
@@ -77,7 +95,7 @@ describe('useSocialLinks', () => {
   });
 
   it('fails again when the second read fails', async () => {
-    mockProvider.linked.mockResolvedValue(null);
+    mockProvider.linked.mockResolvedValue(UNAVAILABLE);
     const { result } = await setup();
 
     act(() => result.current.retry());
@@ -101,15 +119,15 @@ describe('useSocialLinks', () => {
 
     expect(answers).toHaveLength(2);
     await act(async () => {
-      answers[1]?.({ items: ['github'] });
+      answers[1]?.(listed(['github']));
     });
-    await act(async () => answers[0]?.(null));
+    await act(async () => answers[0]?.(UNAVAILABLE));
 
     expect(result.current.status).toBe('ready');
   });
 
   it('removes only the unlinked provider', async () => {
-    mockProvider.linked.mockResolvedValue({ items: ['google', 'github'] });
+    mockProvider.linked.mockResolvedValue(listed(['google', 'github']));
     mockProvider.unlink.mockResolvedValue({ kind: 'changed' });
     const { result } = await setup();
 
@@ -147,7 +165,12 @@ describe('useSocialLinks', () => {
       state: 'link.a',
     });
     mockProvider.complete.mockResolvedValue({ kind: 'changed' });
-    const popup = { opener: null, location: { replace: jest.fn() }, close: jest.fn() };
+    const popup = {
+      opener: null,
+      closed: false,
+      location: { replace: jest.fn() },
+      close: jest.fn(),
+    };
     jest.spyOn(window, 'open').mockReturnValue(popup as unknown as Window);
     FakeBroadcastChannel.install();
     const { result } = await setup();
@@ -156,7 +179,10 @@ describe('useSocialLinks', () => {
     await act(async () => {
       pending = result.current.link(google);
     });
-    FakeBroadcastChannel.deliver({ provider: 'google', state: 'link.a', code: 'c', error: null });
+    FakeBroadcastChannel.deliver(
+      { provider: 'google', state: 'link.a', code: 'c', error: null },
+      CHANNEL
+    );
     await act(() => pending);
     FakeBroadcastChannel.uninstall();
 

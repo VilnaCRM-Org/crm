@@ -48,9 +48,10 @@ async function load(
   signal: AbortSignal,
   dispatch: Dispatch<SocialLinksAction>
 ): Promise<void> {
-  const linked = await provider.linked(signal);
+  const outcome = await provider.linked(signal);
   if (signal.aborted) return;
-  dispatch(linked === null ? { type: 'failed' } : { type: 'loaded', linked });
+  if (outcome.kind === 'listed') dispatch({ type: 'loaded', linked: outcome.linked });
+  else if (outcome.reason !== 'session_ended') dispatch({ type: 'failed' });
 }
 
 export default function useSocialLinks(): SocialLinks {

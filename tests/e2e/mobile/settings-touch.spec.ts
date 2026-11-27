@@ -30,6 +30,7 @@ import {
 import {
   cancelUnlinkButton,
   confirmUnlinkButton,
+  countOf,
   linkButton,
   stubSocialLinks,
   unlinkButton,
@@ -256,7 +257,7 @@ test.describe('Settings on touch devices (issue #330)', () => {
 
   test('links and unlinks a social account with taps on full-size targets', async ({ page }) => {
     stub = await stubProfile(page);
-    await stubSocialLinks(page);
+    const calls = await stubSocialLinks(page);
     await openByTap(page);
     await expectTouchTarget(linkButton(page, 'Google'), 'Google link');
 
@@ -272,8 +273,12 @@ test.describe('Settings on touch devices (issue #330)', () => {
     await expectNoHorizontalOverflow(page);
     await confirmUnlinkButton(page, 'Google').tap();
 
+    await expectSuccessOutcome(page, t('settings.social.unlinked', { provider: 'Google' }));
     await expect(linkButton(page, 'Google')).toBeVisible();
-    await page.setViewportSize(NARROW_VIEWPORT);
+    expect(countOf(calls, 'CompleteSocialLink')).toBe(1);
+    expect(calls.filter((call) => call.operation === 'UnlinkSocialProvider')).toEqual([
+      { operation: 'UnlinkSocialProvider', input: expect.objectContaining({ provider: 'google' }) },
+    ]);
     await expectNoHorizontalOverflow(page);
   });
 });

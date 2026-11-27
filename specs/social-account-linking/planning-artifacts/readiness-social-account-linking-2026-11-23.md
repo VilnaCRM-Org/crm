@@ -4,7 +4,10 @@ workflowType: 'implementation-readiness'
 bmadCommand: 'implementation-readiness'
 project_name: 'crm'
 date: '2026-11-23'
-iteration: 1
+revised: '2026-11-27'
+iteration: 2
+revisionPasses:
+  - '2026-11-27 review: the FR ownership evidence names the story of each FR'
 slug: 'social-account-linking'
 verdict: 'CONCERNS'
 inputDocuments:
@@ -15,15 +18,18 @@ inputDocuments:
 
 # Implementation Readiness: Social Account Linking in Settings
 
+> **Revision 2026-11-27 — FR ownership.** The first pass marked "Every FR is owned by a story" PASS
+> while no story cited FR4. S2.2 now owns it, and the evidence names the stories of every FR.
+
 ## Verdict: **CONCERNS** (upstream contract open)
 
-| Check                                      | Result   | Evidence                                                                     |
-| ------------------------------------------ | -------- | ---------------------------------------------------------------------------- |
-| Every FR is owned by a story               | PASS     | FR1-FR12 in S1.1-S4.1                                                        |
-| Design reference for each surface          | CONCERNS | `315:11754` for tiles and notifications; L6 is drawn from the settings pills |
-| No contradiction with an upstream decision | PASS     | Amendments dated 2026-11-23 in both older bundles                            |
-| Error outcomes complete                    | PASS     | FR11                                                                         |
-| Backend can serve it                       | CONCERNS | user-service #520 is open and shaped differently                             |
+| Check                                      | Result   | Evidence                                                                                                                  |
+| ------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Every FR is owned by a story               | PASS     | FR1, FR7, FR8, FR10: S3.1; FR2, FR5, FR12: S2.3; FR3, FR4: S2.2; FR6: S2.1, S2.3; FR9: S3.2; FR11: S1.1, S1.2, S2.1, S3.3 |
+| Design reference for each surface          | CONCERNS | `315:11754` for tiles and notifications; L6 is drawn from the settings pills                                              |
+| No contradiction with an upstream decision | PASS     | Amendments dated 2026-11-23 in both older bundles                                                                         |
+| Error outcomes complete                    | PASS     | FR11                                                                                                                      |
+| Backend can serve it                       | CONCERNS | user-service #520 is open and shaped differently                                                                          |
 
 | Id  | Warning                                                                    | Handling                                     |
 | --- | -------------------------------------------------------------------------- | -------------------------------------------- |

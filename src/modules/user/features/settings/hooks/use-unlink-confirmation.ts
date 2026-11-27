@@ -28,7 +28,7 @@ function cancelFor({ request, setRequest }: UnlinkContext, { controlRef }: Socia
 }
 
 function confirmFor(context: UnlinkContext, target: SocialLinkTarget): void {
-  if (context.links.busy) return;
+  if (context.links.busy || context.request.target?.id !== target.id) return;
   cancelFor(context, target);
   void context.links.unlink(target);
 }

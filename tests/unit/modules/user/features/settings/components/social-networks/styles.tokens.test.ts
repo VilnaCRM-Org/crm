@@ -8,6 +8,7 @@ const DESKTOP = '@media (min-width:1025px)';
 
 const FORCED_COLORS = '@media (forced-colors: active)';
 const DISABLED = '&[aria-disabled="true"]';
+const ENABLED_HOVER = '&:hover:not([aria-disabled="true"])';
 const FOCUS_RING = { outline: '2px solid #1A1C1E', outlineOffset: '2px' };
 
 const loadStyles = (): Promise<SocialStyles> =>
@@ -89,7 +90,7 @@ describe('social networks styles', () => {
       link: {
         padding: 0,
         cursor: 'pointer',
-        '&:hover': { backgroundColor: '#FBFBFB' },
+        [ENABLED_HOVER]: { backgroundColor: '#FBFBFB' },
         '&:focus-visible': FOCUS_RING,
         [DISABLED]: { cursor: 'default', opacity: 0.6 },
         [FORCED_COLORS]: {
@@ -117,7 +118,7 @@ describe('social networks styles', () => {
         background: 'none',
         cursor: 'pointer',
         color: '#1EAEFF',
-        '&:hover': { color: '#00A3FF' },
+        [ENABLED_HOVER]: { color: '#00A3FF' },
         '&:focus-visible': FOCUS_RING,
         [DISABLED]: { cursor: 'default', opacity: 0.6 },
         [FORCED_COLORS]: {
@@ -209,13 +210,21 @@ describe('social networks styles', () => {
           lineHeight: '1.125rem',
           letterSpacing: 0,
           textTransform: 'none',
-          '&:focus-visible': expect.any(Object),
+          '&:focus-visible': FOCUS_RING,
           border: '1px solid #969B9D',
           backgroundColor: '#FFFFFF',
           color: '#1A1C1E',
-          '&:hover': expect.any(Object),
+          '&:hover': { backgroundColor: '#F4F5F6' },
           width: '100%',
           height: '3.125rem',
+          [DISABLED]: {
+            cursor: 'default',
+            opacity: 0.6,
+            '&:hover': { backgroundColor: '#FFFFFF' },
+          },
+          [FORCED_COLORS]: {
+            [DISABLED]: { borderColor: 'GrayText', color: 'GrayText', opacity: 1 },
+          },
           [TABLET]: {
             fontWeight: 600,
             fontSize: '1.125rem',

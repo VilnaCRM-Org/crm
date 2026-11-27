@@ -55,3 +55,5 @@ export const Busy: Story = {
 export const Loading: Story = { args: { links: { ...UNLINKED, status: 'loading' } } };
 
 export const LoadFailed: Story = { args: { links: { ...UNLINKED, status: 'failed' } } };
+
+export const Retrying: Story = { args: { links: { ...UNLINKED, status: 'retrying' } } };

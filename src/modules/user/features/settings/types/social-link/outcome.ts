@@ -14,6 +14,20 @@ export interface LinkedProviderSet {
   readonly items: readonly SocialLinkProviderId[];
 }
 
+export interface SocialLinksListedOutcome {
+  readonly kind: 'listed';
+  readonly linked: LinkedProviderSet;
+}
+
+export type SocialLinksReadFailureReason = 'session_ended' | 'unavailable';
+
+export interface SocialLinksReadFailedOutcome {
+  readonly kind: 'failed';
+  readonly reason: SocialLinksReadFailureReason;
+}
+
+export type SocialLinksReadOutcome = SocialLinksListedOutcome | SocialLinksReadFailedOutcome;
+
 export interface SocialLinkCode {
   readonly code: string;
   readonly state: string;

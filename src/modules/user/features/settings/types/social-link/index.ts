@@ -1,4 +1,9 @@
-export type { LinkedProviderSet, SocialLinkChangeOutcome, SocialLinkFailureKind } from './outcome';
+export type {
+  LinkedProviderSet,
+  SocialLinkChangeOutcome,
+  SocialLinkFailureKind,
+  SocialLinksReadOutcome,
+} from './outcome';
 export type {
   SocialLinks,
   SocialLinkSettle,

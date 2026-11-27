@@ -3,22 +3,29 @@ import 'reflect-metadata';
 import { ApolloError } from '@apollo/client';
 
 import type { GraphQLSocialLinkTransformer } from '@/modules/user/features/settings/transformers';
+import type UserServiceErrorTransformer from '@/modules/user/transformers';
 import type { UserServiceFailure } from '@/modules/user/types/user-service/user-service-failure';
 import { buildToken } from '@tests/builders';
 import loadIsolated from '@tests/unit/utils/isolated-module';
-
-const isolatedTransformer = (): Promise<GraphQLSocialLinkTransformer> =>
-  loadIsolated(async () => {
-    const { GraphQLSocialLinkTransformer: Transformer } =
-      await import('@/modules/user/features/settings/transformers');
-    return new Transformer();
-  });
 
 const failureOf = (reason: UserServiceFailure['reason']): UserServiceFailure => ({
   reason,
   status: null,
   violations: { items: [], complete: true },
 });
+
+const normalized = failureOf('network');
+
+const errors = { normalize: jest.fn((): UserServiceFailure => normalized) };
+
+const isolatedTransformer = (): Promise<GraphQLSocialLinkTransformer> =>
+  loadIsolated(async () => {
+    const { GraphQLSocialLinkTransformer: Transformer } =
+      await import('@/modules/user/features/settings/transformers');
+    return new Transformer(errors as unknown as UserServiceErrorTransformer);
+  });
+
+const GENERIC = { kind: 'failed', reason: 'generic' };
 
 const state = `link.${buildToken()}`;
 
@@ -42,13 +49,39 @@ describe('GraphQLSocialLinkTransformer', () => {
   it('reads the linked providers', () => {
     expect(
       transformer.toLinked({ linkedSocialProviders: ['google', 'facebook', 'github', 'twitter'] })
-    ).toEqual({ items: ['google', 'facebook', 'github', 'twitter'] });
+    ).toEqual({ kind: 'listed', linked: { items: ['google', 'facebook', 'github', 'twitter'] } });
   });
 
   it('ignores a provider the card does not show', () => {
     expect(transformer.toLinked({ linkedSocialProviders: ['apple', 'github'] })).toEqual({
-      items: ['github'],
+      kind: 'listed',
+      linked: { items: ['github'] },
     });
+  });
+
+  it('reads a failed list read as the end of the session only for a 401', () => {
+    expect(transformer.toListFailure(failureOf('unauthenticated'))).toEqual({
+      kind: 'failed',
+      reason: 'session_ended',
+    });
+  });
+
+  it.each(['aborted', 'network', 'server', 'access_denied', 'unknown'] as const)(
+    'reads a %s list failure as unavailable',
+    (reason) => {
+      expect(transformer.toListFailure(failureOf(reason))).toEqual({
+        kind: 'failed',
+        reason: 'unavailable',
+      });
+    }
+  );
+
+  it('normalizes a caught error through the shared error transformer', () => {
+    const caught = new Error('boom');
+    const { signal } = new AbortController();
+
+    expect(transformer.failure(caught, signal)).toBe(normalized);
+    expect(errors.normalize.mock.calls).toEqual([[caught, signal]]);
   });
 
   it.each([undefined, null, {}, { linkedSocialProviders: [1] }])(
@@ -77,10 +110,17 @@ describe('GraphQLSocialLinkTransformer', () => {
     ['an unmarked state', started('https://provider.example', buildToken())],
     ['a state that only contains the mark', started('https://provider.example', 'a-link.b')],
     ['a state that is the mark alone', started('https://provider.example', 'link.')],
-    ['no user', { initiateSocialLinkUser: { user: null } } as never],
-    ['nothing', null],
+    ['no payload field', {} as never],
   ])('refuses to start with %s', (_name, payload) => {
     expect(() => transformer.toStart(payload)).toThrow();
+  });
+
+  it.each([
+    ['no user', { initiateSocialLinkUser: { user: null } } as never],
+    ['no payload', { initiateSocialLinkUser: null } as never],
+    ['nothing', null],
+  ])('answers the contract-legal %s as a generic failure', (_name, payload) => {
+    expect(transformer.toStart(payload)).toEqual(GENERIC);
   });
 
   it('reads a completed link', () => {
@@ -96,7 +136,20 @@ describe('GraphQLSocialLinkTransformer', () => {
   });
 
   it.each([null, { user: null }, { user: { success: false } }])(
-    'refuses the unsuccessful answer %j',
+    'answers the unsuccessful answer %j as a generic failure',
+    (answer) => {
+      expect(transformer.toCompleted({ completeSocialLinkUser: answer })).toEqual(GENERIC);
+      expect(transformer.toUnlinked({ unlinkSocialProviderUser: answer })).toEqual(GENERIC);
+    }
+  );
+
+  it('answers an empty change as a generic failure', () => {
+    expect(transformer.toCompleted(null)).toEqual(GENERIC);
+    expect(transformer.toUnlinked(null)).toEqual(GENERIC);
+  });
+
+  it.each([{}, { user: {} }, { user: { success: 'yes' } }])(
+    'refuses the malformed answer %j',
     (answer) => {
       expect(() => transformer.toCompleted({ completeSocialLinkUser: answer as never })).toThrow();
       expect(() => transformer.toUnlinked({ unlinkSocialProviderUser: answer as never })).toThrow();

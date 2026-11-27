@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { useParams } from 'react-router';
 
 import socialLinkChannelAdapter from '@/modules/user/lib/social-link/social-link-channel-adapter';
@@ -7,9 +7,12 @@ import socialCallbackViewMapper from '@auth/utils/social-callback-view-mapper';
 
 export default function useSocialLinkReturn(query: SocialCallbackQuery): void {
   const { provider } = useParams();
-  useEffect(() => {
-    socialLinkChannelAdapter.post({ provider, ...query });
+  const handed = useRef<SocialCallbackQuery | null>(null);
+  useLayoutEffect(() => {
     socialCallbackViewMapper.stripQuery();
+    if (handed.current === query) return;
+    handed.current = query;
+    socialLinkChannelAdapter.post({ provider, ...query });
     window.close();
   }, [provider, query]);
 }

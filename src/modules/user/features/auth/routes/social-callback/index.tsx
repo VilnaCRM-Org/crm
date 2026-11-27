@@ -29,17 +29,22 @@ function SocialLinkReturn({ query }: SocialLinkReturnProps): JSX.Element {
   return <SocialLinkReturnView />;
 }
 
-// Keyed by the history entry, so a retry (a fresh entry on the same route) starts over.
-export default function SocialCallback(): JSX.Element {
-  const { key } = useLocation();
+function SocialCallbackFlow(): JSX.Element {
   const [query] = useState(() => socialCallbackViewMapper.readQuery());
   const linking = socialLinkStateGuard.isLinkState(query.state);
   usePageTitle(linking ? 'auth.social.link_title' : 'auth.social.callback_title');
 
+  return linking ? <SocialLinkReturn query={query} /> : <SocialCallbackContent />;
+}
+
+// Keyed by the history entry, so a retry (a fresh entry on the same route) starts over.
+export default function SocialCallback(): JSX.Element {
+  const { key } = useLocation();
+
   return (
     <AuthPageLayout>
       <AuthCard variant="recovery">
-        {linking ? <SocialLinkReturn query={query} /> : <SocialCallbackContent key={key} />}
+        <SocialCallbackFlow key={key} />
       </AuthCard>
     </AuthPageLayout>
   );

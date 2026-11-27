@@ -98,6 +98,33 @@ export const REQUEST_RESET = `
 
 export type SingleBody = Extract<GraphQLResponse['body'], { kind: 'single' }>;
 
+export interface OAuthEnvSandbox {
+  clear(): void;
+  restore(): void;
+}
+
+const OAUTH_ENV_KEYS = [
+  'OAUTH_MODE',
+  'OAUTH_SPA_ORIGIN',
+  'OAUTH_GOOGLE_CLIENT_ID',
+  'OAUTH_GITHUB_CLIENT_ID',
+  'OAUTH_FACEBOOK_CLIENT_ID',
+  'OAUTH_TWITTER_CLIENT_ID',
+  'REACT_APP_MOCKOON_URL',
+];
+
+export function oauthEnvSandbox(): OAuthEnvSandbox {
+  const saved = new Map(OAUTH_ENV_KEYS.map((key) => [key, process.env[key]]));
+  return {
+    clear: () => OAUTH_ENV_KEYS.forEach((key) => delete process.env[key]),
+    restore: () =>
+      saved.forEach((value, key) => {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }),
+  };
+}
+
 export function assertSingleResponse(body: GraphQLResponse['body']): asserts body is SingleBody {
   if (body.kind !== 'single') {
     throw new Error(`Expected a single GraphQL response body, received: ${body.kind}`);

@@ -55,6 +55,23 @@ describe('useUnlinkConfirmation', () => {
     expect(links.unlink).not.toHaveBeenCalled();
   });
 
+  it('keeps an asked question open when the card turns busy before the confirm', () => {
+    const { target, focus } = focusable();
+    const idle = buildSocialLinks();
+    const busy = { ...idle, busy: true };
+    const { result, rerender } = renderHook((links) => useUnlinkConfirmation(links), {
+      initialProps: idle,
+    });
+    act(() => result.current.ask(target));
+    rerender(busy);
+
+    act(() => result.current.confirm(target));
+
+    expect(result.current.request).toEqual({ target, count: 1 });
+    expect(focus).not.toHaveBeenCalled();
+    expect(busy.unlink).not.toHaveBeenCalled();
+  });
+
   it('cancels, keeping the count, and returns to the tile', () => {
     const { target, focus } = focusable();
     const { links, result } = setup();
@@ -79,6 +96,40 @@ describe('useUnlinkConfirmation', () => {
     expect(focus.mock.invocationCallOrder[0]).toBeLessThan(
       (links.unlink as jest.Mock).mock.invocationCallOrder[0] ?? 0
     );
+  });
+
+  it('unlinks nothing for a second confirm of an answered question', () => {
+    const { target } = focusable();
+    const { links, result } = setup();
+    act(() => result.current.ask(target));
+    act(() => result.current.confirm(target));
+
+    act(() => result.current.confirm(target));
+
+    expect((links.unlink as jest.Mock).mock.calls).toEqual([[target]]);
+  });
+
+  it('unlinks nothing when nothing was asked', () => {
+    const { target, focus } = focusable();
+    const { links, result } = setup();
+
+    act(() => result.current.confirm(target));
+
+    expect(result.current.request).toEqual({ target: null, count: 0 });
+    expect(focus).not.toHaveBeenCalled();
+    expect(links.unlink).not.toHaveBeenCalled();
+  });
+
+  it('unlinks nothing for a tile other than the one asked about', () => {
+    const { target, focus } = focusable();
+    const { links, result } = setup();
+    act(() => result.current.ask(target));
+
+    act(() => result.current.confirm(github));
+
+    expect(result.current.request).toEqual({ target, count: 1 });
+    expect(focus).not.toHaveBeenCalled();
+    expect(links.unlink).not.toHaveBeenCalled();
   });
 
   it('drops the question when another account is linked, leaving the focus alone', () => {

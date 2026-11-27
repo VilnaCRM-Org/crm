@@ -249,7 +249,7 @@ describe('settings response schemas', () => {
     ).toBe(false);
   });
 
-  it.each([{}, { initiateSocialLinkUser: null }, { initiateSocialLinkUser: { user: null } }])(
+  it.each([undefined, {}, { initiateSocialLinkUser: {} }])(
     'rejects the started link %j',
     async (payload) => {
       const { InitiateSocialLinkResultSchema: schema } = await loadSchemas();
@@ -258,13 +258,27 @@ describe('settings response schemas', () => {
     }
   );
 
+  it.each([null, { initiateSocialLinkUser: null }, { initiateSocialLinkUser: { user: null } }])(
+    'accepts the contract-legal empty start %j',
+    async (payload) => {
+      const { InitiateSocialLinkResultSchema: schema } = await loadSchemas();
+
+      expect(schema.parse(payload)).toEqual(payload);
+    }
+  );
+
   describe.each([
     ['CompleteSocialLinkResultSchema', 'completeSocialLinkUser'],
     ['UnlinkSocialProviderResultSchema', 'unlinkSocialProviderUser'],
   ] as const)('%s', (name, field) => {
-    it('accepts a success', async () => {
+    it.each([
+      null,
+      { [field]: null },
+      { [field]: { user: null } },
+      { [field]: { user: { success: true } } },
+      { [field]: { user: { success: false } } },
+    ])('accepts the contract-legal %j', async (payload) => {
       const schema = (await loadSchemas())[name];
-      const payload = { [field]: { user: { success: true } } };
 
       expect(schema.parse(payload)).toEqual(payload);
     });
@@ -272,11 +286,9 @@ describe('settings response schemas', () => {
     it.each([
       undefined,
       {},
-      { [field]: null },
       { [field]: {} },
-      { [field]: { user: null } },
       { [field]: { user: {} } },
-      { [field]: { user: { success: false } } },
+      { [field]: { user: { success: 'yes' } } },
     ])('rejects %j', async (payload) => {
       const schema = (await loadSchemas())[name];
 

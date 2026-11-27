@@ -75,6 +75,7 @@ export const customColors = {
   },
   surface: {
     page: '#FBFBFB',
+    brandTint: '#E8F7FF',
   },
   digitShadow: {
     primary: '#0E87CC',

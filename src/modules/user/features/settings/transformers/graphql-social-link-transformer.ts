@@ -1,5 +1,5 @@
 import type { ApolloError } from '@apollo/client';
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
 import type {
   CompleteSocialLinkMutation,
@@ -7,16 +7,21 @@ import type {
   LinkedSocialProvidersQuery,
   UnlinkSocialProviderMutation,
 } from '@/api/generated/graphql';
+import AUTH_TOKENS from '@/modules/user/config/tokens';
+import type UserServiceErrorTransformer from '@/modules/user/transformers';
 import type {
   UserServiceFailure,
   UserServiceFailureReason,
 } from '@/modules/user/types/user-service/user-service-failure';
 
+import type { SocialLinkChangedPayload } from '../types/social-link/changed-payload';
 import type {
-  LinkedProviderSet,
   SocialLinkChangeOutcome,
+  SocialLinkFailedOutcome,
   SocialLinkFailureKind,
   SocialLinkFailureOutcome,
+  SocialLinksListedOutcome,
+  SocialLinksReadFailedOutcome,
   SocialLinkStartOutcome,
 } from '../types/social-link/outcome';
 import {
@@ -41,25 +46,42 @@ const REASON_KINDS = new Map<UserServiceFailureReason, SocialLinkFailureKind>([
   ['rate_limited', 'unavailable'],
 ]);
 
+const GENERIC: SocialLinkFailedOutcome = { kind: 'failed', reason: 'generic' };
+
 @injectable()
 export default class GraphQLSocialLinkTransformer {
-  public toLinked(payload: LinkedSocialProvidersQuery): LinkedProviderSet {
-    return { items: LinkedSocialProvidersResultSchema.parse(payload).linkedSocialProviders };
+  constructor(
+    @inject(AUTH_TOKENS.UserServiceErrorTransformer)
+    private readonly errors: UserServiceErrorTransformer
+  ) {}
+
+  public toLinked(payload: LinkedSocialProvidersQuery): SocialLinksListedOutcome {
+    const { linkedSocialProviders } = LinkedSocialProvidersResultSchema.parse(payload);
+    return { kind: 'listed', linked: { items: linkedSocialProviders } };
+  }
+
+  public toListFailure({ reason }: UserServiceFailure): SocialLinksReadFailedOutcome {
+    return {
+      kind: 'failed',
+      reason: reason === 'unauthenticated' ? 'session_ended' : 'unavailable',
+    };
   }
 
   public toStart(payload: InitiateSocialLinkMutation | null): SocialLinkStartOutcome {
-    const { user } = InitiateSocialLinkResultSchema.parse(payload).initiateSocialLinkUser;
-    return { kind: 'started', ...user };
+    const user = InitiateSocialLinkResultSchema.parse(payload)?.initiateSocialLinkUser?.user;
+    return user ? { kind: 'started', ...user } : GENERIC;
   }
 
   public toCompleted(payload: CompleteSocialLinkMutation | null): SocialLinkChangeOutcome {
-    CompleteSocialLinkResultSchema.parse(payload);
-    return { kind: 'changed' };
+    return this.changed(CompleteSocialLinkResultSchema.parse(payload)?.completeSocialLinkUser);
   }
 
   public toUnlinked(payload: UnlinkSocialProviderMutation | null): SocialLinkChangeOutcome {
-    UnlinkSocialProviderResultSchema.parse(payload);
-    return { kind: 'changed' };
+    return this.changed(UnlinkSocialProviderResultSchema.parse(payload)?.unlinkSocialProviderUser);
+  }
+
+  public failure(caught: unknown, signal: AbortSignal): UserServiceFailure {
+    return this.errors.normalize(caught, signal);
   }
 
   public toFailure(error: unknown, { reason }: UserServiceFailure): SocialLinkFailureOutcome {
@@ -70,5 +92,9 @@ export default class GraphQLSocialLinkTransformer {
       kind: 'failed',
       reason: FAILURE_KINDS.get(code) ?? REASON_KINDS.get(reason) ?? 'generic',
     };
+  }
+
+  private changed(payload: SocialLinkChangedPayload | null | undefined): SocialLinkChangeOutcome {
+    return payload?.user?.success === true ? { kind: 'changed' } : GENERIC;
   }
 }

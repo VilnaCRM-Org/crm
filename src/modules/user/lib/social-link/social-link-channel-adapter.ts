@@ -7,6 +7,12 @@ import type {
 
 const CHANNEL_NAME = 'crm.socialLink';
 
+const REFUSED: SocialLinkAnswer = { kind: 'refused' };
+
+const MISSING: SocialLinkAnswer = { kind: 'missing' };
+
+const MALFORMED: SocialLinkAnswer = { kind: 'malformed' };
+
 class SocialLinkChannelAdapter {
   public post(callback: SocialLinkCallback): void {
     const channel = new BroadcastChannel(CHANNEL_NAME);
@@ -39,11 +45,17 @@ class SocialLinkChannelAdapter {
   private answerOf(data: unknown, { provider, state }: SocialLinkAttempt): SocialLinkAnswer | null {
     const callback = Object(data) as Partial<Record<keyof SocialLinkCallback, unknown>>;
     if (callback.provider !== provider || callback.state !== state) return null;
-    return { code: this.textOf(callback.code), error: this.textOf(callback.error) };
+    return this.readingOf(callback.code, callback.error);
   }
 
-  private textOf(value: unknown): string | null {
-    return typeof value === 'string' ? value : null;
+  private readingOf(code: unknown, error: unknown): SocialLinkAnswer {
+    if (!this.isNullableText(code) || !this.isNullableText(error)) return MALFORMED;
+    if (error !== null) return REFUSED;
+    return code === null || code.trim() === '' ? MISSING : { kind: 'code', code };
+  }
+
+  private isNullableText(value: unknown): value is string | null {
+    return value === null || typeof value === 'string';
   }
 }
 

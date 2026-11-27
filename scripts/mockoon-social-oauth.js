@@ -35,8 +35,8 @@ const SCENARIOS = Object.freeze({
 });
 
 // Every reflected value is constrained before the page renders, so nothing a request carries can
-// inject markup: a local SPA callback URL for a known provider, a v4 UUID state, marked when it
-// links an account, a known provider.
+// inject markup: a local SPA callback URL for a known provider, a v4 UUID state with an optional
+// `link.` prefix for account linking, a known provider.
 // The query values are tested as the page renders them: a rule on the query itself passes when any
 // one of a repeated parameter's values matches, while the page renders them all as a JSON array.
 const PROVIDERS = '(google|github|facebook|twitter)';

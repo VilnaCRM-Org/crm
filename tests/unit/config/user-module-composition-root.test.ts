@@ -5,9 +5,15 @@ import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provid
 import runtimeConfigRegistrar from '@/config/runtime/di';
 import userModuleRegistrar from '@/modules/user/config/di';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import ProfileProvider from '@/modules/user/features/settings/data-providers/profile-provider';
-import GraphQLProfileRepository from '@/modules/user/features/settings/repositories';
-import GraphQLProfileTransformer from '@/modules/user/features/settings/transformers';
+import ProfileProvider, {
+  SocialLinkProvider,
+} from '@/modules/user/features/settings/data-providers';
+import GraphQLProfileRepository, {
+  GraphQLSocialLinkRepository,
+} from '@/modules/user/features/settings/repositories';
+import GraphQLProfileTransformer, {
+  GraphQLSocialLinkTransformer,
+} from '@/modules/user/features/settings/transformers';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import UserDisplayNameMapper from '@/modules/user/store/user-display-name-mapper';
 import UserServiceErrorTransformer from '@/modules/user/transformers';
@@ -56,6 +62,8 @@ const TWO_FACTOR_SETTINGS_TOKENS = [
   AUTH_TOKENS.GraphQLTwoFactorSettingsRepository,
   AUTH_TOKENS.GraphQLTwoFactorSettingsTransformer,
   AUTH_TOKENS.TwoFactorSettingsProvider,
+];
+const SOCIAL_LINK_TOKENS = [
   AUTH_TOKENS.GraphQLSocialLinkRepository,
   AUTH_TOKENS.GraphQLSocialLinkTransformer,
   AUTH_TOKENS.SocialLinkProvider,
@@ -86,6 +94,7 @@ const EVERY_TOKEN = [
   ...SETTINGS_TOKENS,
   ...SIGN_IN_TOKENS,
   ...TWO_FACTOR_SETTINGS_TOKENS,
+  ...SOCIAL_LINK_TOKENS,
   ...AUTH_STATE_TOKENS,
   ...SESSION_LINK_TOKENS,
 ];
@@ -246,6 +255,23 @@ describe('user module composition root', () => {
 
   it('binds the two-factor settings repository, transformer and provider', () => {
     expectAllRegistered(registeredContainer(), TWO_FACTOR_SETTINGS_TOKENS);
+  });
+
+  it('binds the social link repository, transformer and provider as singletons', () => {
+    const child = registeredContainer();
+
+    expectAllRegistered(child, SOCIAL_LINK_TOKENS);
+    child.register(AUTH_TOKENS.ApolloClient, { useValue: {} });
+    child.register(OBSERVABILITY_TOKENS.UnseenFailureReporter, { useValue: {} });
+    const provider = child.resolve(AUTH_TOKENS.SocialLinkProvider);
+    expect(provider).toBeInstanceOf(SocialLinkProvider);
+    expect(child.resolve(AUTH_TOKENS.SocialLinkProvider)).toBe(provider);
+    const repository = child.resolve(AUTH_TOKENS.GraphQLSocialLinkRepository);
+    expect(repository).toBeInstanceOf(GraphQLSocialLinkRepository);
+    expect(child.resolve(AUTH_TOKENS.GraphQLSocialLinkRepository)).toBe(repository);
+    const transformer = child.resolve(AUTH_TOKENS.GraphQLSocialLinkTransformer);
+    expect(transformer).toBeInstanceOf(GraphQLSocialLinkTransformer);
+    expect(child.resolve(AUTH_TOKENS.GraphQLSocialLinkTransformer)).toBe(transformer);
   });
 
   it('binds the session link factory as a singleton over the session link bundle', () => {

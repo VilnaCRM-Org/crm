@@ -9,6 +9,11 @@ import SocialNetworks, {
 } from '@/modules/user/features/settings/components/social-networks';
 import type { SocialLinks } from '@/modules/user/features/settings/types/social-link/social-links';
 import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i18n';
+import {
+  doubledClass,
+  mediaStyleRuleFor,
+  styleRuleFor,
+} from '@tests/unit/utils/emotion-style-rules';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
 import buildSocialLinks from './social-links-fixture';
@@ -36,6 +41,9 @@ const button = (name: string): HTMLElement => screen.getByRole('button', { name 
 
 const LINK_GOOGLE = 'Google: підключити обліковий запис (відкриється нове вікно)';
 const LOAD_FAILED = 'Не вдалося завантажити підключені облікові записи';
+const DISABLED = '[aria-disabled="true"]';
+const ENABLED_HOVER = `:hover:not(${DISABLED})`;
+const FOCUS_OUTLINE = '2px solid #1A1C1E';
 
 describe('SocialNetworks', () => {
   it('renders the card from the links hook', () => {
@@ -155,6 +163,51 @@ describe('SocialNetworksCard', () => {
     });
   });
 
+  it('gives the hover to an enabled tile control only', () => {
+    render(card(buildSocialLinks({ busy: true, linked: { items: ['github'] } })));
+    const link = button(LINK_GOOGLE);
+    const unlink = button('Відключити GitHub');
+
+    expect(styleRuleFor(link, ':hover')).toBeUndefined();
+    expect(styleRuleFor(unlink, ':hover')).toBeUndefined();
+    expect(styleRuleFor(link, ENABLED_HOVER)?.getPropertyValue('background-color')).toBe('#FBFBFB');
+    expect(styleRuleFor(unlink, ENABLED_HOVER)?.getPropertyValue('color')).toBe('#00A3FF');
+  });
+
+  it('keeps the focus ring on a busy tile control', () => {
+    render(card(buildSocialLinks({ busy: true, linked: { items: ['github'] } })));
+
+    [button(LINK_GOOGLE), button('Відключити GitHub')].forEach((control) => {
+      expect(control).toHaveAttribute('aria-disabled', 'true');
+      expect(styleRuleFor(control, ':focus-visible')?.getPropertyValue('outline')).toBe(
+        FOCUS_OUTLINE
+      );
+    });
+  });
+
+  it('dims the retry and takes the hover and the pointer off it while it runs', () => {
+    render(card(buildSocialLinks({ status: 'retrying' })));
+    const retry = button('Спробувати ще раз');
+    const rule = (suffix: string): CSSStyleDeclaration | undefined =>
+      styleRuleFor(retry, doubledClass(retry, suffix));
+
+    expect(rule(':hover')?.getPropertyValue('background-color')).toBe('#F4F5F6');
+    expect(rule(DISABLED)?.getPropertyValue('cursor')).toBe('default');
+    expect(rule(DISABLED)?.getPropertyValue('opacity')).toBe('0.6');
+    expect(rule(`${DISABLED}:hover`)?.getPropertyValue('background-color')).toBe('#FFFFFF');
+    expect(rule(':focus-visible')?.getPropertyValue('outline')).toBe(FOCUS_OUTLINE);
+  });
+
+  it('greys the running retry out in forced colours', () => {
+    render(card(buildSocialLinks({ status: 'retrying' })));
+    const retry = button('Спробувати ще раз');
+    const forced = mediaStyleRuleFor(retry, 'forced-colors:active', doubledClass(retry, DISABLED));
+
+    expect(forced?.getPropertyValue('border-color')).toBe('GrayText');
+    expect(forced?.getPropertyValue('color')).toBe('GrayText');
+    expect(forced?.getPropertyValue('opacity')).toBe('1');
+  });
+
   it('announces a failed load, its retry and the next failure, and nothing otherwise', () => {
     const { rerender } = render(card(buildSocialLinks({ status: 'loading' })));
     const status = screen.getByRole('status');
@@ -177,10 +230,12 @@ describe('SocialNetworksCard', () => {
 
     await userEvent.click(retry);
     expect(links.retry).toHaveBeenCalledTimes(1);
+    expect(retry).toContainHTML('MuiTouchRipple');
     rerender(card(buildSocialLinks({ status: 'retrying' })));
 
     expect(retry).toHaveFocus();
     expect(retry).toHaveAttribute('aria-disabled', 'true');
+    expect(retry).not.toContainHTML('MuiTouchRipple');
   });
 
   it('moves the focus from a successful retry to the heading', () => {
@@ -208,6 +263,7 @@ describe('SocialNetworksCard', () => {
     ['unlinked', buildSocialLinks()],
     ['linked', buildSocialLinks({ linked: { items: ['google', 'github'] } })],
     ['busy', buildSocialLinks({ busy: true, linked: { items: ['google'] } })],
+    ['retrying', buildSocialLinks({ status: 'retrying' })],
   ])('has no axe violations while %s', async (_name, links) => {
     render(card(links));
 
