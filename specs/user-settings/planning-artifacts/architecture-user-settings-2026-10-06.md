@@ -24,7 +24,7 @@ inputDocuments:
 (FR/NFR reconciliation), 2026-11-17 (the flag-removal commit cited as 62ddc565), 2026-11-18
 (owner decision: resend inert only during an e-mail-section save), 2026-11-23 (owner decision
 D2b: the social tiles link and unlink) and 2026-11-27 (D2b written into §2, §3, §5, §7, §8,
-§15 and §17 in place) **Feature:** `user-settings`
+§13, §15 and §17 in place) **Feature:** `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
 > supersede this document's text where the two differ; the earlier text is kept as the record of the
@@ -58,7 +58,7 @@ D2b: the social tiles link and unlink) and 2026-11-27 (D2b written into §2, §3
 > owns that design. Its operations are a provisional pending contract, because user-service has no
 > signed-in link, list or unlink yet (G6, user-service #520), so they run against the local mock
 > until #520 agrees them; G6 blocks the production enablement of linking only (§15.1). The
-> `SocialNetworks` passages of §2, §3, §5, §7, §8, §15 and §17 say so in place.
+> `SocialNetworks` passages of §2, §3, §5, §7, §8, §13, §15 and §17 say so in place.
 
 Predecessors: [research](./research-user-settings-2026-10-06.md) (cited "research §N"),
 [brief](./brief-user-settings-2026-10-06.md) ("brief §N") and the authoritative
@@ -2253,9 +2253,10 @@ UserProfile [component]<route> (settings/routes/user-profile/index.tsx)
   │ │ │          ├ p role=status (no-change text), always mounted
   │ │ │          └ Save "Зберегти зміни" + ClearButton "Очистити"
   │ │ └ SocialNetworks [component] (links and unlinks, D2b)   h2 "Соціальні мережі"
-  │ │   └ ul role=list, labelled by the heading: Google, Facebook, GitHub, Twitter tiles,
-  │ │      display-only with a hidden "linking not available yet" status until the list answers,
-  │ │      and after it fails
+  │ │   ├ ul role=list, labelled by the heading: Google, Facebook, GitHub, Twitter tiles,
+  │ │   │  display-only with a hidden "linking not available yet" status until the list answers,
+  │ │   │  and after it fails
+  │ │   └ failed: SocialLoadFailure (message, "Спробувати ще раз"; loading text while retrying)
   │ └ TwoFactorSettings (the grid's second child; twoFactorAuth; 2FA bundle, board 2FASettings)
   └ UIToastStack toasts: ToastItemSet, announcement, returnFocusRef=saveRef
 ```
@@ -2322,10 +2323,11 @@ other than through a hook.
   list or unlink yet (G6, user-service #520), so the actions run against the local mock until it
   does. Until the list of linked providers answers, and after it fails, every tile is
   display-only and carries a visually hidden status from `settings.social.*`, ", linking not
-  available yet" / ", підключення поки недоступне" (the separator lives in the catalog). The four
-  brand icons move from `@auth/assets/social-links/` to
-  `src/assets/icons/social/` and are shared with the sign-in and sign-up OAuth buttons
-  (`oauth-providers.ts`).
+  available yet" / ", підключення поки недоступне" (the separator lives in the catalog). A failed
+  list adds a localized message and a "Спробувати ще раз" button under the tiles; while the retry
+  runs, the message says the list is loading. The four brand icons move from
+  `@auth/assets/social-links/` to `src/assets/icons/social/` and are shared with the sign-in and
+  sign-up OAuth buttons (`oauth-providers.ts`).
 - **New password at rest** (amended 2026-10-21, product owner; PRD FR-10). Figma draws no hint
   and no rule list, so the optional-field hint is visually hidden but stays in the field's
   `aria-describedby`, and the four rules render only while the field has focus or a value. When
@@ -2903,7 +2905,7 @@ type, TB-1 position 8); literals only where the value is the case.
 | FR-5         | read, IRI passthrough         | read, `cache.write` spy | stubbed read         |
 | FR-6         | section states, retry focus   | read failure classes    | failure + retry      |
 | FR-7         | monogram cases                | —                       | visual header        |
-| FR-7a        | social-networks tiles, status | —                       | —                    |
+| FR-7a        | tiles, link, unlink, failure  | provider, apollo-server | link, unlink, visual |
 | FR-8         | labels, autocomplete, toggles | —                       | keyboard spec        |
 | FR-9, FR-10  | dirty-only rules, policy      | —                       | field-error flows    |
 | FR-11        | detector, input keys          | exact input keys        | request bodies       |

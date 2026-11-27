@@ -118,7 +118,10 @@ test.describe('Social account linking', () => {
     await expectSuccessOutcome(page, t('settings.social.unlinked', GOOGLE));
     await expect(linkButton(page, 'Google')).toBeFocused();
     await expect(unlinkButton(page, 'GitHub')).toBeVisible();
-    expect(calls.at(-1)?.input).toMatchObject({ provider: 'google' });
+    const unlinks = calls.filter((call) => call.operation === 'UnlinkSocialProvider');
+    expect(unlinks.map((call) => call.input)).toEqual([
+      expect.objectContaining({ provider: 'google' }),
+    ]);
   });
 
   test('asks before it unlinks, by keyboard only', async ({ page }) => {

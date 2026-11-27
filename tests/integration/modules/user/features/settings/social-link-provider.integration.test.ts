@@ -10,6 +10,7 @@ import DeadlineFetchAdapter from '@/services/https-client/deadline-fetch-adapter
 import { HttpError } from '@/services/https-client/http-error';
 import useAuthStore, { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
 import { buildToken } from '@tests/builders';
+import { resetClientStores } from '@tests/utils/reset-client-stores';
 
 import server, { userServiceGraphql } from '../../../../mocks/server';
 
@@ -89,6 +90,7 @@ describe('SocialLinkProvider over the container client (integration)', () => {
   const token = buildToken();
 
   beforeEach(() => {
+    resetClientStores();
     useAuthStore.setState({ ...CLEARED_AUTH_STATE, token });
   });
 

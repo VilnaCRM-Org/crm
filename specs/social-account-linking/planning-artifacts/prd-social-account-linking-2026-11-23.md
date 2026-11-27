@@ -43,7 +43,8 @@ inputDocuments:
 
 A signed-in user links Google, GitHub, Facebook or Twitter to the account they already have, sees
 which providers are linked, and unlinks one, from the "Соціальні мережі" card of `/settings`.
-Linking is not a sign-in: it never issues, replaces or ends a session.
+Linking is not a sign-in: it never issues or replaces a session. A linking request refused with
+HTTP 401 still ends the session, as FR1 and FR11 state.
 
 ## 2. Decisions
 

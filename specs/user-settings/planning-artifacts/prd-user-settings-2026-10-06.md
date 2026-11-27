@@ -463,8 +463,8 @@ amendment below. A successful name change updates it from the payload. Amended 2
 Amendment 2026-10-21 (product owner; supersedes the §2 non-goal and D2's "no social networks
 card"): a second card "Соціальні мережі" renders Figma-exact (desktop `476:46530`, tablet
 `386:27239`, mobile `386:27457`) with four tiles, Google, Facebook, GitHub and Twitter. Until the
-list of linked providers answers, and after it fails, it has no working action; otherwise its
-tiles link and unlink (D2b, 2026-11-23) as the social-account-linking PRD specifies, against a
+list of linked providers answers, and after it fails, its tiles have no working action; otherwise
+they link and unlink (D2b, 2026-11-23) as the social-account-linking PRD specifies, against a
 provisional contract, because user-service has no signed-in link, list or unlink yet (G6,
 user-service #520; Follow-up 5.5). The tiles are the items of a `<ul role="list">` labelled by
 the card's heading. While they have no working action, each carries a visually hidden status from

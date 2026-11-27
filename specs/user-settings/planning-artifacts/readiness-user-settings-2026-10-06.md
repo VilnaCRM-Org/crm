@@ -3,10 +3,10 @@ status: complete
 workflowType: implementation-readiness
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-05
+revised: 2026-11-27
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
-iteration: 5
+iteration: 6
 finalReview: opus
 author: 'implementation-readiness checker (architect, Validate mode), autonomous run'
 inputDocuments:
@@ -284,7 +284,8 @@ removed from the naming policy and the burn-down; #315 Epic 0 owns the `data-pro
   `UserProfileSettings` → `UserEntity` and → `RestorePassword` → `RestorePasswordDTO`. All are
   used; `SocialNetworks` and the component-level "User profile" menu are named gaps (A §17.3
   G-1, G-2). Amended 2026-10-21: `SocialNetworks` is built UI-only (PRD FR-7a); only
-  `UserSocialNetworkEntity` and the actions stay a gap.
+  `UserSocialNetworkEntity` and the actions stay a gap. Amended 2026-11-23 (D2b): the link and
+  unlink actions are planned and built by `specs/social-account-linking/`.
 - `State [Redux]` is drawn `State [Zustand]`, the `useAuthStore` Zustand store (replacing the
   then-current reactive var, client-state pass below); the board has no Provider → State edge, and
   the plan draws none.
@@ -587,7 +588,9 @@ in place, keeping the superseded text visible; one requirement remains for each.
    `@auth/assets/social-links/` to `src/assets/icons/social/` and are shared with the OAuth
    buttons (`oauth-providers.ts`). Supersedes the PRD §2 non-goal, D2's "no social card", UX-DR-5,
    architecture G-1, Follow-up 5.5's "PRD amendment first" and Story 1.1's "only the eye icons
-   move"; new PRD FR-7a.
+   move"; new PRD FR-7a. Amended 2026-11-23 (D2b): the tiles link and unlink providers on a
+   provisional contract (`specs/social-account-linking/`); they stay display-only only until the
+   list of linked providers answers, and after it fails, when a retry button sits under them.
 2. **Full-name row** (product owner). The name is a row above the "Особисті дані" `h2`, as in
    Figma `315:11316`, labelled "Ваше ПІБ" / "Your full name" (`settings.profile.full_name`), not
    the reused sign-up label; the `h2` heads only the e-mail, and the skeleton follows the same
