@@ -106,7 +106,6 @@ const answerGoogleLink = async (completed: object): Promise<void> => {
   );
   await screen.findByRole('button', { name: UNLINK_GOOGLE });
   await screen.findByRole('button', { name: CLOSE });
-  FakeBroadcastChannel.uninstall();
 };
 
 const closeFirstNotice = async (): Promise<void> => {
@@ -122,6 +121,7 @@ describe('SocialNetworks notice focus return', () => {
   });
 
   afterEach(() => {
+    FakeBroadcastChannel.uninstall();
     jest.restoreAllMocks();
   });
 

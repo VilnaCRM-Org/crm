@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import i18next from 'i18next';
 import type { JSX } from 'react';
 
 import { ReactComponent as Google } from '@/assets/icons/social/google-color.svg';
@@ -21,7 +22,7 @@ const PHONE_TILE_WIDTH = 158;
 
 const TILE_STYLES: readonly SocialTileStyle[] = ['tinted', 'badge', 'labelled'];
 
-const UNLINK_GOOGLE = 'Відключити Google';
+const GOOGLE = { provider: 'Google' };
 
 const IN_LIST = { decorators: [withStoryList(DESKTOP_TILE_WIDTH)] };
 
@@ -46,9 +47,12 @@ function ConfirmationStage({ tileStyle }: ConfirmationStageArgs): JSX.Element {
 }
 
 const openConfirmation = ({ canvasElement }: { canvasElement: HTMLElement }): Promise<void> => {
-  canvasElement.querySelector<HTMLButtonElement>(`button[aria-label="${UNLINK_GOOGLE}"]`)?.click();
+  const name = i18next.t('settings.social.unlink', GOOGLE);
+  const unlink = canvasElement.querySelector<HTMLButtonElement>(`button[aria-label="${name}"]`);
+  if (unlink === null) throw new Error(`No unlink button named "${name}"`);
+  unlink.click();
 
-  return waitForText(canvasElement, `${UNLINK_GOOGLE}?`);
+  return waitForText(canvasElement, i18next.t('settings.social.unlink_question', GOOGLE));
 };
 
 const meta: Meta<typeof SocialTile> = {

@@ -5,7 +5,7 @@ bmadCommand: 'create-prd'
 project_name: 'crm'
 date: '2026-11-23'
 revised: '2026-11-27'
-iteration: 4
+iteration: 5
 revisionPasses:
   - '2026-11-27 review: FR1, FR4, FR6, FR11 — how an attempt ends, the popup return, the list after a 401'
   - '2026-11-27 review: FR8, NFR2 — the linked border is under 3:1, owner-accepted'

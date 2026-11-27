@@ -16,7 +16,7 @@ import {
   doubledClass,
   mediaStyleRuleFor,
   styleRuleFor,
-  styleRulesFor,
+  winningValueFor,
 } from '@tests/unit/utils/emotion-style-rules';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
@@ -69,12 +69,6 @@ const LOAD_FAILED = 'Не вдалося завантажити підключе
 const DISABLED = '[aria-disabled="true"]';
 const ENABLED_HOVER = `:hover:not(${DISABLED})`;
 const FOCUS_OUTLINE = '2px solid #1A1C1E';
-
-const lastDeclared = (element: Element, suffix: string, property: string): string | undefined =>
-  styleRulesFor(element, suffix)
-    .map((style) => style.getPropertyValue(property))
-    .filter((value) => value !== '')
-    .at(-1);
 
 describe('SocialNetworks', () => {
   it('renders the card from the links hook, handing it the page return target', () => {
@@ -332,7 +326,7 @@ describe.each([
 
     [button(LINK_GOOGLE), button('Відключити GitHub')].forEach((control) => {
       expect(control).toHaveAttribute('aria-disabled', 'true');
-      expect(lastDeclared(control, ':focus-visible', 'outline')).toBe(FOCUS_OUTLINE);
+      expect(winningValueFor(control, ':focus-visible', 'outline')).toBe(FOCUS_OUTLINE);
     });
   });
 

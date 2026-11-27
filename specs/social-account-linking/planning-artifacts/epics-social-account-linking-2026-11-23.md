@@ -5,11 +5,12 @@ bmadCommand: 'create-epics-stories'
 project_name: 'crm'
 date: '2026-11-23'
 revised: '2026-11-27'
-iteration: 4
+iteration: 5
 revisionPasses:
   - '2026-11-27 review: S2.1, S2.3, S3.1 follow PRD FR1, FR6 and FR11'
   - '2026-11-27 review: S2.2 owns FR4 — the query per history entry, the fallback when the popup cannot close'
   - '2026-11-27 owner: S3.1, S3.2 per tile style; S3.4 the Storybook trial; S4.2 the removal after the pick'
+  - '2026-11-27 review: S3.3 — closing a result notification returns focus to its tile'
 slug: 'social-account-linking'
 inputDocuments:
   - 'specs/social-account-linking/planning-artifacts/prd-social-account-linking-2026-11-23.md'

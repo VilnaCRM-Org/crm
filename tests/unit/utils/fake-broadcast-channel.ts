@@ -20,6 +20,7 @@ export default class FakeBroadcastChannel {
   }
 
   public static uninstall(): void {
+    if ((globalThis.BroadcastChannel as unknown) !== FakeBroadcastChannel) return;
     globalThis.BroadcastChannel =
       FakeBroadcastChannel.original as unknown as typeof BroadcastChannel;
   }

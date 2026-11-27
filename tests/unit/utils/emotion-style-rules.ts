@@ -88,16 +88,25 @@ export const containerStyleRuleFor = (
     suffix
   );
 
+const lastValueOf = (styles: CSSStyleDeclaration[], property: string): string | undefined =>
+  styles
+    .map((style) => style.getPropertyValue(property))
+    .filter((value) => value !== '')
+    .at(-1);
+
+export const winningValueFor = (
+  element: Element,
+  suffix: string,
+  property: string
+): string | undefined => lastValueOf(styleRulesFor(element, suffix), property);
+
 export const winningMediaValueFor = (
   element: Element,
   mediaFragment: string,
   property: string,
   suffix = ''
 ): string | undefined =>
-  declarationsIn(mediaRulesMatching(mediaFragment), element, suffix)
-    .map((style) => style.getPropertyValue(property))
-    .filter((value) => value !== '')
-    .at(-1);
+  lastValueOf(declarationsIn(mediaRulesMatching(mediaFragment), element, suffix), property);
 
 /**
  * The selector suffix that repeats the element's own emotion class, for rules written under
