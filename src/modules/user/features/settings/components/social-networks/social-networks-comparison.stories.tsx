@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 import type { JSX } from 'react';
-import type { ViewportMap } from 'storybook/viewport';
+import type { Viewport, ViewportMap, ViewportType } from 'storybook/viewport';
 
 import layoutStyles from '@/components/layouts/app-layout.styles';
 import UIShellContent from '@/components/ui-shell-content';
@@ -45,32 +45,18 @@ const ROWS: readonly ComparisonRow[] = [
   },
 ];
 
+const comparisonViewport = (width: number, height: number, type: ViewportType): Viewport => ({
+  name: `Comparison ${type} (${width})`,
+  styles: { width: `${width}px`, height: `${height}px` },
+  type,
+});
+
 const VIEWPORTS: ViewportMap = {
-  comparison375: {
-    name: 'Comparison phone (375)',
-    styles: { width: '375px', height: '812px' },
-    type: 'mobile',
-  },
-  comparison768: {
-    name: 'Comparison tablet (768)',
-    styles: { width: '768px', height: '1024px' },
-    type: 'tablet',
-  },
-  comparison1025: {
-    name: 'Comparison desktop (1025)',
-    styles: { width: '1025px', height: '768px' },
-    type: 'desktop',
-  },
-  comparison1100: {
-    name: 'Comparison desktop (1100)',
-    styles: { width: '1100px', height: '800px' },
-    type: 'desktop',
-  },
-  comparison1440: {
-    name: 'Comparison desktop (1440)',
-    styles: { width: '1440px', height: '900px' },
-    type: 'desktop',
-  },
+  comparison375: comparisonViewport(375, 812, 'mobile'),
+  comparison768: comparisonViewport(768, 1024, 'tablet'),
+  comparison1025: comparisonViewport(1025, 768, 'desktop'),
+  comparison1100: comparisonViewport(1100, 800, 'desktop'),
+  comparison1440: comparisonViewport(1440, 900, 'desktop'),
 };
 
 const STAGE = {
