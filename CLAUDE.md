@@ -608,6 +608,22 @@ modules with `jest.resetModules()` plus an `import()` inside the test body (or
 `jest.isolateModulesAsync`) so the literal is evaluated during the test. This moved 154 mutants from
 `Survived` to `Killed` in a single run. `tests/unit/utils/isolated-module.ts` wraps the pattern.
 
+**A test helper must not value-import a small production leaf that a test-only equivalent can
+replace.** A helper under `tests/unit` is inside Jest's roots, so every test that uses it becomes a
+related file of each module it imports, and a call it makes inside the test covers that module's
+mutants for that test. Each mutant then re-runs all of those tests. `lazy-catalog-loader.ts` holds
+seven mutants, and the nine `tests/unit/utils/create-*-locale-i18n` helpers called it in every test
+that needed a lazy catalog: on main's green run at `81d253b7` (2026-11-26) each mutant re-ran about
+1,300 tests, 133 to 229 s apiece and 1,189 s of runner time, two of them timing out, and from
+`3c10332d` on it pushed whichever shard held the file past the 15-minute kill switch. The helpers
+now register through `tests/unit/utils/add-test-catalog.ts`, which makes the same
+`addResourceBundle` calls, and the loader's own suite pins that the two register the same bundles.
+The loader stays scored: production still registers through it at module load, and its own suite
+covers all seven mutants and kills each one, as applying every mutant by hand confirmed.
+`tests/unit/tooling/lazy-catalog-loader-fan-out.test.ts` asks
+`scripts/ci/mutation-related-tests.mjs` for the loader's related test files, the set Stryker
+re-runs, and fails unless it is that suite alone.
+
 ### Route coverage inventory (issue #169)
 
 The browser-level suites are hand-written, and nothing verified they tracked the route table —

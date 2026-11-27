@@ -14,6 +14,7 @@ import recoveryEn from '@auth/routes/recovery-catalog/i18n/en.json';
 import recoveryUk from '@auth/routes/recovery-catalog/i18n/uk.json';
 import twoFactorEn from '@auth/routes/two-factor-catalog/i18n/en.json';
 import twoFactorUk from '@auth/routes/two-factor-catalog/i18n/uk.json';
+import addTestCatalog from '@tests/unit/utils/add-test-catalog';
 import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
 
 const createInstance = (seeded: Record<string, unknown> = {}): I18nInstance =>
@@ -87,6 +88,23 @@ describe('LazyCatalogLoader', () => {
     expect(instance.getResource(locale, 'translation', 'sign_in.title')).toBe('Authentication');
     expect(instance.getResource(locale, 'translation', 'password_recovery.seeded')).toBe('kept');
     expect(instance.getResource(locale, 'translation', 'password_recovery.back')).toBe(back);
+  });
+
+  it('registers the same bundles as the test catalog helper', () => {
+    const seed = { password_recovery: { seeded: 'kept' } };
+    const loaded = createInstance(seed);
+    const helped = createInstance(seed);
+    const catalog = { en: recoveryEn, uk: recoveryUk };
+
+    lazyCatalogLoader.register(loaded, catalog);
+    addTestCatalog(helped, catalog);
+
+    expect(helped.getResourceBundle('en', 'translation')).toEqual(
+      loaded.getResourceBundle('en', 'translation')
+    );
+    expect(helped.getResourceBundle('uk', 'translation')).toEqual(
+      loaded.getResourceBundle('uk', 'translation')
+    );
   });
 
   it('ships the settings shell, profile, social, toasts and two-factor groups per locale', () => {
