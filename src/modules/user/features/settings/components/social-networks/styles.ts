@@ -120,8 +120,8 @@ export default {
     borderRadius: '0.5rem',
     background: 'none',
     cursor: 'pointer',
-    color: paletteColors.primary.linkText,
-    '&:hover': { color: paletteColors.primary.linkTextHover },
+    color: customColors.brand.blue,
+    '&:hover': { color: paletteColors.primary.hover },
     '&:focus-visible': FOCUS_RING,
     [DISABLED]: { cursor: 'default', opacity: 0.6 },
     [FORCED_COLORS]: {

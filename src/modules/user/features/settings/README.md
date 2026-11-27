@@ -301,8 +301,9 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   posts the query and closes; the settings tab completes only the exact state it was issued. A
   result changes its own provider's tile alone, shows one toast, and leaves the keyboard on the
   tile. Until `linkedSocialProviders` answers, and after it fails, the tiles offer nothing to
-  press. A linked tile is `315:11754`, with its bin in `#0074B5` because the Figma blue fails 3:1.
-  The bin asks first in one row under the tiles (PRD L6); Figma draws none.
+  press. A linked tile is `315:11754`, bin included (owner, 2026-11-23: every colour follows
+  Figma; the bin is under 3:1 until #276). The bin asks first in one row under the tiles (PRD L6);
+  Figma draws none.
 - **Card padding is the Figma inset minus the 1 px border.** The card declares the inline
   insets as `--settings-card-inset-start` / `--settings-card-inset-end`, and the section
   titles and the divider above Save and "Очистити" bleed through them to the card edges.

@@ -66,7 +66,8 @@ Linking is not a sign-in: it never issues, replaces or ends a session.
 - **FR7** A refusal that the provider is already linked shows the tile as linked. A result changes only its own provider's tile, so answers that arrive out of order, or an
   older list answer, never undo it.
 - **FR8** A linked tile shows Figma `315:11754` (fill `#E8F7FF`, border `#1EAEFF`) and an unlink
-  button named for its provider. The bin is `#0074B5`, because the Figma blue fails 3:1 (SC 1.4.11).
+  button named for its provider. The bin is Figma's `#1EAEFF` (owner, 2026-11-23: every colour follows Figma). At
+  2.2:1 on the fill it stays under the 3:1 of SC 1.4.11, accepted until issue #276.
 - **FR9** The bin shows the L6 row, named for its provider, with focus on Cancel. Cancel and Escape
   close it and focus the bin; confirming closes it, focuses the bin and calls `unlinkSocialProviderUser(provider)` once.
 - **FR10** After a tile changes state, keyboard focus moves to the tile's new control.
@@ -90,7 +91,7 @@ Linking is not a sign-in: it never issues, replaces or ends a session.
 
 - **NFR1** 100% unit and integration coverage, Stryker `break` 100, no suppression.
 - **NFR2** WCAG 2.1 AA: names, focus order, visible focus, 44 px targets, 375 px without sideways
-  scroll, forced colours; no new axe exception.
+  scroll, forced colours; no new axe exception. The bin's contrast is the one accepted gap (FR8).
 - **NFR3** `code`, `state` and provider identifiers never reach logs, Sentry, the DOM or the history
   of the settings tab.
 - **NFR4** No growth of the auth page's eager path beyond the 1 kB gzip already allowed.

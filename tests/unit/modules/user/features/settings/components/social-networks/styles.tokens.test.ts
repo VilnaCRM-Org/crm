@@ -116,8 +116,8 @@ describe('social networks styles', () => {
         borderRadius: '0.5rem',
         background: 'none',
         cursor: 'pointer',
-        color: '#0074B5',
-        '&:hover': { color: '#00588A' },
+        color: '#1EAEFF',
+        '&:hover': { color: '#00A3FF' },
         '&:focus-visible': FOCUS_RING,
         [DISABLED]: { cursor: 'default', opacity: 0.6 },
         [FORCED_COLORS]: {
