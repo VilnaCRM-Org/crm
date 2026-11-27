@@ -1,6 +1,4 @@
-import type UrlBuilder from '@/utils/url-builder';
 import type { OAuthProvider } from '@auth/types/auth-provider-buttons/oauth-providers';
-import type BrowserNavigator from '@auth/utils/browser-navigator';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 jest.mock('@/assets/icons/social/facebook-color.svg', () => ({ ReactComponent: 'svg' }));
@@ -8,26 +6,21 @@ jest.mock('@/assets/icons/social/github-color.svg', () => ({ ReactComponent: 'sv
 jest.mock('@/assets/icons/social/google-color.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@/assets/icons/social/twitter-color.svg', () => ({ ReactComponent: 'svg' }));
 
-const OAUTH_BASE_URL = 'https://oauth.vilnacrm.test';
-
 interface IsolatedProviders {
   providers: ReadonlyArray<OAuthProvider>;
-  urlBuilder: typeof UrlBuilder;
-  browserNavigator: typeof BrowserNavigator;
+  start: jest.Mock;
 }
 
 // The provider table is a module-level literal, so it is only evaluated inside the test when the
-// module is loaded here. Its two collaborators are loaded from the same isolated registry, or the
-// spies below would sit on different singletons than the ones the handler calls.
+// module is loaded here. The start handler it calls is handed in, so no collaborator is spied on.
 function loadProviders(): Promise<IsolatedProviders> {
   return loadIsolated(async () => {
-    const urlBuilder = (await import('@/utils/url-builder')).default;
-    const browserNavigator = (await import('@auth/utils/browser-navigator')).default;
-    const providers = (
+    const oauthProviders = (
       await import('@auth/components/form-section/components/auth-provider-buttons/oauth-providers')
-    ).default.items;
+    ).default;
+    const start = jest.fn();
 
-    return { providers, urlBuilder, browserNavigator };
+    return { providers: oauthProviders.list(start).items, start };
   });
 }
 
@@ -64,27 +57,17 @@ describe('oauthProviders', () => {
     });
   });
 
-  // The base URL is stubbed rather than inherited from the environment: `urlBuilder.build` returns
-  // its argument unchanged when no base resolves, which would let the assertion below pass without
-  // the endpoint ever being built.
   it.each([
     ['Google', 'google'],
     ['GitHub', 'github'],
     ['Facebook', 'facebook'],
     ['Twitter', 'twitter'],
-  ])('opens the %s authorization endpoint in an isolated tab', async (label, key) => {
-    const { providers, urlBuilder, browserNavigator } = await loadProviders();
-    const buildSpy = jest
-      .spyOn(urlBuilder, 'build')
-      .mockImplementation((endpoint: string) => `${OAUTH_BASE_URL}${endpoint}`);
-    const openSpy = jest
-      .spyOn(browserNavigator, 'openInNewTab')
-      .mockImplementation(() => undefined);
+  ])('starts the %s flow with its provider key', async (label, key) => {
+    const { providers, start } = await loadProviders();
 
     providerFor(providers, label).onClick();
 
-    expect(buildSpy).toHaveBeenCalledWith(`/auth/${key}`);
-    expect(openSpy).toHaveBeenCalledTimes(1);
-    expect(openSpy).toHaveBeenCalledWith(`${OAUTH_BASE_URL}/auth/${key}`);
+    expect(start).toHaveBeenCalledTimes(1);
+    expect(start).toHaveBeenCalledWith(key);
   });
 });

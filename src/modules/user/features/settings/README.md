@@ -3,15 +3,14 @@
 The user settings page (issue #330): `/settings`, a protected route registered in every
 environment, with no feature flag. A signed-in user reads their profile, changes the name, the
 e-mail and the password in three forms, one thing saved at a time, resends the confirmation link
-and sees every outcome as a toast or a field error. The decisions are recorded in
-`## User Settings decisions` of the
-[user module README](../../README.md).
+and sees every outcome as a notification (the card under the header bell) or a field error. The
+decisions are recorded in `## User Settings decisions` of the [user module README](../../README.md).
 
 ## What is here
 
 - `routes/index.ts` — the `user.settings` route contract.
 - `routes/user-profile/index.tsx` — `UserProfile`, the page: title, heading, subtitle, grid,
-  toast queue.
+  and the `UINotificationOutlet` that announces its outcomes.
 - `components/` — `user-profile-settings` (states), `profile-header`, `profile-form`
   (`ProfileSectionForm`, `SectionFields` with its `EmailField` and `EmailStatus`, `ClearButton`,
   `EmailStatusRow`), `change-password`,
@@ -102,11 +101,12 @@ Built here:
   instead.
 - The `UI*` moves of #315's field pieces (`UIFormField`, `UIPasswordField`,
   `UIPasswordPolicyRules`, `UIServerFieldError`) and the policy catalog.
-- `UIToastStack`, `UIToast` and `useToastQueue`, used by settings alone (R16): no timer, a polite
-  region for success texts and an assertive one for error texts, both always mounted, at most three
-  on screen. The two-factor card reports inside its own card. A window resize scrolls the focused
-  control clear of the stack only if it was clear of it before, so it never undoes the user's own
-  scroll (`useStackClearance`, `FocusClearanceDetector`).
+- The outcome surface: every save and resend outcome is raised through the notifications port
+  (`useNotifications` in `src/hooks/`), as `settings.toasts.*` message keys, and the page renders
+  `UINotificationOutlet`, which announces it (a polite region for success texts and an assertive
+  one for error texts, both always mounted). The shell's bell shows it in its card: no timer, at
+  most three on screen. The page draws no outcome itself. The two-factor card reports inside its
+  own card.
 - The `SettingsGrid`, whose second slot holds the two-factor card.
 - The two-factor card itself (#331): `TwoFactorSettings` in that slot, the `TwoFactorSettingsEntity`,
   the `TwoFactorDto` and `TwoFactorCodeNormalizer` in the user module, and `twoFactorStatus` /
@@ -123,7 +123,7 @@ imports `SessionLinkFactory`. The card reuses `UserServiceErrorTransformer` thro
 ## Page tree
 
 ```text
-UserProfile [component]<route>          title, toast queue, useProfileLoad
+UserProfile [component]<route>          title, useProfileLoad
 └ UIShellContent                      15 / 26 / 12 px insets, shared with home
   ├ h1 "Налаштування", subtitle
   ├ SettingsGrid                        profile column; the second column holds the 2FA card
@@ -153,7 +153,7 @@ UserProfile [component]<route>          title, toast queue, useProfileLoad
   │     ├ DisableView                   disable: code field, Cancel
   │     ├ RegenerateView                regenerate: confirm, Cancel
   │     └ ReauthView                    reauth: message, "sign in again" button
-  └ UIToastStack                        returns focus to the Save, or the input if its Save hid
+  └ UINotificationOutlet                announces outcomes; the shell's bell shows them
 ```
 
 ## Layer stack
@@ -207,27 +207,30 @@ before it becomes `failed: rejected`.
 
 `session_ended` is the one outcome the page answers with nothing, because the link has already
 cleared the token and `ProtectedRoute` redirects. "Access Denied." clears no token, so a page that
-receives it is still signed in; it is `rejected` and gets the same error toast as any refused
+receives it is still signed in; it is `rejected` and gets the same error notification as any refused
 Save, read or resend (amended 2026-11-02, superseding the earlier `session_ended` mapping).
 
 Field error reasons are `name_rejected`, `email_taken`, `email_invalid`, `password_wrong`,
-`password_not_accepted` and `new_password_rejected`. The hooks turn every toast reason into an i18n
-key; a field error reason is copy that `ServerFieldErrors` (`server-field-errors.tsx`) looks up in
-its module-private `ERROR_MESSAGES` table when it renders the error under its field, and it focuses
+`password_not_accepted` and `new_password_rejected`. The hooks turn every notification reason into an
+i18n key; a field error reason is copy that `ServerFieldErrors` (`server-field-errors.tsx`) looks up
+in its module-private `ERROR_MESSAGES` table when it renders the error under its field, and it focuses
 the first field, in field order, that has one. A `currentPassword` error goes to the password field
-of the section that sent it. A Save that settles with a toast moves focus when focus has fallen to
-the page body or is still inside the form, as after Enter in a field (`useSettledFocus`), so a
-control the user moved to outside the form keeps focus: to that form's Save, or to the text input
+of the section that sent it. A Save that settles with a notification moves focus when focus has
+fallen to the page body or is still inside the form, as after Enter in a field (`useSettledFocus`),
+so a control the user moved to outside the form keeps focus: to that form's Save, or to the text input
 when a name or e-mail save succeeded and hid its Save. When Save is itself disabled as it settles,
 because the connection dropped during the Save, focus that fell to the page body moves to the `h1`,
-the same fallback closing a toast uses, and a field the user is still in keeps focus.
+the same fallback closing a notice row uses, and a field the user is still in keeps focus.
 `useCollapseFocus` does the same for a Clear that removes itself.
 
-Every Save toast belongs to the section that sent it (`useSaveSettle`). Its `returnFocusRef` is that
-section's own settled target, so closing the last toast returns focus to that form's Save, or to
-its text input when the Save hid, and to the `h1` when that control cannot take focus, never to a
-section that saved later. The transient-failure "Спробувати ще раз" clicks the Save of the section
-that failed, so a name failure followed by an e-mail save retries the name alone.
+Every Save outcome belongs to the section that sent it. The drafts carry no return target of their
+own: the page publishes one `saveRef` to the outlet as `returnFocusRef`, and `useSettledFocus`
+points it at the Save of the section that settled last, or at its text input when a name or e-mail
+save hid the Save. Closing the last notice row returns focus there, and to the `h1` when that
+control cannot take focus, so after a failed name save and a successful e-mail save it lands on the
+e-mail field. The transient-failure "Спробувати ще раз"
+clicks the Save of the section that failed, so a name failure followed by an e-mail save retries
+the name alone.
 
 Each section sends only its own field and its own password (`ProfileChangeDetector.detect`), and a
 form remounts only on its own successful save (`key=saved`), so a draft in another form survives.
@@ -235,12 +238,12 @@ form remounts only on its own successful save (`key=saved`), so a draft in anoth
 `useProfileFormRules`; `EmailStatus` (in `section-fields.tsx`, under `EmailField`) calls
 `useEmailRow` (over `useEmailResend`) and renders `EmailStatusRow`; all take the hook-owned
 `ProfileEditContext`. A resend that settles after a Save changed the address has no visible effect:
-before it confirms, toasts or moves focus it asks `adoption.isCurrent(email)` with the e-mail it was
+before it confirms, notifies or moves focus it asks `adoption.isCurrent(email)` with the e-mail it was
 issued for, which `adopt` answers synchronously (a ref written before the dispatch), so even a
 resend that settles before React commits the adopted entity is dropped. The reducer's `confirm`
 still carries the e-mail as a second guard. Save is never held by a resend. A Save for the unchanged
 address that succeeds while a resend is in flight moves `adoption.revision()` on, so the resend
-still shows its toast, because the link was sent, but drops its older `confirmed` flag. A failed
+still shows its notice, because the link was sent, but drops its older `confirmed` flag. A failed
 Save adopts nothing, so the revision stays and the resend applies its confirmation.
 
 ## Figma parity
@@ -316,8 +319,6 @@ Where the frames contradict each other or the copy, the page follows one reading
   whole pixels.
 - **Labels.** The Ukrainian labels can wrap in the label column, so a label is as tall as its
   input and centres its text on it, also when a field error grows the row.
-- **Toasts (T13, T15).** One layout from the desktop and phone frames, bottom-right 12 px from
-  the edge on desktop. An action sits on its own row under the message.
 - **Phone values (M-20).** Field values are `#1A1C1E` as on desktop and tablet, not the
   placeholder grey the phone frame draws.
 
@@ -377,5 +378,5 @@ the outlined "Очистити" pill. The card's buttons and focusable headings 
 `focusVisibleRing` (`src/styles/focus-ring.ts`, 2 px `#404142`, offset 2 px, NFR-9); the profile
 forms' buttons and the page `h1` keep #330's 2 px `#1A1C1E` ring. Text links (the resend control
 and the home "Налаштування" link) use a 2 px `#0074B5` ring and darken to `#00588A` on hover.
-Deliberate colour deviations (greeting, resend link, field errors, toast
+Deliberate colour deviations (greeting, resend link, field errors, notification
 icon and text) are recorded in the user module README.

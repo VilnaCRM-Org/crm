@@ -1,0 +1,51 @@
+# pending-against: v2.8.0
+extend type Mutation {
+  "InitiateSocialSignIns a AuthPayload."
+  initiateSocialSignInUser(input: initiateSocialSignInUserInput!): initiateSocialSignInUserPayload
+
+  "CompleteSocialSignIns a AuthPayload."
+  completeSocialSignInUser(input: completeSocialSignInUserInput!): completeSocialSignInUserPayload
+}
+
+"InitiateSocialSignIns a AuthPayload."
+input initiateSocialSignInUserInput {
+  clientMutationId: String
+  provider: String!
+}
+
+"InitiateSocialSignIns a AuthPayload."
+type initiateSocialSignInUserPayload {
+  user: initiateSocialSignInUserPayloadData
+  clientMutationId: String
+}
+
+"InitiateSocialSignIns a AuthPayload."
+type initiateSocialSignInUserPayloadData implements Node {
+  id: ID!
+  authorizationUrl: String!
+  state: String!
+}
+
+"CompleteSocialSignIns a AuthPayload."
+input completeSocialSignInUserInput {
+  clientMutationId: String
+  provider: String!
+  code: String!
+  state: String!
+}
+
+"CompleteSocialSignIns a AuthPayload."
+type completeSocialSignInUserPayload {
+  user: completeSocialSignInUserPayloadData
+  clientMutationId: String
+}
+
+"CompleteSocialSignIns a AuthPayload."
+type completeSocialSignInUserPayloadData implements Node {
+  id: ID!
+  success: Boolean!
+  twoFactorEnabled: Boolean
+  accessToken: String
+  refreshToken: String
+  pendingSessionId: String
+}

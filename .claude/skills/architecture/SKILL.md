@@ -273,7 +273,9 @@ or through the public exports of another module — never a deep import.
 ## Backend Microservices (what repositories call)
 
 The frontend never talks to a microservice directly. It calls the BFF / API
-gateway, and the repository layer hides which service answered.
+gateway, and the repository layer hides which service answered. The one exception is the
+notification broadcast stream, which connects to the origin `notificationEventsUrl` names and stays
+off while the setting is absent (`SECURITY.md`).
 
 - **user-service** (PHP, API Platform) — auth, registration, 2FA, OAuth,
   profile, password reset.

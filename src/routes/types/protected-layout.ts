@@ -2,31 +2,44 @@ import type { ComponentType } from 'react';
 
 import type { AppLayoutProps } from '@/components/types/layouts/app-layout';
 
-import type { ShellChunkFailureHandler, ShellSlotLoad, UserMenuSlot } from './shell-slot';
+import type {
+  ShellChunkFailureHandler,
+  ShellSlot,
+  ShellSlotLoad,
+  ShellSlotSource,
+} from './shell-slot';
 
-export interface UserMenuSlotFactory {
-  create(load: ShellSlotLoad): UserMenuSlot;
+export interface ShellSlotRequest {
+  readonly load: ShellSlotLoad;
+  readonly source: ShellSlotSource;
 }
 
-export type UserMenuSlotFactoryClass = new (
-  report: ShellChunkFailureHandler
-) => UserMenuSlotFactory;
+export interface ShellSlotBuilder {
+  create(load: ShellSlotLoad, source: ShellSlotSource): ShellSlot;
+}
+
+export type ShellSlotBuilderClass = new (report: ShellChunkFailureHandler) => ShellSlotBuilder;
 
 export interface ProtectedLayoutModule {
   readonly ProtectedRoute: ComponentType;
   readonly AppLayout: ComponentType<AppLayoutProps>;
-  readonly ShellSlotFactory: UserMenuSlotFactoryClass;
+  readonly ShellSlotFactory: ShellSlotBuilderClass;
 }
 
 export type ProtectedLayoutExport = 'ProtectedRoute' | 'AppLayout';
 
-export interface ProtectedShell {
+export interface ProtectedShellLoads {
   readonly userMenu?: ShellSlotLoad | undefined;
+  readonly notifications?: ShellSlotLoad | undefined;
+}
+
+export interface ProtectedShell extends ProtectedShellLoads {
   readonly report: ShellChunkFailureHandler;
 }
 
 export interface ProtectedLayout {
   readonly ProtectedRoute: ComponentType;
   readonly AppLayout: ComponentType<AppLayoutProps>;
-  readonly userMenu?: UserMenuSlot | undefined;
+  readonly userMenu?: ShellSlot | undefined;
+  readonly notifications?: ShellSlot | undefined;
 }

@@ -355,6 +355,15 @@ static website. A sandbox has no backend, so two things make it reviewable (issu
   `/sign-in`, `/forbidden` or any other route with the app instead of its own error page. S3
   still reports HTTP status 404 for those responses; the page itself renders normally.
 
+### Social sign-in in development
+
+Social sign-in runs through the pending `initiateSocialSignInUser` and `completeSocialSignInUser`
+GraphQL mutations, which the Apollo mock answers. By default each provider button leads to a
+Mockoon mock consent page with one link per outcome. Set `OAUTH_MODE=provider` and a Google or
+GitHub client ID in `.env`, then run `make apollo-restart`, to go through the real consent screen
+instead. Registering the OAuth clients, the redirect URIs and troubleshooting are in
+[`docs/social-sign-in-local.md`](docs/social-sign-in-local.md).
+
 ### Password reset e-mails in development
 
 `make start` also runs [Mailpit](https://mailpit.axllent.org/), a local mail catcher, next to
@@ -441,17 +450,41 @@ What that means when you test by hand:
 - To issue a new token after changing the demo password, delete the generated file and run
   `LOCAL_DEMO_PASSWORD=<new password> make start-local-stack`.
 
-The start script builds the user-service image without its DocumentDB CA bundle step. That file
-secures AWS connections, which a local Mongo never makes, and its pinned digest fails whenever AWS
-rotates the bundle (user-service #503). user-service's tracked files are left unchanged.
+**E-mails need user-service's workers.** user-service queues every e-mail (confirmation,
+password reset, password-change notice) on a LocalStack SQS queue, and only its `workers` container
+sends them. Without it every e-mail stays queued, and a resend in Settings can fail with "Не вдалося
+надіслати посилання" even though no link ever went out. The start script therefore starts
+`workers` too, and the e-mails arrive in Mailcatcher at <http://localhost:1080>.
 
-The script builds that image only when `user-service-local-php` does not exist yet. user-service's
-source is bind-mounted into the container, so code changes apply without a rebuild, but a change to
-its `Dockerfile` or to the dependencies baked into the image does not. Untag the image to pick one
-up, and the next start rebuilds it:
+- The workers always run `messenger:consume --env=prod`, and production mode refuses to boot
+  without `OAUTH_ENCRYPTION_KEY` and `TWO_FACTOR_ENCRYPTION_KEY`, which user-service sets only in
+  `.env.dev`. The script copies a dev value into the clone's `.env.local` when that file has
+  none, or an empty one, and recreates the workers when it does. `.env.local` is read in every
+  environment and `.env.dev` still wins in dev, so php and the workers share the keys only while
+  both files agree. The script stops with an error, before it changes anything, when neither file
+  sets a key and when the two files set different values.
+- The script starts the workers without `--wait`, because their healthcheck reports `unhealthy`
+  while every consumer is running. Check the consumers instead:
+
+  ```bash
+  docker exec user-service-local-workers-1 supervisorctl -c /etc/supervisor/supervisord.conf status
+  ```
+
+- user-service throttles confirmation e-mails: after one is sent, the next is refused for 1, then
+  1, then 3 minutes, and Settings shows the same generic error. Wait and resend.
+
+The start script builds the user-service images (`frankenphp_dev` and `app_workers`) without the
+DocumentDB CA bundle step. That file secures AWS connections, which a local Mongo never makes, and
+its pinned digest fails whenever AWS rotates the bundle (user-service #503). user-service's tracked
+files are left unchanged.
+
+The script builds each image only when `user-service-local-php` or `user-service-local-workers`
+does not exist yet. user-service's source is bind-mounted into both containers, so code changes
+apply without a rebuild, but a change to its `Dockerfile` or to the dependencies baked into the
+images does not. Untag the images to pick one up, and the next start rebuilds them:
 
 ```bash
-docker rmi --force user-service-local-php
+docker rmi --force user-service-local-php user-service-local-workers
 ```
 
 ### The browser security-header gate

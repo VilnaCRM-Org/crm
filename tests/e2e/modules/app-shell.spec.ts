@@ -392,7 +392,7 @@ test.describe('App shell on desktop (issue #362)', () => {
     });
   }
 
-  test('does nothing when the disabled search, bell and list are clicked', async ({ page }) => {
+  test('does nothing when the disabled search and list are clicked', async ({ page }) => {
     const stub = await openProtected(page, ROUTE_PATHS.home);
     await expect.poll(() => stub.count('CurrentUser')).toBe(1);
     await expect(chipOf(page)).toHaveAccessibleName(
@@ -403,9 +403,12 @@ test.describe('App shell on desktop (issue #362)', () => {
     });
     const requests: string[] = [];
     page.on('request', (request: Request) => requests.push(request.url()));
+    const bell = page.getByRole('button', { name: shellText.notifications, exact: true });
+    await expect(bell).toBeEnabled();
+    await expect(bell).toHaveAttribute('aria-expanded', 'false');
+    await expect(bell).toHaveAccessibleDescription(shellText.seedUnread);
     const controls = [
       page.getByRole('searchbox', { name: shellText.search }),
-      page.getByRole('button', { name: shellText.notifications, exact: true }),
       page.getByRole('button', { name: shellText.tasks, exact: true }),
     ];
 
@@ -425,16 +428,20 @@ test.describe('App shell on desktop (issue #362)', () => {
     ROUTE_PATHS.boards,
     ROUTE_PATHS.settingsBilling,
   ]) {
-    test(`renders no badge on ${path}`, async ({ page }) => {
+    test(`renders the seed badge on ${path}`, async ({ page }) => {
+      const bell = page.getByRole('button', { name: shellText.notifications, exact: true });
+      await page.setViewportSize({ width: 1440, height: 900 });
       await openProtected(page, path);
 
-      await expect(
-        page.getByRole('button', { name: shellText.notifications, exact: true })
-      ).toHaveAccessibleDescription(shellText.unavailable);
-      await expect(
-        page.getByRole('button', { name: shellText.tasks, exact: true })
-      ).toHaveAccessibleDescription(shellText.unavailable);
-      await expect(page.getByRole('banner')).not.toContainText(/\d/);
+      for (const width of [1440, 1024]) {
+        await page.setViewportSize({ width, height: 900 });
+
+        await expect(bell).toHaveAccessibleDescription(shellText.seedUnread);
+        await expect(page.getByRole('banner').getByText('1', { exact: true })).toBeVisible();
+        await expect(
+          page.getByRole('button', { name: shellText.tasks, exact: true })
+        ).toHaveAccessibleDescription(shellText.unavailable);
+      }
     });
   }
 

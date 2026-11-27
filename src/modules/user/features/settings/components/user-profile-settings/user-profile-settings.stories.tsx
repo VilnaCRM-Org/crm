@@ -24,7 +24,6 @@ const meta: Meta<typeof UserProfileSettings> = {
       isCurrent: (): boolean => true,
       revision: (): number => 0,
     },
-    toasts: { toasts: { items: [] }, announcement: '', alert: '', show: noop, dismiss: noop },
     saveRef: { current: null },
     headingRef: { current: null },
   },
@@ -38,7 +37,7 @@ const meta: Meta<typeof UserProfileSettings> = {
           'whose save and resend hooks resolve the Data provider behind ' +
           '`AUTH_TOKENS.ProfileProvider`, so it registers the same stub as the UserProfile page ' +
           'story: a Save echoes back as saved and a resend answers as sent, and nothing reaches ' +
-          'the network. The meta carries a no-op toast queue and the Save ref the form writes to.',
+          'the network. The meta carries the Save ref the form writes to.',
       },
       story: { inline: false },
     },

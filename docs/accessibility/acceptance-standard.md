@@ -100,7 +100,7 @@ scoped entry in [`A11Y_EXCEPTIONS`][config]:
 
 ### Current exceptions
 
-Twelve `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
+Thirteen `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
 `grey[50]` `#969B9D`) and the `UILink` theme dropping the palette, tracked together in
 [issue #276](https://github.com/VilnaCRM-Org/crm/issues/276). Two of them belong to the error
 pages (issue #309): the primary actions (`#error-page-actions > .MuiButton-contained`, white on
@@ -139,6 +139,11 @@ The twelfth is the two-factor challenge's "Назад" (`#auth-form-card > butto
 the same selector the ninth lists for the recovery cards' button-form back control, since both
 render `CardBackControl`. It stays a separate entry only so the challenge's owner decision of
 2026-11-04 carries its own reason; removing either entry leaves the challenge covered.
+The thirteenth covers the primary action of the social sign-in callback page
+(`#social-sign-in-actions > .MuiButton-contained`, specs/social-sign-in): "Спробувати ще раз", or
+"Повернутися до входу" when it is the only action, white on `#1EAEFF` at 2.45:1, the same
+design-owned debt as the submit button; the secondary text-variant link below it uses the
+accessible `#0074B5` (5.04:1) and needs no entry.
 
 A known gap axe cannot see, tracked under the same issue: auth input placeholders render the
 `grey[50]` `#969B9D` token at full opacity (about 2.8:1 on white, under the 4.5:1 of SC 1.4.3),

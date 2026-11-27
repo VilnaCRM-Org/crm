@@ -65,8 +65,8 @@ describe('the exception allowlist', () => {
     }
   });
 
-  it('holds the twelve reviewed entries, one being the current navigation row (X-1)', () => {
-    expect(A11Y_EXCEPTIONS).toHaveLength(12);
+  it('holds the thirteen reviewed entries, one being the current navigation row (X-1)', () => {
+    expect(A11Y_EXCEPTIONS).toHaveLength(13);
     expect(A11Y_EXCEPTIONS.map(({ ruleId }) => ruleId)).toEqual(
       A11Y_EXCEPTIONS.map(() => 'color-contrast')
     );

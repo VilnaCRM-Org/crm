@@ -1,0 +1,9 @@
+mutation CompleteSocialSignIn($input: completeSocialSignInUserInput!) {
+  completeSocialSignInUser(input: $input) {
+    user {
+      twoFactorEnabled
+      accessToken
+      pendingSessionId
+    }
+  }
+}

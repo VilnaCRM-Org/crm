@@ -60,6 +60,20 @@ describe('pii scrubber (integration)', () => {
     });
   });
 
+  it('scrubs callback values behind percent-encoded parameter names', async () => {
+    const beforeSend = await beforeSendOf();
+
+    const scrubbed = beforeSend({
+      message: 'at /auth/callback/google?%63ode=c-1&%73tate=s-1',
+      extra: { route: '/x?%6eame=1' },
+    });
+
+    expect(scrubbed).toEqual({
+      message: 'at /auth/callback/google?code=[redacted]&state=[redacted]',
+      extra: { route: '/x?%6eame=1' },
+    });
+  });
+
   it('exposes the scrubber as a shared singleton', async () => {
     const { PiiScrubber } = await import('@/services/observability/pii-scrubber');
     const piiScrubber = (await import('@/services/observability/pii-scrubber')).default;

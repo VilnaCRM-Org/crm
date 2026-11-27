@@ -4,12 +4,12 @@
  * served serve.json with the runtime API origins (issue #113).
  *
  * The committed serve.json allows the build-time REACT_APP_* API origins. When a deployment
- * repoints the app through APP_CONFIG_API_BASE_URL / APP_CONFIG_GRAPHQL_URL (issue #145), the
- * browser connects to those origins instead, so the same container start that renders them into
- * the HTML shell also allows them here. The served file is always rendered from the immutable
- * baseline the image ships, never from the previous start's output, so an override that is
- * changed or cleared between restarts leaves no stale origin behind. Everything else in the
- * baseline stays byte-identical.
+ * repoints the app through APP_CONFIG_API_BASE_URL / APP_CONFIG_GRAPHQL_URL (issue #145) or names
+ * a stream through APP_CONFIG_NOTIFICATION_EVENTS_URL (issue #391), the browser connects to those
+ * origins, so the same container start that renders them into the HTML shell also allows them
+ * here. The served file is always rendered from the immutable baseline the image ships, never from
+ * the previous start's output, so an override that is changed or cleared between restarts leaves
+ * no stale origin behind. Everything else in the baseline stays byte-identical.
  *
  * Run by scripts/docker-entrypoint.sh after render-app-config.js; also runnable directly:
  *   node scripts/render-security-headers.js <baseline serve.json> [<served serve.json>]
@@ -55,7 +55,7 @@ module.exports = { renderSecurityHeaders };
 if (require.main === module) {
   try {
     const origins = main(process.argv, process.env);
-    const summary = origins.length ? origins.join(' ') : '(no runtime API origins)';
+    const summary = origins.length ? origins.join(' ') : '(no runtime origins)';
 
     process.stdout.write(`render-security-headers: connect-src extended with ${summary}\n`);
   } catch (error) {

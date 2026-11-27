@@ -36,6 +36,7 @@ const BLOCK_PATTERN = new RegExp(
 const URL_SETTINGS = [
   { envVar: 'APP_CONFIG_API_BASE_URL', key: 'apiBaseUrl' },
   { envVar: 'APP_CONFIG_GRAPHQL_URL', key: 'graphqlUrl' },
+  { envVar: 'APP_CONFIG_NOTIFICATION_EVENTS_URL', key: 'notificationEventsUrl' },
 ];
 
 function toCamelCase(upperSnakeCase) {

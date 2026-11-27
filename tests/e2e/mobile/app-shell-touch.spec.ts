@@ -7,10 +7,12 @@ import {
   stubProfile,
 } from '@tests/e2e/modules/user/features/settings/utils/profile-stub';
 import {
+  bellOf,
   burgerOf,
   chipOf,
   drawerOf,
   expectShellReady,
+  logoOf,
   menuItemOf,
   shellText,
   userMenuOf,
@@ -34,8 +36,6 @@ const drawerLinkOf = (page: Page, id: string): Locator =>
   drawerOf(page).getByRole('link', { name: t(`app_shell.items.${id}`), exact: true });
 const drawerSignOutOf = (page: Page): Locator =>
   drawerOf(page).getByRole('button', { name: shellText.signOut, exact: true });
-const logoOf = (page: Page): Locator =>
-  page.getByRole('banner').getByRole('link', { name: 'VilnaCRM', exact: true });
 
 async function tapCentreOfBox(
   page: Page,
@@ -281,6 +281,7 @@ test.describe('App shell on touch devices (issue #362)', () => {
   test('gives the header, drawer and menu controls a 44 px tap area', async ({ page }) => {
     await openAt(page, ROUTE_PATHS.home);
     await expectTapArea(logoOf(page), 'logo');
+    await expectTapArea(bellOf(page), 'bell');
     await expectTapArea(chipOf(page), 'avatar');
     await expectTapArea(burgerOf(page), 'burger');
 
@@ -308,9 +309,7 @@ test.describe('App shell on touch devices (issue #362)', () => {
     );
   });
 
-  test('keeps the bell and the list inert on a tap, with their status described', async ({
-    page,
-  }) => {
+  test('keeps the list inert on a tap, with its status described', async ({ page }) => {
     await openAt(page, ROUTE_PATHS.home);
     await expect(chipOf(page)).toHaveAccessibleName(
       `${PROFILE_MONOGRAM}, ${PROFILE_NODE.initials}, ${shellText.userMenu}`
@@ -321,12 +320,13 @@ test.describe('App shell on touch devices (issue #362)', () => {
     const requests: string[] = [];
     page.on('request', (request) => requests.push(request.url()));
 
-    for (const name of [shellText.notifications, shellText.tasks]) {
-      const control = page.getByRole('banner').getByRole('button', { name, exact: true });
-      await expect(control).toBeDisabled();
-      await expect(control).toHaveAccessibleDescription(shellText.unavailable);
-      await control.tap({ force: true });
-    }
+    const list = page.getByRole('banner').getByRole('button', {
+      name: shellText.tasks,
+      exact: true,
+    });
+    await expect(list).toBeDisabled();
+    await expect(list).toHaveAccessibleDescription(shellText.unavailable);
+    await list.tap({ force: true });
 
     await expect(page).toHaveURL(ROUTE_PATHS.home);
     expect(requests).toEqual([]);
@@ -379,6 +379,7 @@ test.describe('App shell on touch devices (issue #362)', () => {
     await page.setViewportSize({ width: 320, height: 640 });
     await openAt(page, ROUTE_PATHS.home);
     await expectTapArea(burgerOf(page), 'burger');
+    await expectTapArea(bellOf(page), 'bell at 320 px');
     await expectTapArea(chipOf(page), 'avatar');
 
     await burgerOf(page).tap();

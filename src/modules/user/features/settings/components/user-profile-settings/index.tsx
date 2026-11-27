@@ -56,7 +56,6 @@ export default function UserProfileSettings(props: UserProfileSettingsProps): JS
             user={user}
             adoption={props.adoption}
             refocus={refocus}
-            toasts={props.toasts}
             saveRef={props.saveRef}
             headingRef={props.headingRef}
           />

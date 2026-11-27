@@ -26,13 +26,6 @@ const props = (confirmed: boolean): Props => ({
     isCurrent: (): boolean => true,
     revision: (): number => 0,
   },
-  toasts: {
-    toasts: { items: [] },
-    announcement: '',
-    alert: '',
-    show: jest.fn(),
-    dismiss: jest.fn(),
-  },
   saveRef: { current: null },
   headingRef: { current: null },
 });
@@ -45,12 +38,12 @@ describe('useEmailRow', () => {
     mockEmailResend.mockReset().mockReturnValue({ isSubmitting: false, resend });
   });
 
-  it('hands the entity, the adoption and the toast queue to the resend hook', () => {
+  it('hands the entity and the adoption to the resend hook', () => {
     const input = props(false);
 
     renderHook(() => useEmailRow(input, false));
 
-    expect(mockEmailResend).toHaveBeenCalledWith(input.user, input.adoption, input.toasts);
+    expect(mockEmailResend).toHaveBeenCalledWith(input.user, input.adoption);
   });
 
   it('reports the confirmation and the resend action of an idle online row', () => {

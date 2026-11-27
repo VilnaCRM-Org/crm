@@ -6,7 +6,7 @@ import { MemoryRouter, Outlet, Route, Routes, useNavigate, useOutletContext } fr
 import AppLayout from '@/components/layouts/app-layout';
 import type { UIAppShellProps } from '@/components/types/ui-app-shell';
 import type { ProtectedOutletContext } from '@/routes/types/protected-outlet-context';
-import type { UserMenuSlot } from '@/routes/types/shell-slot';
+import type { ShellSlot } from '@/routes/types/shell-slot';
 import testI18n from '@tests/i18n/test-i18n';
 
 let mockFooterPending = false;
@@ -27,7 +27,11 @@ jest.mock('@/components/layouts/app-shell-loader', () => ({
   default: {
     load: (): Promise<unknown> =>
       Promise.resolve({
-        default: ({ signOut, userMenu: UserMenu }: UIAppShellProps): ReactElement => {
+        default: ({
+          signOut,
+          userMenu: UserMenu,
+          notifications: Notifications,
+        }: UIAppShellProps): ReactElement => {
           if (mockShellPending) throw mockNeverSettles;
           return (
             <>
@@ -36,7 +40,10 @@ jest.mock('@/components/layouts/app-shell-loader', () => ({
                   shell sign out
                 </button>
                 {UserMenu === undefined ? null : (
-                  <UserMenu signOut={signOut} onAvatar={jest.fn()} />
+                  <UserMenu layout="desktop" signOut={signOut} onAvatar={jest.fn()} />
+                )}
+                {Notifications === undefined ? null : (
+                  <Notifications layout="desktop" signOut={signOut} onAvatar={jest.fn()} />
                 )}
               </header>
               <nav aria-label="Main navigation">shell navigation</nav>
@@ -71,14 +78,15 @@ async function renderLayout(
   entries: Entry,
   page: JSX.Element = <div>home page</div>,
   signOut: () => void = jest.fn(),
-  userMenu?: UserMenuSlot
+  userMenu?: ShellSlot,
+  notifications?: ShellSlot
 ): Promise<RenderResult> {
   const view = render(
     <I18nextProvider i18n={testI18n}>
       <MemoryRouter initialEntries={entries}>
         <Routes>
           <Route element={<Outlet context={{ signOut }} />}>
-            <Route element={<AppLayout userMenu={userMenu} />}>
+            <Route element={<AppLayout userMenu={userMenu} notifications={notifications} />}>
               <Route path="/" element={page} />
               <Route path="/deals" element={<div>deals page</div>} />
             </Route>
@@ -234,7 +242,7 @@ describe('AppLayout', () => {
 
   it('hands the shell the outlet sign out and the user menu slot', async () => {
     const signOut = jest.fn();
-    const userMenu: UserMenuSlot = ({ signOut: menuSignOut }) => (
+    const userMenu: ShellSlot = ({ signOut: menuSignOut }) => (
       <button type="button" onClick={menuSignOut}>
         slot sign out
       </button>
@@ -245,6 +253,20 @@ describe('AppLayout', () => {
     act(() => screen.getByRole('button', { name: 'slot sign out' }).click());
 
     expect(signOut).toHaveBeenCalledTimes(2);
+  });
+
+  it('hands the shell the notifications slot beside the user menu slot', async () => {
+    const signOut = jest.fn();
+    const notifications: ShellSlot = ({ signOut: bellSignOut }) => (
+      <button type="button" onClick={bellSignOut}>
+        bell slot
+      </button>
+    );
+    await renderLayout(['/'], undefined, signOut, undefined, notifications);
+
+    act(() => screen.getByRole('button', { name: 'bell slot' }).click());
+
+    expect(signOut).toHaveBeenCalledTimes(1);
   });
 
   it('focuses main, not the header or the navigation, on arrival', async () => {

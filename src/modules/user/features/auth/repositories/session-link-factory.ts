@@ -17,6 +17,8 @@ export default class SessionLinkFactory {
     'ConfirmPasswordReset',
     'SignInUser',
     'CompleteTwoFactorUser',
+    'InitiateSocialSignIn',
+    'CompleteSocialSignIn',
   ]);
 
   constructor(@inject(AUTH_TOKENS.SessionLinkDeps) private readonly deps: SessionLinkDeps) {}

@@ -339,6 +339,7 @@ describe('DI collaborator gate — allowlisted barrels expose data only (issue #
   // surface stays data — a barrel that re-exported an injectable implementation would launder it
   // past the gate. This pins the invariant the honest-limitation section relies on.
   const barrelPaths = ['src/modules/user/index.ts', 'src/modules/user/features/auth/index.ts'];
+  const typesOnlyBarrelPaths = ['src/modules/user/features/notifications/index.ts'];
 
   // Collapse the barrel to one statement per line first: a multi-line
   // `export {\n  A,\n} from './x'` would otherwise be invisible to a line-oriented scan and
@@ -354,6 +355,19 @@ describe('DI collaborator gate — allowlisted barrels expose data only (issue #
       .map((statement) => /from ['"]([^'"]+)['"]/.exec(statement)?.[1] ?? '')
       .filter(Boolean);
 
+  const parser = require('@typescript-eslint/parser') as {
+    parse: (
+      code: string,
+      options: object
+    ) => { body: ReadonlyArray<{ type: string; exportKind?: string }> };
+  };
+
+  const valueExports = (code: string): string[] =>
+    parser
+      .parse(code, { sourceType: 'module' })
+      .body.filter(({ type, exportKind }) => type.startsWith('Export') && exportKind !== 'type')
+      .map(({ type }) => type);
+
   it.each(barrelPaths)('%s re-exports values only from allowlisted contract modules', (barrel) => {
     const sources = valueReExports(barrel);
 
@@ -363,6 +377,31 @@ describe('DI collaborator gate — allowlisted barrels expose data only (issue #
     });
   });
 
+  it.each(typesOnlyBarrelPaths)('%s re-exports no value at all', (barrel) => {
+    expect(readFile(barrel).trim().length).toBeGreaterThan(0);
+    expect(valueExports(readFile(barrel))).toEqual([]);
+  });
+
+  it.each([
+    ['a local value', 'export const collaborator = {};'],
+    ['a local class', 'export class Collaborator {}'],
+    ['a default value', 'export default {};'],
+    ['a named value re-export', "export { collaborator } from './collaborator';"],
+    ['a value star re-export', "export * from './collaborator';"],
+    ['a value without a semicolon', 'export const collaborator = {}'],
+  ])('finds %s in a barrel', (_name, code) => {
+    expect(valueExports(code)).toHaveLength(1);
+  });
+
+  it.each([
+    ['a type alias', 'export type Draft = string;'],
+    ['an interface', 'export interface Draft {}'],
+    ['a type re-export', "export type { Draft } from './draft';"],
+    ['a type star re-export', "export type * from './draft';"],
+  ])('leaves %s in a barrel alone', (_name, code) => {
+    expect(valueExports(code)).toEqual([]);
+  });
+
   it('covers every barrel the allowlist opens up', () => {
     const allowlisted = walk('src').filter(
       (file) =>
@@ -370,7 +409,7 @@ describe('DI collaborator gate — allowlisted barrels expose data only (issue #
         /^src\/modules\/[^/]+\/features\/[^/]+\/index\.ts$/.test(file)
     );
 
-    expect(allowlisted.sort()).toEqual([...barrelPaths].sort());
+    expect(allowlisted.sort()).toEqual([...barrelPaths, ...typesOnlyBarrelPaths].sort());
   });
 });
 

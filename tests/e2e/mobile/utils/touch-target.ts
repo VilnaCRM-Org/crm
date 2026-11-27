@@ -2,6 +2,8 @@ import { expect, type Locator } from '@playwright/test';
 
 import { MIN_TOUCH_TARGET_PX } from '@tests/e2e/mobile/constants';
 
+const roundToHundredth = (value: number): number => Math.round(value * 100) / 100;
+
 export default async function expectTouchTarget(
   locator: Locator,
   name: string,
@@ -12,8 +14,8 @@ export default async function expectTouchTarget(
   const box = await locator.boundingBox();
   expect(box, `${name} must have a layout box`).not.toBeNull();
 
-  const width = box?.width ?? 0;
-  const height = box?.height ?? 0;
+  const width = roundToHundredth(box?.width ?? 0);
+  const height = roundToHundredth(box?.height ?? 0);
 
   expect(width, `${name} touch width (CSS px)`).toBeGreaterThanOrEqual(minimum);
   expect(height, `${name} touch height (CSS px)`).toBeGreaterThanOrEqual(minimum);

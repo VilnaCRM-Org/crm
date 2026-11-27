@@ -547,14 +547,14 @@ It also amends #315's violation step by name. API Platform reports several const
 of one `updateUser` as a multi-line message, so the step reads one `FieldViolation` per line
 instead of one for the whole message. A line with an unknown property is flagged, not dropped:
 the set carries `complete: false` and keeps every recognised line. The rule that an unknown line
-means no field errors and one toast lives in `GraphQLProfileTransformer`, the settings consumer,
+means no field errors and one notification lives in `GraphQLProfileTransformer`, the settings consumer,
 so the shared step stays shape-only. On the confirm step of password recovery a `token` line
 anywhere in the message still gives `invalid_link`, before or after a `newPassword` line and
 beside an unknown line.
 
 **Rejected.** Matching `extensions.code` (upstream drops it); a substring or case-insensitive
 match of a message (it would turn a translation change into a silent misclassification); half
-field errors and half toast for one failure.
+field errors and half notification for one failure.
 
 ### One rule ends a session, in the link
 
@@ -603,21 +603,46 @@ the profile card's width.
 
 **Rejected.** Rendering the challenge inside `/settings` (the user is not signed in yet).
 
-### Outcomes are toasts with no timer
+### Notifications: one port, the bell notice, a bell on every page (issue #391)
 
 **Context.** The name, the e-mail and the password are saved separately and each can succeed, fail
-or be rejected on its own, and a confirmation that disappears can be missed.
+or be rejected on its own, and a confirmation that disappears can be missed. The team lead
+reported that the first version, a toast, "is not clearly seen", and the measurements agreed: its
+pale success surface `#E8F4EF` separated from the page `#FBFBFB` by 1.09:1 (the error surface by
+1.10:1), with no border, shadow or motion, and at 1440 × 900 it appeared about 555 px from the Save
+just pressed
+(`specs/notification-visibility-variants/planning-artifacts/prd-notification-visibility-variants-2026-11-11.md`,
+"Measured pair" table, from research §2.1). Three variants of the transient surface were built
+behind a temporary runtime setting and compared: an elevated toast stack (A), an inline status
+below the Save that sent the outcome (B) and a merged card under the header bell (C).
 
-**Decision.** `UIToastStack` shows at most three toasts with no timer. Success texts are
-announced through one always-mounted polite region and error texts through one always-mounted
-assertive region, so neither is a region created and filled in the same commit. Closing the last
-toast returns focus to the Save that settled, to the text input when a name or e-mail save hid its
-Save, or to the page heading while that target cannot take focus. The success icon uses
-`success.text` (`#2E7D32`, 4.55:1 on the success surface), since the Figma `#38B386` is 2.34:1,
-under the 3:1 graphics floor. A field error is shown on its field, never as a toast.
+**Decision.** The bell variant (C) won (owner decision 2026-11-23). Outcomes are raised through the
+notifications port, `useNotifications()` in `src/hooks/`, over the container-free outlet store in
+`src/lib/notifications/`, and a page never names a renderer. The outcome shows in the merged card
+under the header bell (`BellOutcomeNotice`, chunk `notifications-notice`), and opening the bell
+hides it. The card's edge is neutral for every kind: `border.strong` (`#80878A`), 3.65:1 on white
+and 3.53:1 on the page `#FBFBFB`, above the 3:1 floor modelled on WCAG 1.4.11 and pinned by
+`tests/unit/components/ui-bell-notice/styles.test.ts` and
+`tests/e2e/modules/user/features/notifications/bell-notice-edge.spec.ts`. Only the status icon
+keeps its colour (`success.text` `#2E7D32`, `error.main` `#DC3939`), and its shape differs per
+kind, so the status never rests on colour alone.
+
+The outlet's two always-mounted regions (polite for success texts, assertive for error texts)
+announce each outcome, no outcome has a timer, at most three are shown, and the notifications
+feature (`features/notifications/`) records every outcome and shows the enabled bell, its unread
+badge and the history panel with mark-all-read on every protected page (owner decision
+2026-11-12). A field error is still shown on its field, never as a notification.
+
+**Removal plan.** Carried out on 2026-11-23: one follow-up removed the two losing renderers, their
+stories, tests and baselines, the comparison sheet, and the temporary setting with its compose and
+`.env.example` entries and its docs rows. It kept the enabled bell, the badge, the count
+description, the history panel and mark-all-read, the repository's four operations of that day (a
+fifth, `claim`, follows PRD item 57), the seed, the notifications shell slot, the broadcast events,
+the feature, and the merged card with its chunk.
 
 **Rejected.** A timer (a confirmation could be lost before it is read); a toast per field error
-(the user would fix the wrong place).
+(the user would fix the wrong place); a toned edge on the card (the owner wants the notice
+neutral, and the icon already carries the status).
 
 ### The settings copy is a lazy catalog
 
@@ -628,8 +653,8 @@ downloads, and its mobile Lighthouse budget has no headroom.
 when the route module evaluates, by the mechanism #315 introduced. The rule list's
 `password_policy.*` keys leave the recovery catalog for a catalog the shared
 `UIPasswordPolicyRules` component owns, so a key resolves wherever the component renders, and the
-toast's `ui_toast.close` is a lazy catalog `components/ui-toast` owns, since only the settings
-chunk renders a toast. Every lazy catalog registers through one container-free
+close label `ui_notification.close` is a lazy catalog `components/ui-notification-content`
+owns, since only the bell notice uses it. Every lazy catalog registers through one container-free
 `lazyCatalogLoader` (`src/lib/locale-catalog`) that takes the owner's JSON as a named
 `LocaleCatalogPair`, so the owner keeps its static import and a new catalog adds no class.
 
@@ -1146,8 +1171,8 @@ engines: `two-factor-challenge-states` and `two-factor-settings-states` run the 
 scan plus the no-positive-`tabindex` check (`expectCleanScan`) on every state, and
 `two-factor-challenge-keyboard` and `two-factor-settings-keyboard` walk the tab order with
 `expectTabOrder`, then check Enter, Space, Escape, the focus target of each change and the
-colours with `toHaveCSS`. `A11Y_EXCEPTIONS` has twelve entries, and the unit test pins the count;
-the twelfth is the challenge's grey "Назад" (`#969B9D`, 2.81:1), kept on the owner's decision of
+colours with `toHaveCSS`. `A11Y_EXCEPTIONS` has thirteen entries, and the unit test pins the count;
+one of them is the challenge's grey "Назад" (`#969B9D`, 2.81:1), kept on the owner's decision of
 2026-11-04 and recorded in
 [`docs/accessibility/acceptance-standard.md`](../../../docs/accessibility/acceptance-standard.md),
 with the pin cells' contrast and focus gaps and the auto-submit's WCAG 3.2.2 gap, which no axe
@@ -1245,3 +1270,33 @@ module grows:
    add a bare alias like `@auth` in `tsconfig.paths.json`, `jest.config.ts`,
    and `rsbuild.config.ts`.
 4. Run `make lint-deps` and iterate until green. Never weaken a rule.
+
+## Social sign-in decisions
+
+The Google, GitHub, Facebook and Twitter/X buttons sign in through two GraphQL mutations that are
+pending until user-service declares them (`src/api/contracts/pending/social-sign-in.graphql`;
+planning in `specs/social-sign-in/`).
+
+- **Flow.** A button opens `/auth/callback/:provider` with `{ socialStart: true }`; the page calls
+  `initiateSocialSignInUser`, keeps the returned `state` and replaces its history entry with the
+  provider's authorization URL. The provider redirects back to the same page, which checks the
+  `state` against the one this tab started with and calls `completeSocialSignInUser`.
+- **Layers.** `useSocialCallback` (hook) → `SocialSignInProvider` (data provider, resolved through
+  `AuthProviderLoader`) → `GraphQLSocialSignInRepository`, with `SocialSignInTransformer` mapping
+  `extensions.error_code` to a `SocialSignInErrorKind`. Like a password sign-in, the provider
+  first signs out any earlier session the store still holds, then writes
+  `{ ...CLEARED_AUTH_STATE, token, twoFactorStatus: 'disabled' }` and emits `signedIn()`.
+- **Paint path.** The buttons only add a `sessionStorage` write and an in-app navigation. The
+  page and its hooks load with the `social-callback` chunk; the data provider, repository and
+  schemas come with the DI container chunk `AuthProviderLoader` loads.
+- **Single use.** Each mutation runs once per start or per `state`, even under StrictMode, and is
+  never retried; "Try again" starts a new round trip and replaces the failed attempt's entry. The
+  start marker is spent when the page reads it, so Back to a failed start never starts again.
+- **Leaving.** The relay counts the pages that share a request and aborts it once none is left. A
+  completion whose page is gone changes no session and reports nothing. One that another sign-in,
+  sign-out or 2FA challenge overtook changes no session either, and reports only a refusal.
+- **Destination.** The page a protected route sent the user from survives the round trip in
+  `sessionStorage` and is validated by `loginRedirectTarget` when saved and when read.
+- **2FA.** A `pendingSessionId` answer stores `{ ...CLEARED_AUTH_STATE, pendingSessionId }`, never a
+  token, and replace-navigates to `/sign-in/two-factor` (`ROUTE_PATHS.twoFactorChallenge`) with the
+  saved destination as `state.from`; the challenge route finishes the sign-in.
