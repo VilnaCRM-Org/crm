@@ -4,12 +4,14 @@ workflowType: 'product-brief'
 bmadCommand: 'create-brief'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-19'
-iteration: 4
+revised: '2026-11-25'
+iteration: 6
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR'
   - '2026-11-19 review: stale REST passages corrected'
   - '2026-11-19 review: GraphQL field names and scope aligned'
+  - '2026-11-20 after #331 merged: 2FA hand-off to the challenge'
+  - '2026-11-25 bundle review: constraints and risks'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'
@@ -91,12 +93,13 @@ recovery, and zero regression to the auth page's performance budget.
 
 ## 6. Constraints
 
-- Contract pin `v2.8.0` lacks the endpoints; the newest user-service tag is still `v2.8.0`.
+- Contract pin `v2.8.0` lacks the two mutations; the newest user-service tag is still `v2.8.0`.
 - The auth paint path is container-free and budget-bound (ADR-011, ADR-017).
 - No `data-testid`, no suppressions, classes-only non-React code, type-only files,
   DI-delivered collaborators, 100% coverage and mutation score.
 
 ## 7. Risks (carried from research)
 
-Contract pin, StrictMode double callback, `code`/`state` leakage, missing 2FA route, and
-developer confusion between modes. Each has a mitigation owned by the PRD and architecture.
+Contract pin, StrictMode double callback, `code`/`state` leakage, and developer
+confusion between modes. Each has a mitigation owned by the PRD and architecture. The missing 2FA
+route is no longer one: #331 merged and the hand-off is built (2026-11-20, PRD D6).

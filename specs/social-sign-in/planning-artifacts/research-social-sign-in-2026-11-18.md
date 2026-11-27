@@ -4,7 +4,7 @@ workflowType: 'research'
 bmadCommand: 'analyst'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-19'
+revised: '2026-11-25'
 slug: 'social-sign-in'
 inputDocuments:
   - 'src/modules/user/features/auth/components/form-section/components/auth-provider-buttons/index.tsx'
@@ -74,7 +74,7 @@ user-service shipped social OAuth across epics #256-#261 (closed). Endpoints, fr
 
 Backend configuration (`user-service/.env`, block `oauth-social-signin`):
 
-```env
+```bash
 OAUTH_GOOGLE_CLIENT_ID=
 OAUTH_GOOGLE_CLIENT_SECRET=
 OAUTH_GOOGLE_REDIRECT_URI=${API_BASE_URL}/api/auth/social/google/callback
@@ -88,30 +88,31 @@ Findings:
 
 - **F-R4 — the callback answers JSON, not a redirect.** _Superseded 2026-11-19: the plan runs
   over two GraphQL mutations with the state bound to the tab in `sessionStorage` (architecture §7);
-  the REST relay and its cookie below are not used._ With the default redirect URI the
+  the REST relay and its cookie are not used. As first written:_ With the default redirect URI the
   provider sends the browser to the **API** origin and the user ends on a raw JSON page. The
   state record stores `redirect_uri` and the backend re-sends it at token exchange, so pointing
   `OAUTH_<P>_REDIRECT_URI` at a **frontend** route works without backend code changes: the
   provider redirects to the SPA, and the SPA relays `code` + `state` to the backend callback with
   `fetch(..., { credentials: 'include' })`. The flow-binding cookie is `SameSite=Lax` and
   `localhost:3000` → `localhost:8080` is **same-site** (cookies ignore ports), so it is sent.
-  This "SPA callback relay" is the integration pattern this plan adopts.
+  This "SPA callback relay" was the integration pattern this plan first adopted.
 - **F-R5 — CORS with credentials.** _Superseded 2026-11-19 with F-R4: no credentialed
-  cross-origin `fetch` remains, so no CORS change is needed._ The relay is a credentialed cross-origin `fetch`; the
+  cross-origin `fetch` remains, so no CORS change is needed. As first written:_ The relay is a credentialed cross-origin `fetch`; the
   backend's `CORS_ALLOW_ORIGIN` must list the SPA origin and allow credentials. Mockoon must
   answer `Access-Control-Allow-Origin: <exact origin>` + `Access-Control-Allow-Credentials:
 true` (a `*` origin is rejected by browsers for credentialed requests).
 - **F-R6 — provider-side denial never reaches the backend.** If the user clicks "Cancel" on
   the consent screen, the provider redirects to `redirect_uri?error=access_denied&state=…`. The
   SPA callback route must handle `error` itself.
-- **F-R7 — 2FA.** The callback can return `pending_session_id`. The 2FA bundle
-  (`crm-worktrees/331-two-factor`, PR #377, route `twoFactorChallenge: '/sign-in/two-factor'`)
-  deferred "social sign-in combined with 2FA" as Follow-up 5.3. This plan consumes that route
-  when it exists and degrades honestly when it does not.
-- **F-R8 — the pinned contract lacks the endpoints.** crm pins `OPENAPI_SPEC_VERSION=v2.8.0`;
-  the newest user-service tag is still `v2.8.0`, and the social endpoints exist only on `main`.
-  Mockoon is built from that pinned spec (`Mockoon.Dockerfile`, sha256-checked), so today it
-  cannot serve social routes at all.
+- **F-R7 — 2FA.** The completion can return a pending session. The 2FA bundle (PR #377, route
+  `twoFactorChallenge: '/sign-in/two-factor'`) deferred "social sign-in combined with 2FA" as
+  Follow-up 5.3. _Resolved 2026-11-20: #331 merged, and S3.3 hands the `pendingSessionId` to that
+  challenge (PRD D6), so the fallback first planned for a missing route was dropped._
+- **F-R8 — the pinned contract lacks social sign-in.** crm pins user-service `v2.8.0`, its newest tag;
+  the REST social endpoints exist only on `main`, and no GraphQL mutation exists anywhere. The spec
+  Mockoon imports (`Mockoon.Dockerfile`, sha256-checked) therefore has no social route.
+  _Resolved 2026-11-19: the two mutations are a pending contract (PRD D3) the local Apollo mock
+  answers, and a merge script adds the consent page to the imported Mockoon environment._
 - **F-R9 — open backend risks.** user-service #468 (account pre-hijacking via email
   auto-link) is open; #520 (link/unlink providers in settings) is open. Neither blocks a
   sign-in button, but #468 is a production-enablement blocker (see PRD D5).
@@ -127,7 +128,8 @@ true` (a `*` origin is rejected by browsers for credentialed requests).
   (`{{queryParam 'state'}}`, `{{urlParam 'provider'}}`, `{{faker 'string.uuid'}}`,
   `{{getEnvVar 'MOCKOON_…'}}` — environment variables are read only with the `MOCKOON_` prefix
   by default).
-- Rules compare a request field against a constant or regex; they cannot compare two request
+- _Superseded 2026-11-19 with F-R4: the state is bound to the tab in `sessionStorage`, not to a
+  cookie, and the Apollo mock checks it. As first written:_ Rules compare a request field against a constant or regex; they cannot compare two request
   fields (state vs cookie). Exact state/cookie binding stays a user-service concern covered by
   its own Behat suite (`features/oauth_social.feature`).
 
@@ -146,25 +148,27 @@ Consequence: the redirect URIs to register are **frontend** URLs on `http://loca
 
 ## 6. Security surface
 
-- CSP (`config/security-headers.json`): top-level navigation to the API origin is not governed
+- _Superseded 2026-11-19 with F-R4: both mutations go to the GraphQL URL `connect-src` already lists;
+  no relay `fetch` exists. As first written:_ CSP (`config/security-headers.json`): top-level navigation to the API origin is not governed
   by `connect-src`; the relay `fetch` already falls under `connect-src 'self'` + API origins.
   `form-action 'self'` is irrelevant (no form post). No CSP change expected — to be confirmed by
   `make check-security-headers`.
 - `Referrer-Policy: strict-origin` (from `config/security-headers.json`) keeps `code`/`state` out of `Referer` to
   third parties; the SPA must still strip them from the address bar (`history.replaceState`)
   before rendering anything that could leak them, and never log them (observability
-  `piiScrubber` must cover `code`, `state`, `pending_session_id`).
+  `piiScrubber` must cover `code` and `state`; _(2026-11-19)_ the GraphQL `pendingSessionId` never
+  enters a URL or a log).
 - `code`/`state` are single-use (backend `validateAndConsume`), so React 19 StrictMode's
   double-invoked effects would burn the code on the second call — the relay must be idempotent
-  per `state` within the page lifetime.
+  within the page lifetime. _(2026-11-19)_ It is keyed by the history entry (PRD FR9).
 
 ## 7. Risks
 
 | Risk                                                       | Likelihood | Impact | Mitigation in plan                                                                                                                 |
 | ---------------------------------------------------------- | ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Contract pin cannot move to a released tag                 | High       | Medium | Pin to a user-service commit SHA or wait for `v2.9.0` (PRD D3)                                                                     |
+| Contract pin cannot move to a released tag                 | High       | Medium | Pending contract fragment until a release declares the mutations _(revised 2026-11-24, PRD D3)_                                    |
 | Mobile Lighthouse regression on `/sign-in`                 | Medium     | High   | Callback code in its own lazy chunk; button module change ≤ 1 kB                                                                   |
-| Double callback under StrictMode                           | High       | Medium | Single-flight relay keyed by `state`                                                                                               |
+| Double callback under StrictMode                           | High       | Medium | Single-flight relay keyed by the history entry _(2026-11-19, PRD FR9)_                                                             |
 | `code`/`state` leak through history, logs, Sentry          | Medium     | High   | `replaceState` first; scrubber keys; unit tests                                                                                    |
 | 2FA route not merged when this lands                       | Medium     | Low    | Degrade to a localized "complete sign-in with password" notice _(resolved 2026-11-20: #331 merged; the hand-off is built, PRD D6)_ |
-| Developer confusion between Mockoon and real-provider mode | Medium     | Medium | One `make` switch + a local verification guide                                                                                     |
+| Developer confusion between Mockoon and real-provider mode | Medium     | Medium | An `.env` edit plus `make apollo-restart` (FR18), and a local verification guide _(2026-11-19)_                                    |

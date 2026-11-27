@@ -40,6 +40,11 @@ interface CompletePayload {
   clientMutationId: string | null;
 }
 
+interface IssuedState {
+  provider: SocialProvider;
+  expiresAt: number;
+}
+
 interface Scenario {
   errorCode: string;
   status: number;
@@ -68,31 +73,35 @@ const AUTHORIZE: Record<SocialProvider, { base: string; params: Record<string, s
 };
 
 // Codes the Mockoon consent page links to; any other code (a real provider's) signs in.
-const SCENARIOS: Record<string, Scenario> = {
-  'mock-expired': { errorCode: 'state_expired', status: 422, message: 'OAuth state expired' },
-  'mock-unverified': {
-    errorCode: 'unverified_provider_email',
-    status: 422,
-    message: 'Provider email is not verified',
-  },
-  'mock-no-email': {
-    errorCode: 'provider_email_unavailable',
-    status: 422,
-    message: 'Provider returned no email address',
-  },
-  'mock-duplicate': {
-    errorCode: 'duplicate_email',
-    status: 409,
-    message: 'Email address matches multiple local users; automatic linking is blocked.',
-  },
-  'mock-unavailable': {
-    errorCode: 'provider_unavailable',
-    status: 503,
-    message: 'OAuth provider error: mock provider is unavailable.',
-  },
-};
+const SCENARIOS = new Map<string, Scenario>(
+  Object.entries({
+    'mock-expired': { errorCode: 'state_expired', status: 422, message: 'OAuth state expired' },
+    'mock-unverified': {
+      errorCode: 'unverified_provider_email',
+      status: 422,
+      message: 'Provider email is not verified',
+    },
+    'mock-no-email': {
+      errorCode: 'provider_email_unavailable',
+      status: 422,
+      message: 'Provider returned no email address',
+    },
+    'mock-duplicate': {
+      errorCode: 'duplicate_email',
+      status: 409,
+      message: 'Email address matches multiple local users; automatic linking is blocked.',
+    },
+    'mock-unavailable': {
+      errorCode: 'provider_unavailable',
+      status: 503,
+      message: 'OAuth provider error: mock provider is unavailable.',
+    },
+  })
+);
 
-const issuedStates = new Map<string, SocialProvider>();
+const STATE_TTL_MS = 10 * 60 * 1000;
+const MAX_ISSUED_STATES = 1000;
+const issuedStates = new Map<string, IssuedState>();
 
 const reject = (errorCode: string, status: number, message: string): never => {
   throw new GraphQLError(message, {
@@ -149,15 +158,29 @@ const pendingTwoFactor = (): CompletePayload['user'] => ({
   pendingSessionId: uuidv4(),
 });
 
+const dropStates = (states: string[]): void =>
+  states.forEach((state) => issuedStates.delete(state));
+
+const issueState = (provider: SocialProvider): string => {
+  const excess = Math.max(0, issuedStates.size + 1 - MAX_ISSUED_STATES);
+  dropStates([...issuedStates.keys()].slice(0, excess));
+  const state = uuidv4();
+  issuedStates.set(state, { provider, expiresAt: Date.now() + STATE_TTL_MS });
+  return state;
+};
+
 const consumeState = (input: CompleteInput): void => {
   const issued = issuedStates.get(input.state);
-  if (issued === undefined) reject('invalid_state', 422, 'Invalid or already consumed OAuth state');
+  if (issued === undefined) {
+    return reject('invalid_state', 422, 'Invalid or already consumed OAuth state');
+  }
   issuedStates.delete(input.state);
-  if (issued !== input.provider) {
+  if (issued.expiresAt <= Date.now()) reject('state_expired', 422, 'OAuth state expired');
+  if (issued.provider !== input.provider) {
     reject(
       'provider_mismatch',
       400,
-      `Provider mismatch: expected ${issued}, got ${input.provider}`
+      `Provider mismatch: expected ${issued.provider}, got ${input.provider}`
     );
   }
 };
@@ -172,8 +195,7 @@ export const socialSignInResolvers = {
         reject('unsupported_provider', 400, `Unsupported OAuth provider "${input.provider}".`);
       }
       const provider = input.provider as SocialProvider;
-      const state = uuidv4();
-      issuedStates.set(state, provider);
+      const state = issueState(provider);
       return {
         user: {
           id: `/api/oauth/states/${state}`,
@@ -187,8 +209,11 @@ export const socialSignInResolvers = {
       _: unknown,
       { input }: { input: CompleteInput }
     ): Promise<CompletePayload> => {
+      if (input.code.trim() === '') {
+        reject('missing_oauth_parameters', 400, 'Missing OAuth code or state');
+      }
       consumeState(input);
-      const scenario = SCENARIOS[input.code];
+      const scenario = SCENARIOS.get(input.code);
       if (scenario) reject(scenario.errorCode, scenario.status, scenario.message);
       const user = input.code === 'mock-2fa' ? pendingTwoFactor() : signedIn();
       return { user, clientMutationId: input.clientMutationId ?? null };
@@ -196,4 +221,4 @@ export const socialSignInResolvers = {
   },
 };
 
-export const __socialTest__ = { issuedStates };
+export const __socialTest__ = { issuedStates, issueState };

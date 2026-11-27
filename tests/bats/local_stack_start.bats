@@ -5,8 +5,8 @@ load './test_helper.bash'
 setup() {
   setup_stub_dir
   export USER_SERVICE_DIR="$BATS_TEST_TMPDIR/user-service"
-  export BUILT_DOCKERFILE="$BATS_TEST_TMPDIR/built.Dockerfile"
-  mkdir -p "$USER_SERVICE_DIR"
+  export BUILT_DIR="$BATS_TEST_TMPDIR/built"
+  mkdir -p "$USER_SERVICE_DIR" "$BUILT_DIR"
   printf '%s\n' 'OAUTH_ENCRYPTION_KEY=dev-oauth' 'TWO_FACTOR_ENCRYPTION_KEY=dev-2fa' \
     > "$USER_SERVICE_DIR/.env.dev"
   cat > "$USER_SERVICE_DIR/Dockerfile" << 'DOCKERFILE'
@@ -33,7 +33,7 @@ if [ "$1" = image ] && [ "$2" = inspect ]; then
   exit
 fi
 if [ "$1" = build ]; then
-  cat > "${BUILT_DOCKERFILE:?}"
+  cat > "${BUILT_DIR:?}/$5"
 fi
 exit 0
 STUB
@@ -129,15 +129,67 @@ lines() {
   [ "$(grep -c 'docker compose rm' "$COMMAND_LOG")" -eq 0 ]
 }
 
-@test "local stack start keeps encryption keys the developer already set" {
+@test "local stack start keeps encryption keys that match .env.dev, quoted or not" {
+  lines AUTH_ACCESS_TOKEN_TTL_SECONDS=60 'OAUTH_ENCRYPTION_KEY="dev-oauth"' \
+    "TWO_FACTOR_ENCRYPTION_KEY='dev-2fa'" > "$USER_SERVICE_DIR/.env.local"
+
+  run_start
+
+  [ "$status" -eq 0 ]
+  [ "$(env_local)" = "$(lines AUTH_ACCESS_TOKEN_TTL_SECONDS=60 'OAUTH_ENCRYPTION_KEY="dev-oauth"' \
+    "TWO_FACTOR_ENCRYPTION_KEY='dev-2fa'")" ]
+  [ "$(grep -c 'docker compose rm' "$COMMAND_LOG")" -eq 0 ]
+}
+
+@test "local stack start keeps local encryption keys .env.dev does not set" {
   lines AUTH_ACCESS_TOKEN_TTL_SECONDS=60 OAUTH_ENCRYPTION_KEY=mine \
     TWO_FACTOR_ENCRYPTION_KEY=mine-too > "$USER_SERVICE_DIR/.env.local"
+  rm "$USER_SERVICE_DIR/.env.dev"
 
   run_start
 
   [ "$status" -eq 0 ]
   [ "$(env_local)" = "$(lines AUTH_ACCESS_TOKEN_TTL_SECONDS=60 OAUTH_ENCRYPTION_KEY=mine \
     TWO_FACTOR_ENCRYPTION_KEY=mine-too)" ]
+}
+
+@test "local stack start stops, changing nothing, when a local key differs from .env.dev" {
+  lines OAUTH_ENCRYPTION_KEY=dev-oauth TWO_FACTOR_ENCRYPTION_KEY=mine \
+    > "$USER_SERVICE_DIR/.env.local"
+
+  run_start
+
+  [ "$status" -eq 1 ]
+  assert_output_contains "TWO_FACTOR_ENCRYPTION_KEY differs between $USER_SERVICE_DIR/.env.local"
+  [[ "$output" != *mine* ]]
+  [[ "$output" != *dev-2fa* ]]
+  [ "$(env_local)" = "$(lines OAUTH_ENCRYPTION_KEY=dev-oauth TWO_FACTOR_ENCRYPTION_KEY=mine)" ]
+  [ ! -s "$COMMAND_LOG" ]
+}
+
+@test "local stack start fills an empty local encryption key from .env.dev" {
+  lines AUTH_ACCESS_TOKEN_TTL_SECONDS=60 OAUTH_ENCRYPTION_KEY= \
+    'TWO_FACTOR_ENCRYPTION_KEY=""' > "$USER_SERVICE_DIR/.env.local"
+
+  run_start
+
+  [ "$status" -eq 0 ]
+  [ "$(env_local)" = "$(lines AUTH_ACCESS_TOKEN_TTL_SECONDS=60 OAUTH_ENCRYPTION_KEY= \
+    'TWO_FACTOR_ENCRYPTION_KEY=""' OAUTH_ENCRYPTION_KEY=dev-oauth \
+    TWO_FACTOR_ENCRYPTION_KEY=dev-2fa)" ]
+  grep -qx 'docker compose rm --force --stop workers' "$COMMAND_LOG"
+}
+
+@test "local stack start fails fast, changing nothing, when .env.dev has an empty key" {
+  lines OAUTH_ENCRYPTION_KEY=dev-oauth TWO_FACTOR_ENCRYPTION_KEY= \
+    > "$USER_SERVICE_DIR/.env.dev"
+
+  run_start
+
+  [ "$status" -eq 1 ]
+  assert_output_contains "TWO_FACTOR_ENCRYPTION_KEY is not set in $USER_SERVICE_DIR/.env.dev"
+  [ ! -e "$USER_SERVICE_DIR/.env.local" ]
+  [ ! -s "$COMMAND_LOG" ]
 }
 
 @test "local stack start fails fast when .env.dev has no key for the workers" {
@@ -158,12 +210,15 @@ lines() {
     "$COMMAND_LOG"
   grep -qx "docker build -f - --target app_workers -t user-service-local-workers $USER_SERVICE_DIR" \
     "$COMMAND_LOG"
-  [ "$(cat "$BUILT_DOCKERFILE")" = "$(lines \
+  local filtered
+  filtered="$(lines \
     'FROM php AS frankenphp_base' \
     'RUN echo before' \
     'RUN echo after' \
     'FROM frankenphp_base AS frankenphp_dev' \
-    'FROM frankenphp_base AS app_workers')" ]
+    'FROM frankenphp_base AS app_workers')"
+  [ "$(cat "$BUILT_DIR/frankenphp_dev")" = "$filtered" ]
+  [ "$(cat "$BUILT_DIR/app_workers")" = "$filtered" ]
 }
 
 @test "local stack start builds only the missing workers image" {
@@ -184,7 +239,7 @@ lines() {
 
   [ "$status" -eq 0 ]
   [ "$(grep -c '^docker build' "$COMMAND_LOG")" -eq 0 ]
-  [ ! -e "$BUILT_DOCKERFILE" ]
+  [ -z "$(ls -A "$BUILT_DIR")" ]
   [ "$(grep '^docker compose up' "$COMMAND_LOG" | head -n 2)" = "$(lines \
     'docker compose up --detach --no-build --wait php database redis mailer localstack' \
     'docker compose up --detach --no-build workers')" ]

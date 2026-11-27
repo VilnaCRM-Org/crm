@@ -1143,8 +1143,8 @@ engines: `two-factor-challenge-states` and `two-factor-settings-states` run the 
 scan plus the no-positive-`tabindex` check (`expectCleanScan`) on every state, and
 `two-factor-challenge-keyboard` and `two-factor-settings-keyboard` walk the tab order with
 `expectTabOrder`, then check Enter, Space, Escape, the focus target of each change and the
-colours with `toHaveCSS`. `A11Y_EXCEPTIONS` has twelve entries, and the unit test pins the count;
-the twelfth is the challenge's grey "Назад" (`#969B9D`, 2.81:1), kept on the owner's decision of
+colours with `toHaveCSS`. `A11Y_EXCEPTIONS` has thirteen entries, and the unit test pins the count;
+one of them is the challenge's grey "Назад" (`#969B9D`, 2.81:1), kept on the owner's decision of
 2026-11-04 and recorded in
 [`docs/accessibility/acceptance-standard.md`](../../../docs/accessibility/acceptance-standard.md),
 with the pin cells' contrast and focus gaps and the auto-submit's WCAG 3.2.2 gap, which no axe
@@ -1262,7 +1262,11 @@ planning in `specs/social-sign-in/`).
   page and its hooks load with the `social-callback` chunk; the data provider, repository and
   schemas come with the DI container chunk `AuthProviderLoader` loads.
 - **Single use.** Each mutation runs once per start or per `state`, even under StrictMode, and is
-  never retried; "Try again" starts a new round trip and replaces the failed attempt's entry.
+  never retried; "Try again" starts a new round trip and replaces the failed attempt's entry. The
+  start marker is spent when the page reads it, so Back to a failed start never starts again.
+- **Leaving.** The relay counts the pages that share a request and aborts it once none is left. A
+  completion whose page is gone changes no session and reports nothing. One that another sign-in,
+  sign-out or 2FA challenge overtook changes no session either, and reports only a refusal.
 - **Destination.** The page a protected route sent the user from survives the round trip in
   `sessionStorage` and is validated by `loginRedirectTarget` when saved and when read.
 - **2FA.** A `pendingSessionId` answer stores `{ ...CLEARED_AUTH_STATE, pendingSessionId }`, never a

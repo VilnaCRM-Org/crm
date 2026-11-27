@@ -12,8 +12,7 @@ interface IsolatedProviders {
 }
 
 // The provider table is a module-level literal, so it is only evaluated inside the test when the
-// module is loaded here. Its two collaborators are loaded from the same isolated registry, or the
-// spies below would sit on different singletons than the ones the handler calls.
+// module is loaded here. The start handler it calls is handed in, so no collaborator is spied on.
 function loadProviders(): Promise<IsolatedProviders> {
   return loadIsolated(async () => {
     const oauthProviders = (

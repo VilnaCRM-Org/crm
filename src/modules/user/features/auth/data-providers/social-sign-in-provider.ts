@@ -27,7 +27,9 @@ export default class SocialSignInProvider {
 
   public async start(provider: SocialProvider, signal: AbortSignal): Promise<SocialStartOutcome> {
     try {
-      return this.transformer.toStart(await this.repository.initiate(provider, signal));
+      const initiation = await this.repository.initiate(provider, signal);
+      signal.throwIfAborted();
+      return this.transformer.toStart(initiation);
     } catch (caught) {
       return this.failed(caught, signal);
     }
@@ -38,10 +40,16 @@ export default class SocialSignInProvider {
     params: SocialCallbackParams,
     signal: AbortSignal
   ): Promise<SocialSignInOutcome> {
+    const superseded = new AbortController();
+    const stopWatching = this.onSessionChange(() => superseded.abort());
     try {
-      return this.settle(await this.repository.complete(provider, params, signal));
+      const completion = await this.repository.complete(provider, params, signal);
+      const dropped = signal.aborted || superseded.signal.aborted;
+      return dropped ? { kind: 'aborted' } : this.settle(completion);
     } catch (caught) {
       return this.failed(caught, signal);
+    } finally {
+      stopWatching();
     }
   }
 
@@ -67,6 +75,12 @@ export default class SocialSignInProvider {
       this.deps.securitySignals.signedIn();
     }
     return this.transformer.toOutcome(completion);
+  }
+
+  private onSessionChange(notify: VoidFunction): VoidFunction {
+    return this.deps.authState.subscribe((now, before) => {
+      if (now.token !== before.token || now.pendingSessionId !== before.pendingSessionId) notify();
+    });
   }
 
   private endEarlierSession(): void {

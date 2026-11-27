@@ -24,7 +24,7 @@ const PROVIDER_LABELS: SocialProviderLabels = {
 
 // What the social callback page shows, decided from how it was opened (a start from the
 // provider buttons, or a provider redirect back) and from each relay's outcome
-// (specs/social-sign-in, FR5-FR14).
+// (specs/social-sign-in, FR5-FR13).
 class SocialCallbackViewMapper {
   public readQuery(): SocialCallbackQuery {
     const params = new URLSearchParams(window.location.search);
@@ -73,10 +73,10 @@ class SocialCallbackViewMapper {
     return { status: 'failed', provider: view.provider, label: view.label, error };
   }
 
-  // A relay that never got an answer (the page never aborts one) counts as the service being
-  // unavailable.
+  // An aborted relay usually has no page left to show it; a completion a newer sign-in overtook
+  // while its page stayed mounted is an attempt that no longer counts.
   private errorOf(outcome: SocialSignInOutcome | SocialStartOutcome): SocialSignInErrorKind {
-    return outcome.kind === 'failed' ? outcome.error : 'unavailable';
+    return outcome.kind === 'failed' ? outcome.error : 'expired';
   }
 
   private queryView(

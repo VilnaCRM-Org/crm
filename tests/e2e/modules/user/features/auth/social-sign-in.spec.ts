@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 
-import { buildUserId } from '@tests/builders';
+import { buildPendingSessionId } from '@tests/builders';
+import { expectNoSecrets } from '@tests/e2e/utils/expect-no-secrets';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
 import { challengeHeadingOf, codeCellsOf, typeCode } from '@tests/e2e/utils/reach-challenge';
@@ -10,6 +11,7 @@ import {
   answerInitiate,
   E2E_STATE,
   refused,
+  refuseInitiate,
   signedIn,
   twoFactor,
   unreachableComplete,
@@ -45,17 +47,21 @@ test.describe('Social sign-in', () => {
       expect(completed).toEqual([
         expect.objectContaining({ provider, code: 'e2e-code', state: E2E_STATE }),
       ]);
-      await expect(page.locator('main')).toBeFocused();
+      await expect(page.getByRole('main')).toBeFocused();
     });
   }
 
   test('signs in from /sign-up as well', async ({ page }) => {
-    await answerInitiate(page, 'e2e-code');
-    await answerComplete(page, signedIn());
+    const initiated = await answerInitiate(page, 'e2e-code');
+    const completed = await answerComplete(page, signedIn());
 
     await signInWith(page, 'Google', '/sign-up');
 
     await expect(page).toHaveURL(/\/$/);
+    expect(initiated.map((input) => input.provider)).toEqual(['google']);
+    expect(completed).toEqual([
+      expect.objectContaining({ provider: 'google', code: 'e2e-code', state: E2E_STATE }),
+    ]);
   });
 
   test('strips the code and state from the address bar', async ({ page }) => {
@@ -70,11 +76,14 @@ test.describe('Social sign-in', () => {
   });
 
   test('refuses a cancel for a state this tab never started', async ({ page }) => {
+    const completed = await answerComplete(page, signedIn());
+
     await page.goto(`/auth/callback/github?error=access_denied&state=${E2E_STATE}`);
 
     await expect(
       page.getByRole('status').filter({ hasText: t('auth.social.error.expired') })
     ).toBeVisible();
+    expect(completed).toHaveLength(0);
   });
 
   test('refuses a callback for a state this tab never started', async ({ page }) => {
@@ -139,7 +148,7 @@ test.describe('Social sign-in', () => {
   test('hands a 2FA account to the challenge and lands it on the page it came from', async ({
     page,
   }) => {
-    const pendingSessionId = buildUserId();
+    const pendingSessionId = buildPendingSessionId();
     await answerInitiate(page, 'e2e-code');
     await answerComplete(page, twoFactor(pendingSessionId));
     const challenge = await stubChallenge(page);
@@ -154,6 +163,8 @@ test.describe('Social sign-in', () => {
     await expect(page.getByRole('heading', { level: 1, name: errorTitle('Google') })).toHaveCount(
       0
     );
+
+    await expectNoSecrets(page, { pendingSessionId });
 
     await typeCode(page, '246810');
 
@@ -179,6 +190,28 @@ test.describe('Social sign-in', () => {
     await page.keyboard.press('Enter');
 
     await expect.poll(() => initiated.map((input) => input.provider)).toEqual(['google', 'google']);
+  });
+
+  test('takes Space on Try again and Enter on Back to sign in', async ({ page }) => {
+    const initiated = await answerInitiate(page, 'e2e-code');
+    await answerComplete(page, refused(503, 'provider_unavailable'));
+    await signInWith(page, 'Google');
+    await expect(page.getByRole('heading', { level: 1, name: errorTitle('Google') })).toBeFocused();
+
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: tryAgain })).toBeFocused();
+    await page.keyboard.press('Space');
+
+    await expect.poll(() => initiated).toHaveLength(2);
+    await expect(page.getByRole('heading', { level: 1, name: errorTitle('Google') })).toBeFocused();
+
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('link', { name: backToSignIn })).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect(page).toHaveURL(/\/sign-in$/);
+    await expect(page.getByRole('main')).toBeFocused();
   });
 
   test.describe('dropped connection', () => {
@@ -230,7 +263,33 @@ test.describe('Social sign-in', () => {
     await page.getByRole('button', { name: button('Google') }).click();
 
     await expect(page).toHaveURL(PROTECTED_DESTINATION);
-    await expect(page.locator('main')).toBeFocused();
+    await expect(page.getByRole('main')).toBeFocused();
+  });
+
+  test('never starts again on Back to a failed start', async ({ page }) => {
+    const initiated = await refuseInitiate(page, 503, 'provider_unavailable');
+    await signInWith(page, 'Google');
+    await expect(page.getByRole('heading', { level: 1, name: errorTitle('Google') })).toBeFocused();
+    await page.getByRole('link', { name: backToSignIn }).click();
+    await expect(page.getByRole('button', { name: button('Google') })).toBeVisible();
+    await expect(page.getByRole('main')).toBeFocused();
+    await expect.poll(() => page.evaluate(() => window.history.state?.usr?.focusMain)).toBe(false);
+
+    await page.goBack();
+
+    await expect(
+      page
+        .getByRole('status')
+        .filter({ hasText: t('auth.social.error.missing_parameters', { provider: 'Google' }) })
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: errorTitle('Google') })).toBeFocused();
+    expect(initiated).toHaveLength(1);
+
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: tryAgain })).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect.poll(() => initiated).toHaveLength(2);
   });
 
   test('goes back to sign-in from the error view', async ({ page }) => {

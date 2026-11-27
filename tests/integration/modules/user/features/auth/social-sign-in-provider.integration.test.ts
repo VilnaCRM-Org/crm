@@ -1,11 +1,14 @@
-import { HttpResponse } from 'msw';
+import { HttpResponse, delay } from 'msw';
 
 import '../../../../setup';
 import container from '@/config/dependency-injection-config';
 import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
+import type RequestDeadlineFactory from '@/lib/reliability/request-deadline-factory';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import SECURITY_EVENT_TOKENS from '@/services/security-events/tokens';
-import type { SecurityEventRecorder } from '@/services/types/security-events/security-event';
+import HTTP_TOKENS from '@/services/https-client/tokens';
+import observabilityCore from '@/services/observability/observability-core';
+import securityEventConfig from '@/services/security-events/security-event-config';
+import SecurityEventSignal from '@/services/security-events/security-event-signal';
 import SocialSignInProvider from '@auth/data-providers/social-sign-in-provider';
 import { AuthProviderLoader, useAuthStore } from '@auth/stores';
 import { CLEARED_AUTH_STATE } from '@auth/stores/use-auth-store';
@@ -36,11 +39,34 @@ const refused = (errorCode: string, status = 422): Response =>
     errors: [{ message: 'refused', extensions: { status, error_code: errorCode } }],
   });
 
+let clock = Date.now();
+
+const leaveEveryEarlierWindow = (): void => {
+  clock += securityEventConfig.windowMs() + 1;
+  jest.spyOn(Date, 'now').mockReturnValue(clock);
+};
+
+const reportedEvents = (): jest.SpyInstance => {
+  leaveEveryEarlierWindow();
+  return jest.spyOn(observabilityCore, 'report').mockImplementation();
+};
+
+const loginFailure = (reason: string, failureCount = 1): unknown[] => [
+  expect.any(SecurityEventSignal),
+  expect.objectContaining({
+    event: 'auth_failure',
+    category: 'login',
+    severity: 'warning',
+    reason,
+    failureCount,
+  }),
+];
+
 describe('SocialSignInProvider over the container and msw', () => {
   let provider: SocialSignInProvider;
 
   beforeEach(async () => {
-    useAuthStore.setState({ token: null });
+    useAuthStore.setState(CLEARED_AUTH_STATE);
     provider = await new AuthProviderLoader().resolve<SocialSignInProvider>(
       AUTH_TOKENS.SocialSignInProvider
     );
@@ -51,18 +77,12 @@ describe('SocialSignInProvider over the container and msw', () => {
     jest.restoreAllMocks();
   });
 
-  const authFailures = (): jest.SpyInstance =>
-    jest.spyOn(
-      container.resolve<SecurityEventRecorder>(SECURITY_EVENT_TOKENS.SecurityEventReporter),
-      'authFailure'
-    );
-
   it.each([
     ['a refused completion', 'validation', 422],
     ['a conflicting completion', 'conflict', 409],
     ['a completion the provider could not serve', 'server', 503],
   ])('records %s with its reason code', async (_label, reason, status) => {
-    const recorded = authFailures();
+    const reported = reportedEvents();
     answer('CompleteSocialSignIn', () =>
       HttpResponse.json({
         data: { completeSocialSignInUser: null },
@@ -72,20 +92,68 @@ describe('SocialSignInProvider over the container and msw', () => {
 
     await provider.complete('google', PARAMS, new AbortController().signal);
 
-    expect(recorded).toHaveBeenCalledTimes(1);
-    expect(recorded).toHaveBeenCalledWith('login', reason);
+    expect(reported.mock.calls).toEqual([loginFailure(reason)]);
   });
 
   it('records a start user-service could not be reached for as a network failure', async () => {
-    const recorded = authFailures();
+    const reported = reportedEvents();
     answer('InitiateSocialSignIn', () => HttpResponse.error());
 
     await expect(provider.start('google', new AbortController().signal)).resolves.toEqual({
       kind: 'failed',
       error: 'unavailable',
     });
-    expect(recorded).toHaveBeenCalledTimes(1);
-    expect(recorded).toHaveBeenCalledWith('login', 'network');
+    expect(reported.mock.calls).toEqual([loginFailure('network')]);
+  });
+
+  const answered = (status: number) => (): Response => new HttpResponse(null, { status });
+  const gateway = (): Response => new HttpResponse('<html>Bad gateway</html>', { status: 502 });
+  const unparsable = (): Response => new HttpResponse('<html>', { status: 200 });
+
+  it.each<[string, () => Response, string]>([
+    ['an HTTP 423', answered(423), 'locked'],
+    ['an HTTP 429', answered(429), 'rate_limited'],
+    ['an HTTP 500', answered(500), 'server'],
+    ['an HTTP 503', answered(503), 'server'],
+    ['a gateway page', gateway, 'server'],
+    ['an unparsable body', unparsable, 'unknown'],
+  ])('shows the generic error for %s and records why', async (_label, respond, reason) => {
+    const reported = reportedEvents();
+    const started = answer('InitiateSocialSignIn', respond);
+    const completed = answer('CompleteSocialSignIn', respond);
+    const signal = new AbortController().signal;
+
+    await expect(provider.start('google', signal)).resolves.toEqual({
+      kind: 'failed',
+      error: 'generic',
+    });
+    await expect(provider.complete('google', PARAMS, signal)).resolves.toEqual({
+      kind: 'failed',
+      error: 'generic',
+    });
+    expect([started, completed]).toEqual([[expect.anything()], [expect.anything()]]);
+    expect(reported.mock.calls).toEqual([loginFailure(reason), loginFailure(reason, 2)]);
+  });
+
+  it('shows unavailable for a request the deadline cut short', async () => {
+    const reported = reportedEvents();
+    jest
+      .spyOn(
+        container.resolve<RequestDeadlineFactory>(HTTP_TOKENS.RequestDeadlineFactory),
+        'defaultTimeoutMs'
+      )
+      .mockReturnValue(20);
+    server.use(
+      userServiceGraphql.mutation('CompleteSocialSignIn', async () => {
+        await delay('infinite');
+        return HttpResponse.json({});
+      })
+    );
+
+    await expect(
+      provider.complete('google', PARAMS, new AbortController().signal)
+    ).resolves.toEqual({ kind: 'failed', error: 'unavailable' });
+    expect(reported.mock.calls).toEqual([loginFailure('network')]);
   });
 
   it('resolves one container singleton', () => {
@@ -287,6 +355,89 @@ describe('SocialSignInProvider over the container and msw', () => {
       kind: 'failed',
       error: 'unsupported_provider',
     });
+  });
+
+  it.each([
+    ['session', { token: 'newer-token' }],
+    ['2FA challenge', { pendingSessionId: 'newer-pending' }],
+  ])('keeps a newer %s that started while the completion ran', async (_label, newer) => {
+    answer('CompleteSocialSignIn', () => {
+      useAuthStore.setState(newer);
+      return HttpResponse.json({
+        data: {
+          completeSocialSignInUser: {
+            user: { twoFactorEnabled: false, accessToken: buildToken(), pendingSessionId: null },
+          },
+        },
+      });
+    });
+
+    await expect(
+      provider.complete('google', PARAMS, new AbortController().signal)
+    ).resolves.toEqual({ kind: 'aborted' });
+    expect(useAuthStore.getState()).toMatchObject({ ...CLEARED_AUTH_STATE, ...newer });
+  });
+
+  it('stays signed out when the user signed out while the completion ran', async () => {
+    useAuthStore.setState({ token: buildToken() });
+    answer('CompleteSocialSignIn', () => {
+      useAuthStore.setState({ token: null });
+      return HttpResponse.json({
+        data: {
+          completeSocialSignInUser: {
+            user: { twoFactorEnabled: false, accessToken: buildToken(), pendingSessionId: null },
+          },
+        },
+      });
+    });
+
+    await expect(
+      provider.complete('google', PARAMS, new AbortController().signal)
+    ).resolves.toEqual({ kind: 'aborted' });
+    expect(useAuthStore.getState()).toMatchObject(CLEARED_AUTH_STATE);
+  });
+
+  it('signs in although another part of the store changed while the completion ran', async () => {
+    const accessToken = buildToken();
+    answer('CompleteSocialSignIn', () => {
+      useAuthStore.setState({ loginLoading: true });
+      return HttpResponse.json({
+        data: {
+          completeSocialSignInUser: {
+            user: { twoFactorEnabled: false, accessToken, pendingSessionId: null },
+          },
+        },
+      });
+    });
+
+    await expect(
+      provider.complete('google', PARAMS, new AbortController().signal)
+    ).resolves.toEqual({ kind: 'signed-in' });
+    expect(useAuthStore.getState().token).toBe(accessToken);
+  });
+
+  it('settles as aborted, changing nothing, when its page goes mid-request', async () => {
+    const reported = reportedEvents();
+    const controller = new AbortController();
+    server.use(
+      userServiceGraphql.mutation('CompleteSocialSignIn', async () => {
+        controller.abort();
+        await delay(20);
+        return HttpResponse.json({
+          data: {
+            completeSocialSignInUser: {
+              user: { twoFactorEnabled: false, accessToken: buildToken(), pendingSessionId: null },
+            },
+          },
+        });
+      })
+    );
+
+    await expect(provider.complete('google', PARAMS, controller.signal)).resolves.toEqual({
+      kind: 'aborted',
+    });
+    expect(useAuthStore.getState()).toMatchObject(CLEARED_AUTH_STATE);
+    expect(reported).not.toHaveBeenCalled();
   });
 
   it('reports nothing for a completion the caller already aborted', async () => {

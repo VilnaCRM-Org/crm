@@ -103,6 +103,25 @@ describe('useSocialCallback', () => {
     expect(window.location.search).toBe('');
   });
 
+  it('spends the start marker of its entry, so opening the entry again never starts', async () => {
+    mockStart.mockResolvedValue({ kind: 'failed', error: 'unavailable' });
+    window.history.replaceState({ usr: { socialStart: true }, idx: 1 }, '', '/');
+    const open = (): ReturnType<typeof render> =>
+      renderHook(() => useSocialCallback(), {
+        wrapper: wrapperFor('/auth/callback/google', window.history.state.usr),
+      });
+    const view = open();
+    await waitFor(() => expect(view.result.current.view.status).toBe('failed'));
+    view.unmount();
+
+    const { result } = open();
+
+    expect(window.history.state).toEqual({ usr: null, idx: 1 });
+    expect(result.current.view).toMatchObject({ status: 'failed', error: 'missing_parameters' });
+    expect(result.current.retry).toBeDefined();
+    expect(mockStart).toHaveBeenCalledTimes(1);
+  });
+
   it('leaves for the authorization URL after a successful start', async () => {
     const leave = jest.spyOn(socialSignInNavigator, 'leave').mockImplementation(() => undefined);
     const url = 'https://accounts.google.com/o/oauth2/v2/auth?state=hook';

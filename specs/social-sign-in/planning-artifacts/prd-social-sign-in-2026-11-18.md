@@ -4,7 +4,18 @@ workflowType: 'prd'
 bmadCommand: 'create-prd'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-20'
+revised: '2026-11-25'
+iteration: 10
+revisionPasses:
+  - '2026-11-19 GraphQL only, no ADR; review corrections'
+  - '2026-11-20 after #331 merged: D6, FR10-FR12'
+  - '2026-11-24 FR/NFR gate iteration 7: FR12, NFR10, NFR13, A3'
+  - '2026-11-24 review: NFR6, NFR7, NFR8'
+  - '2026-11-24 FR/NFR gate iteration 8: FR15, FR17'
+  - '2026-11-24 FR/NFR gate iteration 9: NFR8, NFR12'
+  - '2026-11-24 FR/NFR gate iteration 10: NFR6 acceptance'
+  - '2026-11-24 FR/NFR gate iteration 11: NFR6 keys, NFR8 refused completions, trace'
+  - '2026-11-25 bundle review: FR5-FR8, FR12, NFR7, NFR10'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'
@@ -47,7 +58,7 @@ Predecessors: [research](research-social-sign-in-2026-11-18.md) ·
 > Twitter/X are wired identically and verified in `mock` mode only.
 >
 > Assumption A3: The access token from the callback is handled exactly like the password sign-in
-> token (memory-only `AuthStateVar`); `refresh_token` is ignored, consistent with the 2FA bundle's
+> token (memory-only, in `useAuthStore`); `refresh_token` is ignored, consistent with the 2FA bundle's
 > deferred refresh-token follow-up.
 >
 > Assumption A4: No Figma frame covers the callback route. The callback screen composes existing
@@ -71,16 +82,18 @@ Predecessors: [research](research-social-sign-in-2026-11-18.md) ·
 ### Callback
 
 - **FR5** A public route `/auth/callback/:provider` exists, registered through the auth
-  feature's route contract and the route-coverage manifest.
-- **FR6** On mount, before rendering anything else, the route reads `code`, `state` and `error`
+  feature's route contract and the route-coverage manifest. _(2026-11-25)_ A segment that names no
+  known provider shows `unsupported_provider` without calling the backend.
+- **FR6** On mount, before the first paint of its content, the route reads `code`, `state` and `error`
   from the query and removes the query string from the address bar (`history.replaceState`).
 - **FR7** _(2026-11-19)_ A provider denial (`error` present, e.g. `access_denied`) with the
   `state` this tab started shows a localized
-  "sign-in was cancelled" message without calling the backend.
+  "sign-in was cancelled" message without calling the backend. _(2026-11-25)_ A denial without a
+  `state` shows `missing_parameters`, one with a foreign `state` shows `expired`, neither with a call.
 - **FR8** On a provider callback (an arrival not marked `{ socialStart: true }`, which FR1
-  covers), a missing `code` or `state` (and no `error`) shows the `missing_oauth_parameters`
+  covers), a missing `code` (and no `error`) or a missing `state` shows the `missing_oauth_parameters`
   message without calling the backend.
-- **FR9** _(2026-11-19)_ Otherwise the route accepts only a `state` equal to the one this tab saved for this provider (else the `expired` message, no request), and performs exactly one `completeSocialSignInUser(provider, code, state)` per state, even when React runs the effect twice.
+- **FR9** _(2026-11-19)_ Otherwise the route accepts only a `state` equal to the one this tab saved for this provider (else the `expired` message, no request), and performs exactly one `completeSocialSignInUser(provider, code, state)` per state, even when React runs the effect twice. _(2026-11-24)_ The page shares one run per history entry and strips `code` and `state` from that entry; it keeps no record of spent states, because user-service accepts a state once and answers a reused one `invalid_state`, shown as `expired`.
 - **FR10** _(revised 2026-11-20)_ A `completeSocialSignInUser` result with `twoFactorEnabled:
 false` and an `accessToken` starts a session the way a password sign-in does: any earlier session
   (a sandbox demo session included) is ended first, then the auth store holds the signed-out state
@@ -91,29 +104,34 @@ false` and an `accessToken` starts a session the way a password sign-in does: an
   stored destination or `/`.
 - **FR12** Each documented failure renders its own localized message and recovery:
 
-  | Source                                         | Message key (`auth.social.error.*`) | Recovery actions                           |
-  | ---------------------------------------------- | ----------------------------------- | ------------------------------------------ |
-  | provider `error`                               | `cancelled`                         | Try again (same provider), Back to sign in |
-  | `missing_oauth_parameters` (400)               | `missing_parameters`                | Try again, Back to sign in                 |
-  | `provider_mismatch` (400)                      | `provider_mismatch`                 | Back to sign in                            |
-  | `unsupported_provider` (400)                   | `unsupported_provider`              | Back to sign in                            |
-  | `duplicate_email` (409)                        | `duplicate_email`                   | Back to sign in (use email + password)     |
-  | `invalid_state`, `state_expired` (422)         | `expired`                           | Try again, Back to sign in                 |
-  | `provider_email_unavailable` (422)             | `email_unavailable`                 | Try again, Back to sign in                 |
-  | `unverified_provider_email` (422)              | `email_unverified`                  | Try again, Back to sign in                 |
-  | `provider_unavailable` (503), network, timeout | `unavailable`                       | Try again, Back to sign in                 |
-  | unknown `error_code`, 5xx, malformed body      | `generic`                           | Try again, Back to sign in                 |
+  | Source                                                             | Message key (`auth.social.error.*`) | Recovery actions                           |
+  | ------------------------------------------------------------------ | ----------------------------------- | ------------------------------------------ |
+  | provider `error` with this tab's `state`                           | `cancelled`                         | Try again (same provider), Back to sign in |
+  | `missing_oauth_parameters` (400), FR7, FR8                         | `missing_parameters`                | Try again, Back to sign in                 |
+  | `provider_mismatch` (400)                                          | `provider_mismatch`                 | Back to sign in                            |
+  | `unsupported_provider` (400), FR5                                  | `unsupported_provider`              | Back to sign in                            |
+  | `duplicate_email` (409)                                            | `duplicate_email`                   | Back to sign in (use email + password)     |
+  | `invalid_state`, `state_expired` (422), FR7, FR9, NFR8             | `expired`                           | Try again, Back to sign in                 |
+  | `provider_email_unavailable` (422)                                 | `email_unavailable`                 | Try again, Back to sign in                 |
+  | `unverified_provider_email` (422)                                  | `email_unverified`                  | Try again, Back to sign in                 |
+  | `provider_unavailable`, network, timeout, code that failed to load | `unavailable`                       | Try again, Back to sign in                 |
+  | unknown `error_code`, any HTTP error status, malformed body        | `generic`                           | Try again, Back to sign in                 |
+
+  `provider_unavailable` is the `error_code` of a GraphQL error; its 503 travels in
+  `extensions.status`. An HTTP-level 503 is an HTTP error status and shows `generic`.
 
 - **FR13** (the two email kinds became retryable after the S3.1 accessibility review: granting or
   verifying the email at the provider is fixed by a fresh round trip) "Try again" restarts FR1 for the same provider; "Back to sign in" links to `/sign-in`.
 - **FR14** _Withdrawn 2026-11-19_: no redirect for a user who is already signed in. A second social sign-in only issues a fresh session, and the redirect made every page of the E2E stack (which preloads a token) leave the callback before it could be tested.
 - **FR15** The callback is never retried automatically (codes are single-use); only "Try again"
-  restarts the flow.
+  restarts the flow. _(2026-11-24)_ The start marker is spent when the page reads it, so Back to a
+  failed start, or a reload, shows `missing_parameters` with "Try again" and asks user-service
+  nothing.
 
 ### Local verification
 
 - **FR16** _(2026-11-19)_ `OAUTH_MODE=mock` (default): the Apollo mock answers `initiateSocialSignInUser` with a Mockoon-hosted consent page URL that lists one link per outcome; each link redirects to the SPA callback with a scenario `code` and the issued `state`.
-- **FR17** _(2026-11-19)_ `OAUTH_MODE=provider`: for each provider whose `OAUTH_<P>_CLIENT_ID` is set, the Apollo mock answers with the real authorize URL; the rest keep the mock page. `completeSocialSignInUser` accepts any code for a state it issued, once.
+- **FR17** _(2026-11-19)_ `OAUTH_MODE=provider`: for each provider whose `OAUTH_<P>_CLIENT_ID` is set, the Apollo mock answers with the real authorize URL; the rest keep the mock page. `completeSocialSignInUser` accepts any code that is not blank for a state it issued, once, before the state is ten minutes old; it keeps the newest 1000 states. A blank code answers `missing_oauth_parameters`, an expired state `state_expired` _(2026-11-24)_.
 - **FR18** _(2026-11-19)_ Switching mode needs only an `.env` edit and `make apollo-restart`, never a rebuild of the SPA.
 - **FR19** A local verification guide documents provider registration, redirect URIs, `.env`
   keys, commands, the expected screens per mode, and troubleshooting.
@@ -122,30 +140,30 @@ false` and an `accessToken` starts a session the way a password sign-in does: an
 
 Quality floors restate `.claude/react-sdlc.yml` `quality.*` — raise-only:
 
-| Id    | Requirement                                                                                                                                                                                                                                                                                                                                                                        |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFR1  | Coverage 100/100/100/100 (statements/branches/functions/lines), unit and integration suites                                                                                                                                                                                                                                                                                        |
-| NFR2  | Stryker `break` 100 over the extended mutate scope; no new `Stryker disable` without the equivalence proof the repo standard demands                                                                                                                                                                                                                                               |
-| NFR3  | 0 ESLint errors/warnings, 0 `tsc` errors, 0 jscpd clones, 0 dependency-cruiser violations, 0 markdownlint errors, `make lint-metrics` clean                                                                                                                                                                                                                                        |
-| NFR4  | Lighthouse desktop ≥ 95 and mobile ≥ 85 (profile) on `/sign-in` and `/sign-up`; the button module grows ≤ 1 kB gzip and the eager entrypoint stays within `config/performance-budget.json`                                                                                                                                                                                         |
-| NFR5  | 0 visual diffs on existing baselines; new baselines for the callback loading and error states, desktop and both mobile projects                                                                                                                                                                                                                                                    |
-| NFR6  | WCAG 2.1 AA: loading announced via a polite live region; error message in a polite `role="status"` region with focus moved to the error heading; recovery controls reachable by Tab and operable by Enter/Space; ≥ 44 px targets on the callback screen; axe clean on the new route                                                                                                |
-| NFR7  | Security: `code`, `state`, `pendingSessionId`, tokens never appear in logs, Sentry events, rendered DOM, or browser history; tokens fall under the existing `piiScrubber` `token` fragment                                                                                                                                                                                         |
-| NFR8  | _(2026-11-19)_ Both mutations run under the Apollo link's request deadline, are never retried, and are never aborted by the page (a spent state or code cannot be re-asked); an unmounted page ignores the answer                                                                                                                                                                  |
-| NFR9  | i18n: every new string exists in `uk` and `en`; `make lint-i18n` clean; provider names are not translated                                                                                                                                                                                                                                                                          |
-| NFR10 | _(2026-11-19)_ Observability: success and every failure user-service answers (or that cannot reach it) emit through the existing boundaries — `auth_failure` security events with reason codes; refusals decided in the page before any request (cancel, missing parameters, a foreign state) emit nothing, because a crafted link alone triggers them; no new direct Sentry calls |
-| NFR11 | CSP unchanged; `make check-security-headers` green                                                                                                                                                                                                                                                                                                                                 |
-| NFR12 | Determinism: the E2E suite uses `OAUTH_MODE=mock` only, with `retries: 0`                                                                                                                                                                                                                                                                                                          |
-| NFR13 | No secrets committed: `.env.example` carries empty `OAUTH_*_CLIENT_ID` keys only; client secrets appear only in the `backend` mode guide and never in this repository                                                                                                                                                                                                              |
+| Id    | Requirement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFR1  | Coverage 100/100/100/100 (statements/branches/functions/lines), unit and integration suites                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| NFR2  | Stryker `break` 100 over the extended mutate scope; no new `Stryker disable` without the equivalence proof the repo standard demands                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| NFR3  | 0 ESLint errors/warnings, 0 `tsc` errors, 0 jscpd clones, 0 dependency-cruiser violations, 0 markdownlint errors, `make lint-metrics` clean                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| NFR4  | Lighthouse desktop ≥ 95 and mobile ≥ 85 (profile) on `/sign-in` and `/sign-up`; the button module grows ≤ 1 kB gzip and the eager entrypoint stays within `config/performance-budget.json`                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| NFR5  | 0 visual diffs on existing baselines; new baselines for the callback loading and error states, desktop and both mobile projects                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| NFR6  | WCAG 2.1 AA: loading announced via a polite live region; error message in a polite `role="status"` region with focus moved to the error heading; recovery controls reachable by Tab, the button operable by Enter and Space and the link by Enter; ≥ 44 px targets on the callback screen; axe clean on the new route. _(2026-11-24)_ One known non-conformance, kept by the product owner's decision of 2026-11-19 until issue #276: the callback's contained action is white on `#1EAEFF` (2.45:1), covered by one scoped `A11Y_EXCEPTIONS` entry (readiness W7). The entry records the gap; it does not make the route AA. The user accepted the gap on 2026-11-24 |
+| NFR7  | Security: `code`, `state`, `pendingSessionId`, tokens never appear in logs, Sentry events, rendered DOM, or a history entry the SPA keeps; tokens fall under the existing `piiScrubber` `token` fragment. _(2026-11-24)_ The provider's own authorization and redirect URLs carry `state`, and the redirect `code`, as OAuth requires; the callback page strips both from its entry before the first paint of its content                                                                                                                                                                                                                                             |
+| NFR8  | _(2026-11-19)_ Both mutations run under the Apollo link's request deadline, and are never retried (a spent state or code cannot be re-asked); _(2026-11-24)_ the request is aborted, and its answer changes nothing, once every page that shares it has unmounted, while StrictMode's remount keeps it; _(2026-11-24)_ a completion during which the user signed in, signed out or reached a 2FA challenge another way changes no session, even when that newer session has ended again, and shows `expired` if its page is still mounted; one that user-service refused meanwhile shows and reports its own FR12 error                                               |
+| NFR9  | i18n: every new string exists in `uk` and `en`; `make lint-i18n` clean; provider names are not translated                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| NFR10 | _(2026-11-19)_ Observability: success and every failure user-service answers (or that cannot reach it) emit through the existing boundaries — `auth_failure` security events with reason codes; refusals decided in the page before any request (cancel, missing parameters, a foreign state, an unknown provider) emit nothing, because a crafted link alone triggers them, and neither does a page whose code failed to load; no new direct Sentry calls                                                                                                                                                                                                            |
+| NFR11 | CSP unchanged; `make check-security-headers` green                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| NFR12 | Determinism: the E2E suite stubs both mutations with `page.route` and never reaches a provider, with `retries: 0` _(2026-11-24)_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| NFR13 | No secrets committed: `.env.example` carries empty `OAUTH_*_CLIENT_ID` keys only; client secrets never appear in this repository (the local modes of D4 do not use one)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 ## 4. Acceptance-criteria trace
 
-| Brief success criterion                       | FRs / NFRs                 |
-| --------------------------------------------- | -------------------------- |
-| One click → signed in, same tab, no JSON page | FR1, FR5, FR6, FR9, FR10   |
-| Every failure localized with recovery         | FR7, FR8, FR12, FR13, NFR6 |
-| Real Google consent via local guide           | FR17, FR18, FR19           |
-| No performance or quality regression          | NFR1-NFR5                  |
+| Brief success criterion                       | FRs / NFRs                    |
+| --------------------------------------------- | ----------------------------- |
+| One click → signed in, same tab, no JSON page | FR1, FR2, FR5, FR6, FR9, FR10 |
+| Every failure localized with recovery         | FR7, FR8, FR12, FR13, NFR6    |
+| Real Google consent via local guide           | FR17, FR18, FR19              |
+| No performance or quality regression          | NFR1-NFR5                     |
 
 ## 5. Out of scope
 

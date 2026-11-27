@@ -146,6 +146,119 @@ describe('useSocialCallbackRelay', () => {
     await waitFor(() => expect(start).toHaveBeenCalledTimes(2));
   });
 
+  it('leaves a revisited state to user-service, which answers it as expired', async () => {
+    const { loader, complete } = harness();
+    complete
+      .mockResolvedValueOnce({ kind: 'signed-in' })
+      .mockResolvedValueOnce({ kind: 'failed', error: 'expired' });
+    const settle = jest.fn();
+    const run = completeRun(settle);
+
+    const { unmount } = renderHook(() => useSocialCallbackRelay(loader, run));
+    await waitFor(() => expect(settle).toHaveBeenCalledTimes(1));
+    unmount();
+    renderHook(() => useSocialCallbackRelay(loader, run));
+
+    await waitFor(() =>
+      expect(settle).toHaveBeenLastCalledWith(
+        expect.objectContaining({ status: 'failed', error: 'expired' })
+      )
+    );
+    expect(complete).toHaveBeenCalledTimes(2);
+  });
+
+  const signalOf = (mock: jest.Mock): AbortSignal => mock.mock.calls[0]?.at(-1) as AbortSignal;
+
+  const pendingForever = (): Promise<never> => new Promise<never>(() => undefined);
+
+  it('aborts the request only when the last page that shares it is gone', async () => {
+    const { loader, complete } = harness();
+    complete.mockImplementation(pendingForever);
+    const run = completeRun(jest.fn());
+
+    const view = renderHook(() => useSocialCallbackRelay(loader, run));
+    const utils = renderHook(() => useSocialCallbackRelay(loader, run));
+    await waitFor(() => expect(complete).toHaveBeenCalledTimes(1));
+
+    view.unmount();
+    await Promise.resolve();
+    expect(signalOf(complete).aborted).toBe(false);
+
+    utils.unmount();
+    await Promise.resolve();
+    expect(signalOf(complete).aborted).toBe(true);
+  });
+
+  it('keeps the request across a StrictMode style remount', async () => {
+    const { loader, complete } = harness();
+    complete.mockImplementation(pendingForever);
+    const run = completeRun(jest.fn());
+
+    renderHook(() => useSocialCallbackRelay(loader, run), { reactStrictMode: true });
+    await waitFor(() => expect(complete).toHaveBeenCalledTimes(1));
+    await Promise.resolve();
+
+    expect(signalOf(complete).aborted).toBe(false);
+  });
+
+  it('starts over when an abandoned start is revisited, whenever the first one ends', async () => {
+    const { loader, start } = harness();
+    let finishFirst: (value: unknown) => void = () => undefined;
+    start.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishFirst = resolve;
+      })
+    );
+    start.mockImplementation(pendingForever);
+    const run = startRun(jest.fn());
+
+    const { unmount } = renderHook(() => useSocialCallbackRelay(loader, run));
+    await waitFor(() => expect(start).toHaveBeenCalledTimes(1));
+    unmount();
+    await Promise.resolve();
+    renderHook(() => useSocialCallbackRelay(loader, run));
+    await waitFor(() => expect(start).toHaveBeenCalledTimes(2));
+
+    finishFirst({ kind: 'aborted' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    renderHook(() => useSocialCallbackRelay(loader, run));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(start).toHaveBeenCalledTimes(2);
+  });
+
+  it('never counts a page of a settled request against a newer one', async () => {
+    const { loader, complete } = harness();
+    complete.mockResolvedValueOnce({ kind: 'failed', error: 'expired' });
+    complete.mockImplementation(pendingForever);
+    const settle = jest.fn();
+    const run = completeRun(settle);
+
+    const view = renderHook(() => useSocialCallbackRelay(loader, run));
+    await waitFor(() => expect(settle).toHaveBeenCalledTimes(1));
+    renderHook(() => useSocialCallbackRelay(loader, run));
+    await waitFor(() => expect(complete).toHaveBeenCalledTimes(2));
+    view.unmount();
+    await Promise.resolve();
+
+    expect((complete.mock.calls[1]?.at(-1) as AbortSignal).aborted).toBe(false);
+  });
+
+  it('leaves a settled request alone when its page goes', async () => {
+    const { loader, complete } = harness();
+    complete.mockResolvedValue({ kind: 'failed', error: 'expired' });
+    const settle = jest.fn();
+
+    const run = completeRun(settle);
+
+    const { unmount } = renderHook(() => useSocialCallbackRelay(loader, run));
+    await waitFor(() => expect(settle).toHaveBeenCalledTimes(1));
+    unmount();
+    await Promise.resolve();
+
+    expect(signalOf(complete).aborted).toBe(false);
+  });
+
   it('does not settle after the hook unmounted', async () => {
     const { loader, start } = harness();
     let finish: (value: unknown) => void = () => undefined;

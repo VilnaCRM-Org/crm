@@ -19,6 +19,8 @@ const crypto = require('crypto');
 const fs = require('fs');
 
 const CONSENT_ENDPOINT = '__mock-oauth/:provider/authorize';
+const REDIRECT_URI = "{{queryParam 'redirect_uri'}}";
+const STATE = "{{queryParam 'state'}}";
 
 // One link per outcome, scenario code -> link text; the Apollo mock maps each code to its
 // user-service answer.
@@ -35,23 +37,25 @@ const SCENARIOS = Object.freeze({
 // Every reflected value is constrained before the page renders, so nothing a request carries can
 // inject markup: a local SPA callback URL for a known provider, a v4 UUID state, marked when it
 // links an account, a known provider.
+// The query values are tested as the page renders them: a rule on the query itself passes when any
+// one of a repeated parameter's values matches, while the page renders them all as a JSON array.
 const PROVIDERS = '(google|github|facebook|twitter)';
 const PROVIDER_PATTERN = `^${PROVIDERS}$`;
 const LOCAL_ORIGIN = 'https?://(localhost|[a-z0-9-]+\\.localhost)(:[0-9]{1,5})?';
 const REDIRECT_URI_PATTERN = `^${LOCAL_ORIGIN}/auth/callback/${PROVIDERS}$`;
-const STATE_PATTERN = '^(link\\.)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+const STATE_PATTERN =
+  '^(link\\.)?[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$';
 
 function fail(message) {
   throw new Error(`mockoon-social-oauth: ${message}`);
 }
 
 function consentPage() {
-  const back = "{{queryParam 'redirect_uri'}}";
-  const state = "{{queryParam 'state'}}";
   const links = Object.entries(SCENARIOS).map(
-    ([code, label]) => `<li><a href="${back}?code=${code}&amp;state=${state}">${label}</a></li>`
+    ([code, label]) =>
+      `<li><a href="${REDIRECT_URI}?code=${code}&amp;state=${STATE}">${label}</a></li>`
   );
-  links.push(`<li><a href="${back}?error=access_denied&amp;state=${state}">Deny</a></li>`);
+  links.push(`<li><a href="${REDIRECT_URI}?error=access_denied&amp;state=${STATE}">Deny</a></li>`);
 
   return [
     '<!doctype html>',
@@ -101,8 +105,8 @@ function consentRoute() {
         headers: [{ key: 'Content-Type', value: 'text/html; charset=utf-8' }],
         rules: [
           rule('params', 'provider', PROVIDER_PATTERN),
-          rule('query', 'redirect_uri', REDIRECT_URI_PATTERN),
-          rule('query', 'state', STATE_PATTERN),
+          rule('templating', REDIRECT_URI, REDIRECT_URI_PATTERN),
+          rule('templating', STATE, STATE_PATTERN),
         ],
         rulesOperator: 'AND',
         default: false,

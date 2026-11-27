@@ -3,7 +3,7 @@ status: 'complete'
 workflowType: 'run-summary'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-19'
+revised: '2026-11-25'
 slug: 'social-sign-in'
 ---
 
@@ -15,7 +15,7 @@ slug: 'social-sign-in'
   the Mockoon consent page and with the requester's own provider keys. The work is tracked under
   issue #150 (the dead-end OAuth buttons); the bundle was seeded from the task description.
 - **Readiness:** PASS ([readiness](readiness-social-sign-in-2026-11-18.md)), readiness
-  iterations 1-12 (iteration 12 is the latest review pass).
+  iterations 1-21 (iteration 21 is the latest review pass).
 
 ## Artifacts
 
@@ -27,8 +27,8 @@ slug: 'social-sign-in'
 6. [readiness](readiness-social-sign-in-2026-11-18.md)
 7. [local verification guide](local-verification-social-sign-in-2026-11-18.md) (extra, requested)
 
-File names follow the repository convention `<type>-<slug>-<date>.md` (`specs/README.md`)
-rather than the skill's bare `research.md` names.
+File names follow the `<type>-<slug>-<date>.md` pattern of `specs/README.md`, extended to the types
+it does not list, rather than the skill's bare `research.md` names.
 
 ## Subagent Execution Log
 
@@ -49,11 +49,15 @@ rather than the skill's bare `research.md` names.
 
 ## Validation rounds
 
-One self-review round per artifact, then readiness iterations 1-12 as recorded in the
+One self-review round per artifact, then readiness iterations 1-21 as recorded in the
 [readiness log](readiness-social-sign-in-2026-11-18.md): iteration 1 corrected three findings,
 2 was clean, 3-4 followed the implementation waves, 5 moved the plan to GraphQL only, and 6-10
 corrected stale passages that pull request reviews and the FR/NFR gate found; 11 re-planned
-the 2FA hand-off after #331 merged, and 12 closed the gate's iteration 5-6 findings.
+the 2FA hand-off after #331 merged, 12 addressed the actionable findings of the gate's
+iterations 5-6, 13 those of its sliced iteration 7, 14 the pull request
+reviews that followed, 15 those of its iteration 8, 16 those of its iteration 9, 17 those of its iteration 10, 18 those of its iteration 11, 19 those of its iteration 12, 20 those of a bundle review, and 21 those of
+the pull request review that followed.
+NFR6 / W7 (contrast) remains open.
 
 ## Open questions and warnings
 
@@ -61,7 +65,8 @@ the 2FA hand-off after #331 merged, and 12 closed the gate's iteration 5-6 findi
   a release declares them, the pending GraphQL contract and the Apollo mock stand in.
 - W2 (2FA hand-off waiting for PR #377) is closed: #331 merged and S3.3 was re-planned.
 - W4: user-service #468 before any production enablement.
-- W7: the callback error action keeps `#1EAEFF` (below AA) by the owner's decision until #276.
+- W7: the callback error action keeps `#1EAEFF` (below AA) by the owner's decision until #276;
+  accepted by the user on 2026-11-24.
 - W5 (callback visual baselines) is closed.
 - W3 (Mockoon shared state, A5) is closed.
 
@@ -73,6 +78,7 @@ architecture §7). ADR-004 was deleted.
 
 ## Recommended next step
 
-Register the Google client and GitHub OAuth App now (guide §3-§4) — the redirect URIs do not
-depend on implementation — then run `/fe-sdlc-implement` against this bundle, wave 1 first
-(S1.1, S2.1, S2.3, S3.1). S2.2 was withdrawn when wave 1 found every runtime flag retired on `main` (PRD D7).
+_(2026-11-24)_ Every wave is implemented. Verify it with the local guide, registering the Google
+client and GitHub OAuth App (guide §3-§4) for Provider mode. Production then waits for user-service:
+the two mutations (W6) and #468 (W4). S2.1 was withdrawn with the move to GraphQL only, and S2.2
+when wave 1 found every runtime flag retired on `main` (PRD D7).

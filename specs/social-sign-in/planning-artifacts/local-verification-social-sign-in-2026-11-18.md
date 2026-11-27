@@ -3,7 +3,7 @@ status: 'complete'
 workflowType: 'local-verification-guide'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-19'
+revised: '2026-11-24'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/prd-social-sign-in-2026-11-18.md'
@@ -12,7 +12,7 @@ inputDocuments:
 
 # Local Verification Guide: Social Sign-In
 
-> Revised 2026-11-19 for the GraphQL design; the published copy is `docs/social-sign-in-local.md`.
+> Revised 2026-11-24; the published copy is `docs/social-sign-in-local.md`.
 
 How to try the Google, GitHub, Facebook and Twitter/X sign-in buttons on your machine. The SPA
 talks to user-service over GraphQL only: two mutations, `initiateSocialSignInUser` and
@@ -31,21 +31,27 @@ The design and the plan are in
    the provider's authorization URL and a `state`, keeps the `state`, and sends the browser there.
 2. The provider (or the mock consent page) redirects back to `/auth/callback/<provider>` with the
    `state` and either a `code` or, when you cancel, `error=access_denied`.
-3. A cancel shows the cancelled view. Otherwise the page accepts only the `state` this tab started
-   with, then calls `completeSocialSignInUser` and signs in.
+3. The page accepts only the `state` this tab started with. A cancel then shows the cancelled view;
+   a code goes to `completeSocialSignInUser`, which signs in.
 
-| Mode     | `OAUTH_MODE` | Provider screen      | Answers the mutations | Keys you need |
-| -------- | ------------ | -------------------- | --------------------- | ------------- |
-| Mock     | `mock`       | Mockoon consent page | Apollo mock           | none          |
-| Provider | `provider`   | real Google / GitHub | Apollo mock           | client ID     |
+| Mode     | `OAUTH_MODE` | Provider screen        | Answers the mutations | Keys you need |
+| -------- | ------------ | ---------------------- | --------------------- | ------------- |
+| Mock     | `mock`       | Mockoon consent page   | Apollo mock           | none          |
+| Provider | `provider`   | the real provider page | Apollo mock           | client ID     |
+
+In Provider mode a provider reaches its real screen only when its `OAUTH_<PROVIDER>_CLIENT_ID` is
+set; any provider without one, Facebook and Twitter/X included, stays on the Mockoon page.
 
 The redirect URI is always a **frontend** URL:
 
 - dev server: `http://localhost:3000/auth/callback/<provider>`
 - prod-parity stack: `http://localhost:3001/auth/callback/<provider>`
 
-where `<provider>` is `google`, `github`, `facebook` or `twitter`. Use `localhost`, not
-`127.0.0.1` or a `*.localhost` subdomain: Google rejects non-public hosts other than `localhost`.
+where `<provider>` is `google`, `github`, `facebook` or `twitter`. Use `localhost` throughout: the
+mock issues this redirect URI (`OAUTH_SPA_ORIGIN`), and the tab's state lives in the
+`sessionStorage` of the origin that started the sign-in, so a tab opened on `127.0.0.1` would come
+back to another origin and be refused as expired. Google itself accepts `localhost` and loopback
+IPs, but no `*.localhost` subdomain.
 
 ## 2. Mock mode (no accounts needed)
 
@@ -60,8 +66,8 @@ where `<provider>` is `google`, `github`, `facebook` or `twitter`. Use `localhos
 4. The mock consent page lists one link per outcome. What you should see (English copy shown;
    Ukrainian is the main language):
    - **Allow**: signed in, on `/` or on the protected page you came from.
-   - **Allow (2FA account)**: the two-factor challenge at `/sign-in/two-factor`; any six-digit code
-     signs in on the mock and lands on `/`.
+   - **Allow (2FA account)**: the two-factor challenge at `/sign-in/two-factor`. On the mock, any
+     six-digit code finishes the sign-in and lands on `/` or on the protected page you came from.
    - **Deny**: "Sign-in with Google was cancelled…", Try again and Back to sign in.
    - **Expired state**: "Your sign-in attempt expired…" and Try again.
    - **Unverified email**: "Your Google email address is not verified…" and Try again.
@@ -152,7 +158,12 @@ The Apollo mock does not exchange the code, so the identity is canned: this mode
 registrations, redirect URIs and the browser round trip, not account linking.
 
 For the prod-parity stack on port 3001, set `OAUTH_SPA_ORIGIN=http://localhost:3001`, use the
-`:3001` GitHub app, and start it with `make start-prod`.
+`:3001` GitHub app, and start it with `make start-prod`. That target does not start
+the Apollo mock, so start it, and after changing `.env` recreate it, with:
+
+```bash
+docker compose -f docker-compose.test.yml up -d --force-recreate --no-deps apollo
+```
 
 ## 6. Against a real user-service
 
@@ -174,8 +185,12 @@ GraphQL URL at it, and the pin bump removes the pending contract.
 - **Still the mock page in Provider mode.** That provider's client ID is empty, or the Apollo
   mock was not restarted.
 - **"Your sign-in attempt expired".** The state was not started in this tab (for example the
-  callback was opened in another tab or the Apollo mock restarted in between), or it was already
-  used: start again from the button.
+  callback was opened in another tab or the Apollo mock restarted in between), it was already used,
+  or it is at least ten minutes old (the mock also keeps only the newest 1000): start again from the
+  button.
+
+- **"Google did not return the sign-in details".** The callback was opened without its `code` or
+  `state` (Back to a failed start, or a reload, opens it this way), or the mock got a blank `code`.
 
 ## 8. Safety
 

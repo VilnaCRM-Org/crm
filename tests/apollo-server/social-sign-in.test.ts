@@ -155,6 +155,19 @@ describe('pending social sign-in mutations on the mock', () => {
     expect(github.pathname).toBe('/__mock-oauth/github/authorize');
   });
 
+  it.each([['mock'], [undefined]])(
+    'keeps a provider with a client id on the consent page when OAUTH_MODE is %s',
+    (mode) => {
+      if (mode !== undefined) process.env.OAUTH_MODE = mode;
+      process.env.OAUTH_GOOGLE_CLIENT_ID = 'g-id';
+
+      const url = new URL(authorizationUrlFor('google', 's-1'));
+
+      expect(url.origin + url.pathname).toBe('http://localhost:8080/__mock-oauth/google/authorize');
+      expect(url.searchParams.has('client_id')).toBe(false);
+    }
+  );
+
   it.each([
     ['github', 'https://github.com/login/oauth/authorize', { scope: 'read:user user:email' }],
     ['facebook', 'https://www.facebook.com/v19.0/dialog/oauth', { scope: 'email' }],
@@ -211,6 +224,85 @@ describe('pending social sign-in mutations on the mock', () => {
     });
     expect(errorOf(second)).toMatchObject({ status: 422, error_code: 'invalid_state' });
     expectLogged(log, String(second.errors?.[0]?.message));
+  });
+
+  it.each(['__proto__', 'constructor', 'toString'])(
+    'signs in with %s, a code no scenario owns',
+    async (code) => {
+      const { state } = await initiate();
+
+      const result = await execute(COMPLETE, { provider: 'google', code, state });
+
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.completeSocialSignInUser).toMatchObject({ user: { success: true } });
+    }
+  );
+
+  it('accepts a state until just before it is ten minutes old', async () => {
+    const now = jest.spyOn(Date, 'now');
+    now.mockReturnValue(1_000);
+    const { state } = await initiate();
+    now.mockReturnValue(1_000 + 10 * 60 * 1000 - 1);
+
+    const result = await execute(COMPLETE, { provider: 'google', code: '4/real-code', state });
+
+    expect(result.errors).toBeUndefined();
+    expect(result.data?.completeSocialSignInUser).toMatchObject({ user: { success: true } });
+  });
+
+  it('answers a state that is ten minutes old as expired and forgets it', async () => {
+    const now = jest.spyOn(Date, 'now');
+    now.mockReturnValue(1_000);
+    const { state } = await initiate();
+    now.mockReturnValue(1_000 + 10 * 60 * 1000);
+    const log = graphqlErrorLog();
+
+    const result = await execute(COMPLETE, { provider: 'google', code: '4/real-code', state });
+
+    expect(errorOf(result)).toMatchObject({ status: 422, error_code: 'state_expired' });
+    expectLogged(log, 'OAuth state expired');
+    expect(__socialTest__.issuedStates.size).toBe(0);
+  });
+
+  it('still answers an old state as expired after a newer one was issued', async () => {
+    const now = jest.spyOn(Date, 'now');
+    now.mockReturnValue(1_000);
+    const { state } = await initiate();
+    now.mockReturnValue(1_000 + 10 * 60 * 1000);
+    await initiate();
+    const log = graphqlErrorLog();
+
+    const result = await execute(COMPLETE, { provider: 'google', code: '4/real-code', state });
+
+    expect(errorOf(result)).toMatchObject({ status: 422, error_code: 'state_expired' });
+    expectLogged(log, 'OAuth state expired');
+  });
+
+  it('never keeps more than 1000 states, dropping the oldest first', async () => {
+    const { state: oldest } = await initiate();
+    const { state: second } = await initiate();
+    for (let count = 2; count < 1000; count += 1) {
+      __socialTest__.issueState('google');
+    }
+
+    expect(__socialTest__.issuedStates.has(oldest)).toBe(true);
+    const { state: newest } = await initiate();
+
+    expect(__socialTest__.issuedStates.size).toBe(1000);
+    expect(__socialTest__.issuedStates.has(oldest)).toBe(false);
+    expect(__socialTest__.issuedStates.has(second)).toBe(true);
+    expect(__socialTest__.issuedStates.has(newest)).toBe(true);
+  });
+
+  it.each(['', '   '])('refuses the blank code "%s" and keeps its state', async (code) => {
+    const { state } = await initiate();
+    const log = graphqlErrorLog();
+
+    const result = await execute(COMPLETE, { provider: 'google', code, state });
+
+    expect(errorOf(result)).toMatchObject({ status: 400, error_code: 'missing_oauth_parameters' });
+    expectLogged(log, 'Missing OAuth code or state');
+    expect(__socialTest__.issuedStates.has(state)).toBe(true);
   });
 
   it('hands a 2FA account a pending session and no tokens', async () => {

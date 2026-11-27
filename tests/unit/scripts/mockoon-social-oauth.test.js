@@ -1,3 +1,4 @@
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -80,20 +81,38 @@ describe('mockoon-social-oauth', () => {
           operator: 'regex',
         },
         {
-          target: 'query',
-          modifier: 'redirect_uri',
+          target: 'templating',
+          modifier: "{{queryParam 'redirect_uri'}}",
           value: REDIRECT_URI_PATTERN,
           invert: false,
           operator: 'regex',
         },
         {
-          target: 'query',
-          modifier: 'state',
+          target: 'templating',
+          modifier: "{{queryParam 'state'}}",
           value: STATE_PATTERN,
           invert: false,
           operator: 'regex',
         },
       ]);
+    });
+
+    it('tests the very text the page renders for each query value', () => {
+      const [page] = addConsentRoute(importedEnv()).routes[0].responses;
+      const tested = page.rules.slice(1).map(({ modifier }) => modifier);
+      const rendered = page.body.match(/\{\{queryParam [^}]*\}\}/g);
+
+      expect(new Set(rendered)).toEqual(new Set(tested));
+    });
+
+    it.each([
+      [REDIRECT_URI_PATTERN, 'http://localhost:3000/auth/callback/google'],
+      [STATE_PATTERN, '3f2504e0-4f89-41d3-9a0c-0305e82c3301'],
+    ])('refuses a repeated value, which Mockoon renders as a JSON array: %s', (pattern, value) => {
+      expect(matches(pattern, value)).toBe(true);
+      expect(matches(pattern, JSON.stringify([value, 'x']))).toBe(false);
+      expect(matches(pattern, JSON.stringify([value]))).toBe(false);
+      expect(matches(pattern, JSON.stringify({ a: value }))).toBe(false);
     });
 
     it('rejects anything else with a plain-text 400 that reflects nothing', () => {
@@ -129,6 +148,9 @@ describe('mockoon-social-oauth', () => {
       ['link.', false],
       ['"><script>alert(1)</script>', false],
       ['3F2504E0-4F89-41D3-9A0C-0305E82C3301', false],
+      ['3f2504e0-4f89-11d3-9a0c-0305e82c3301', false],
+      ['3f2504e0-4f89-41d3-ca0c-0305e82c3301', false],
+      ['3f2504e0-4f89-41d3-7a0c-0305e82c3301', false],
       ['', false],
     ])('accepts %s as a state: %s', (value, expected) => {
       expect(matches(STATE_PATTERN, value)).toBe(expected);
@@ -170,6 +192,18 @@ describe('mockoon-social-oauth', () => {
       } finally {
         write.mockRestore();
       }
+    });
+
+    it('exits 1 with the reason on stderr when it is run without its paths', () => {
+      const script = path.join(__dirname, '..', '..', '..', 'scripts', 'mockoon-social-oauth.js');
+
+      const { status, stderr, stdout } = spawnSync(process.execPath, [script], {
+        encoding: 'utf8',
+      });
+
+      expect(status).toBe(1);
+      expect(stderr).toContain('usage: mockoon-social-oauth.js <imported.json> <output.json>');
+      expect(stdout).toBe('');
     });
 
     it('requires both paths', () => {

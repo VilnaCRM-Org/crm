@@ -1,14 +1,12 @@
-import type { AuthState, AuthStateWriter } from '@auth/types/auth-store';
+import type { StoreApi } from 'zustand';
+
+import type { AuthState } from '@auth/types/auth-store';
+import type { EarlierSession } from '@auth/types/earlier-session';
 import type AuthSecuritySignals from '@auth/utils/auth-security-signals';
 
-export interface SocialEarlierSession {
-  token(): string | null;
-  signOut(): void;
-}
-
 export interface SocialSignInDeps {
-  readonly authState: AuthStateWriter;
+  readonly authState: StoreApi<AuthState>;
   readonly securitySignals: AuthSecuritySignals;
-  readonly session: SocialEarlierSession;
+  readonly session: EarlierSession;
   readonly signedOut: AuthState;
 }
