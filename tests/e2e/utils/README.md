@@ -65,3 +65,7 @@ A spec that tests the read itself calls `stubProfile(page, …)` as before: a pa
 takes precedence over a context route, so its replies and its call counts are unaffected. A route
 helper that passes a request through must call `route.fallback()`, never `route.continue()`,
 which would skip the context route; `overrideRuntimeConfig` does so.
+
+The same fixture, and `stubProfile`, answer `LinkedSocialProviders` with no linked accounts, for
+the social networks card of `/settings`. A spec that tests linking registers
+`stubSocialLinks(page, …)` after `stubProfile`, so its replies win.

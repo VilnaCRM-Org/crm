@@ -184,3 +184,13 @@ GraphQL URL at it, and the pin bump removes the pending contract.
   enter this repository, its issues or its pull requests; `make scan-secrets` would flag them.
 - Keep the Google app in **Testing** and the Facebook app in **Development**, and delete the
   clients when you no longer need them.
+
+## Linking an account in settings
+
+Sign in, open `/settings` and press a tile of the "Соціальні мережі" card: the same consent page
+opens in a popup, with the same modes, client IDs and redirect URIs as above. Both "Allow"
+choices, "Unverified email" and "No email shared" link the account, because only a sign-in reads
+them; "Deny", "Expired state", "Duplicate email" and "Provider unavailable" each give their own
+failure. The mock remembers links until it restarts.
+Planning is in
+[`specs/social-account-linking/`](../specs/social-account-linking/planning-artifacts/prd-social-account-linking-2026-11-23.md).

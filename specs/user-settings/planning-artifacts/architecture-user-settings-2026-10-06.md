@@ -2300,7 +2300,8 @@ other than through a hook.
   Олеговна" → "Евгения Маслова"); one or two words show as typed. The monogram is built from the
   greeted name: "Петренко Олена Іванівна" → "Олена Петренко", "ОП"; "Олена Петренко" → "Олена
   Петренко", "ОП"; "Admin" → "A"; empty → the person glyph.
-- **`SocialNetworks`** (added 2026-10-21, product owner; PRD FR-7a). A second card "Соціальні
+- **`SocialNetworks`** (added 2026-10-21, product owner; PRD FR-7a; its actions were added
+  2026-11-23, see `specs/social-account-linking/`). A second card "Соціальні
   мережі" renders Figma-exact (desktop `476:46530`, tablet `386:27239`, mobile `386:27457`) with
   four tiles, Google, Facebook, GitHub and Twitter, and no working action, because user-service
   has no signed-in link, list or unlink (G6). The tiles are the items of a `<ul role="list">`

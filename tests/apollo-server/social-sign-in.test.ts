@@ -14,7 +14,7 @@ import {
   assertSingleResponse,
   PINNED_SDL_FIXTURE,
   PROFILE_SDL_FIXTURE,
-  SOCIAL_SIGN_IN_SDL,
+  SOCIAL_SDL,
   type SingleBody,
 } from './mock-schema-fixtures';
 import { TWO_FACTOR_SDL_FIXTURES } from './two-factor-fixtures';
@@ -99,7 +99,7 @@ describe('pending social sign-in mutations on the mock', () => {
         PROFILE_SDL_FIXTURE,
         PASSWORD_RESET_EXTENSION,
         ...TWO_FACTOR_SDL_FIXTURES,
-        ...SOCIAL_SIGN_IN_SDL,
+        ...SOCIAL_SDL,
       ],
       resolvers,
       formatError,

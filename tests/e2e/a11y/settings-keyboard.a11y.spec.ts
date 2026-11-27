@@ -29,6 +29,10 @@ import {
   text,
   toastClose,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
+import {
+  linkButton,
+  stubSocialLinks,
+} from '@tests/e2e/modules/user/features/settings/utils/social-links-page';
 import { startOf } from '@tests/e2e/modules/user/features/settings/utils/two-factor-page';
 import fillInput from '@tests/e2e/utils/fill-input';
 import { test, expect } from '@tests/e2e/utils/fixtures';
@@ -38,7 +42,7 @@ import { expectTabOrder } from '@tests/utils/a11y/keyboard';
 const NEW_NAME = buildFullName();
 const password = buildPassword();
 const newPassword = buildPassword();
-const VISIBLE_MAIN_CONTROLS_WITH_ONE_TOAST = 11;
+const VISIBLE_MAIN_CONTROLS_WITH_ONE_TOAST = 15;
 
 const closeLabel: string = t('ui_toast.close');
 const showPasswordLabel: string = t('auth.password.show');
@@ -52,8 +56,10 @@ const resendButton = (page: Page): Locator =>
 
 async function openSettings(page: Page, stub: Promise<StubbedProfile>): Promise<StubbedProfile> {
   const stubbed = await stub;
+  await stubSocialLinks(page);
   await page.goto('/settings', { waitUntil: 'domcontentloaded' });
   await expect(nameField(page)).toHaveValue(PROFILE_NODE.initials);
+  await expect(linkButton(page, 'Google')).toBeVisible();
   await expect(page.getByRole('contentinfo')).toBeVisible();
   return stubbed;
 }
@@ -98,6 +104,10 @@ test.describe('Settings keyboard contract (issue #330)', () => {
       { locator: toggles(page).nth(1), visibleFocus: true },
       { locator: saveButton(page), visibleFocus: true },
       { locator: clearButton(page), visibleFocus: true },
+      { locator: linkButton(page, 'Google'), visibleFocus: true },
+      { locator: linkButton(page, 'Facebook'), visibleFocus: true },
+      { locator: linkButton(page, 'GitHub'), visibleFocus: true },
+      { locator: linkButton(page, 'Twitter'), visibleFocus: true },
       { locator: startOf(page), visibleFocus: true },
       { locator: page.getByRole('button', { name: closeLabel }), visibleFocus: true },
       { locator: footer.getByRole('link', { name: privacyLabel }), visibleFocus: true },
