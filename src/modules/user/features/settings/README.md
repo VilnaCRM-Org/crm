@@ -47,10 +47,17 @@ decisions are recorded in `## User Settings decisions` of the [user module READM
   shows the name-less chip,
   and is captured through `observabilityCore` (`source: 'settings:current-user'`) unless the
   caller aborted the read. The settings page itself still reads through `ProfileProvider`.
+- `components/social-networks/` — `SocialNetworksCard` and `SocialTile`, which draws a linked tile
+  with one of three renderers (`LinkedTile`, `BadgeLinkedTile` in `social-tile-badge.tsx` and
+  `LabelledLinkedTile` in `social-tile-labelled.tsx`, over `variant-styles.ts`), all sharing
+  `TileLabel`; see [Linked tile styles](#linked-tile-styles).
 - `hooks/` — `useProfileLoad`, `useProfileSave`, `useSaveSettle`, `useEmailResend`, `useEmailRow`,
   `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useSectionReveal`,
   `useCollapseFocus`, `useBlurHold`, `useDisplayName`,
   `useCurrentUser`, `useChipLabel`, `useUserMenu`, `useUserMenuKeys`.
+- `hooks/` for social accounts — `useSocialLinks` over `useSocialLinkAttempt`, `useSocialUnlink`,
+  `useSocialLinkSettle` and `useSocialBusy`; `useUnlinkConfirmation` asks before an unlink; a tile
+  keeps the keyboard through `useTileFocus`.
 - `hooks/` for two-factor — the compose hook `useTwoFactorSettings` over `useTwoFactorTransition`
   (the view state store) and the three operations `useTwoFactorSetup`, `useTwoFactorDisable` and
   `useRecoveryCodesRegenerate`, which settle through `useTwoFactorSettle`. The panel reads
@@ -60,14 +67,18 @@ decisions are recorded in `## User Settings decisions` of the [user module READM
   `useConfirmationShell`. Focus and feedback are `useConfirmFieldFocus`, `useOptionalFocus`,
   `useEscapeCancel`, `useCopyToClipboard`, `useCopyAnnouncement`, `useKeyInfoTooltip`,
   `useKeyInfoControls` and `useKeyInfoDismissal`.
-- `data-providers/` — `ProfileProvider` and `TwoFactorSettingsProvider`, the translation
-  boundaries.
-- `transformers/` — `GraphQLProfileTransformer` and `GraphQLTwoFactorSettingsTransformer`.
+- `data-providers/` — `ProfileProvider`, `TwoFactorSettingsProvider` and `SocialLinkProvider`, the
+  translation boundaries.
+- `transformers/` — `GraphQLProfileTransformer`, `GraphQLTwoFactorSettingsTransformer` and
+  `GraphQLSocialLinkTransformer`.
 - `repositories/` — `GraphQLProfileRepository` and its three GraphQL document seams, and
   `GraphQLTwoFactorSettingsRepository` with its four (`setup`, `confirm`, `disable` and
-  `regenerate-recovery-codes` mutations, each a `.graphql` document beside its typed mutation).
-- `utils/` — `ProfileChangeDetector`, the zod `response-schemas`, and the container-free chip read:
-  `currentUserSource`, `CurrentUserClient`, `CurrentUserResponseParser`.
+  `regenerate-recovery-codes` mutations, each a `.graphql` document beside its typed
+  mutation), and `GraphQLSocialLinkRepository` with one query and three mutations (a provisional
+  local contract that user-service #520 has not agreed to, so they may change; see
+  `src/api/contracts/README.md`).
+- `utils/` — `ProfileChangeDetector`, `TileFocusHandler`, the zod `response-schemas`, and the
+  container-free chip read: `currentUserSource`, `CurrentUserClient`, `CurrentUserResponseParser`.
 - `types/` — type-only files, grouped by source area (TB-1).
 - `i18n/{en,uk}.json` — the lazy settings catalog.
 
@@ -143,7 +154,7 @@ UserProfile [component]<route>          title, useProfileLoad
   │ │     └ ProfileSectionForm password     UIForm key=saved, submitRef, onInvalid, ClearButton
   │ │       ├ ChangePassword key=cleared: h2 "Пароль", both passwords, policy rules
   │ │       └ UIServerFieldError per field, p role=status
-  │ ├ SocialNetworks                    h2 "Соціальні мережі", four presentational tiles
+  │ ├ SocialNetworks                    h2 "Соціальні мережі", four tiles, notifications
   │ └ TwoFactorSettings                 section, useTwoFactorSettings; reports inside its card
   │   └ TwoFactorPanel                  CardHeader (key=view) + one view, ArrivalContext
   │     ├ OffView                       off: UIForm "Почати налаштування", OffGuide, banner
@@ -180,13 +191,12 @@ reaches a Repository, a Transformer or a Data provider; a hook reaches the Data 
 | State                 | `useAuthStore`, read by the link and by `ProtectedRoute`         |
 
 No file names a controller, a service or a handler: the board has none. Gaps that remain gaps: the
-board's social-network component is presentational only — `SocialNetworks` draws the Figma card as a
-list rather than buttons, each tile telling a screen reader that linking is not available yet,
-because user-service has no link, list or unlink — the header menu with the "Log-out" edge is now
-drawn (the app-shell user menu in `components/user-menu/`, declared as `shell.userMenu` in
-`routes/index.ts`, issue #362) and is no longer one of them, nor is the two-factor card (#331),
-whose layers are in the rows above, and the session link reads and resets `useAuthStore`
-without a Repository → State edge on the board.
+board draws no popup or callback for linking a social account (see the
+[social account linking PRD](../../../../../specs/social-account-linking/planning-artifacts/prd-social-account-linking-2026-11-23.md)).
+The header menu with the "Log-out" edge is now drawn (the app-shell user menu in
+`components/user-menu/`, declared as `shell.userMenu` in `routes/index.ts`, issue #362) and is no
+longer one of them, nor is the two-factor card (#331), whose layers are in the rows above. The
+session link reads and resets `useAuthStore` without a Repository → State edge on the board.
 
 ## Data provider outcomes
 
@@ -224,11 +234,17 @@ the same fallback closing a notice row uses, and a field the user is still in ke
 `useCollapseFocus` does the same for a Clear that removes itself.
 
 Every Save outcome belongs to the section that sent it. The drafts carry no return target of their
-own: the page publishes one `saveRef` to the outlet as `returnFocusRef`, and `useSettledFocus`
-points it at the Save of the section that settled last, or at its text input when a name or e-mail
-save hid the Save. Closing the last notice row returns focus there, and to the `h1` when that
-control cannot take focus, so after a failed name save and a successful e-mail save it lands on the
-e-mail field. The transient-failure "Спробувати ще раз"
+own: the page publishes one `saveRef` to the outlet as `returnFocusRef` and hands the same ref to
+`SocialNetworks`. A profile section takes it as soon as it sends a save (`useProfileSave`), even
+a save that then raises nothing, and `useSettledFocus` points it at that section's Save, or at its
+text input when a name or e-mail save hid the Save. A social link result points it at its tile's
+control once the tile has changed (`useSocialLinkSettle`): the unlink control after a link or a
+`provider_linked` refusal (which shows the tile as linked), the link button after an unlink, the
+unchanged control after any other failure; an aborted attempt raises nothing and leaves it alone.
+Closing the last notice row returns focus to whichever of them took the target last, and to the
+`h1` when that control cannot take focus, so after a failed name save and a
+successful e-mail save it lands on the e-mail field, and after a Google link on Google's unlink
+control. The transient-failure "Спробувати ще раз"
 clicks the Save of the section that failed, so a name failure followed by an e-mail save retries
 the name alone.
 
@@ -295,6 +311,35 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   desktop against 23 px at the top, icon-only tiles below 768 px that fill the columns first
   (Google and GitHub on top, as on the sign-in provider grid), and the Figma heading copy
   "Социальные сети" translated to "Соціальні мережі" / "Social networks".
+- **The tiles link and unlink through a popup** (2026-11-23, against the provisional contract
+  `src/api/contracts/pending/social-account-linking.graphql`, which user-service #520 has not
+  agreed to; the plan is the
+  [social account linking PRD](../../../../../specs/social-account-linking/planning-artifacts/prd-social-account-linking-2026-11-23.md)).
+  The token lives in memory, so the settings tab never leaves: `useSocialLinkAttempt` opens the
+  popup in the click, asks `initiateSocialLinkUser` for an authorization URL and a `link.…`
+  state, and waits on the `crm.socialLink` `BroadcastChannel`. `/auth/callback/:provider` sees
+  the mark, posts the query and closes; the settings tab completes only the exact state it was
+  issued. An attempt ends on its answer, on the next click, or when the card goes away. A popup
+  closed before it leaves for the provider settles `cancelled`, as a provider `error` does;
+  `popup.closed` is read only then, while the popup is still the tab's `about:blank`. It is not
+  watched at the provider: a provider page that sends `Cross-Origin-Opener-Policy` moves the popup
+  to another browsing-context group, where the reference reads closed while the user is still on
+  the consent page, and the callback still arrives over the channel. Every ending asks the popup
+  to close, which is certain only on `about:blank`; once the popup has been at the provider, the
+  browser can ignore it, the callback page closes itself, and a window abandoned at the provider is
+  the user's to close. The tiles are not held while
+  the popup waits.
+  A result changes its own provider's tile alone, raises one notification through
+  `useNotifications().raise` (the provider name travels as `messageValues`, and the result is
+  recorded in the bell history), and leaves the keyboard on the tile; closing it as the last notice
+  row returns the keyboard to the tile's control, unless a profile save was sent since. Until
+  `linkedSocialProviders` answers, and after it fails, the tiles offer nothing to press; a list
+  read refused with a 401 shows nothing, as `session_ended` does on the profile card.
+  `SocialLinkProvider` reports a failure that never reached the link through
+  `UnseenFailureReporter` (`source: 'settings:social-link'`), as `ProfileProvider` does. A linked
+  tile on the page is the `tinted` style, `315:11754` (see
+  [Linked tile styles](#linked-tile-styles)). The unlink control asks first in one row under the
+  tiles (PRD L6); Figma draws none.
 - **Card padding is the Figma inset minus the 1 px border.** The card declares the inline
   insets as `--settings-card-inset-start` / `--settings-card-inset-end`, and the section
   titles and the divider above Save and "Очистити" bleed through them to the card edges.
@@ -321,6 +366,46 @@ Where the frames contradict each other or the copy, the page follows one reading
   input and centres its text on it, also when a field error grows the row.
 - **Phone values (M-20).** Field values are `#1A1C1E` as on desktop and tablet, not the
   placeholder grey the phone frame draws.
+
+### Linked tile styles
+
+A linked social tile has three trial styles (owner, 2026-11-27, L8 and L9 of the
+[social account linking PRD](../../../../../specs/social-account-linking/planning-artifacts/prd-social-account-linking-2026-11-23.md)),
+compared in Storybook through a `tileStyle` prop (`'tinted' | 'badge' | 'labelled'`):
+`SocialNetworks` takes it optionally, default `tinted`, and passes it through
+`SocialNetworksCard` and `SocialList` to `SocialTile`, where it is required. The page never sets
+it, so it always renders `tinted`; no environment variable, runtime setting or flag chooses a
+style. Unlinked, display-only and loading tiles and the unlink row are the same in all three, and
+so is the contract: the hidden ", підключено" status, one unlink button named
+"Відключити {provider}", `aria-disabled` while busy, the same confirmation row and the same focus
+hand-over through `TileFocusHandler`.
+
+- **`tinted`** is the shipped tile, `315:11754`: fill `#E8F7FF`, a `#1EAEFF` border, 1 px below
+  1025 px and 2 px from 1025 px, and a `#1EAEFF` `trash-04` bin. The phone frame `386:27719` draws
+  a 2 px border; the owner keeps 1 px. The bin (2.2:1 on the fill) and the border (2.2:1 on the
+  fill, 2.5:1 on the card) are under the 3:1 of SC 1.4.11, owner-accepted until #276.
+- **`badge`** is the white social-button tile with its `#E1E7EA` border (UI kit `439:19329`), the
+  toolkit status badge in its "done" state (`451:25845`, `#38B386` as the toolkit ships it, not
+  CRM's `#4CAF50`) and a `#DC3939` `trash-04` bin on the action-icon-bar danger ramp
+  (`632:46703`–`632:46710`: `#DF7878` on hover and pressed, a pressed plate of `#DC3939` at 10%,
+  `#D0D4D8` while busy). The badge is `aria-hidden`, so the state is spoken once; its required
+  label is `settings.social.linked_badge`. The badge (2.64:1) and the bin on hover (2.96:1) and
+  pressed (2.57:1) are accepted gaps under #276; the bin at rest is 4.48:1.
+- **`labelled`** is a white tile with a 2 px `#1EAEFF` selected-card border (`439:19640`) and the
+  toolkit outlined small pill (`439:19257`–`439:19260`): `#1B2327` on white, a 1 px `#969B9D`
+  border, `#EAECEE` on hover. The tile is an inline-size container: the pill reads "Відключити"
+  from a 16rem content box, the word beginning its accessible name, and folds to a 44 px bin
+  circle below that. It has no contrast gap.
+
+The toolkit components arrive only through the trial seams `src/components/ui-status-badge` and
+`src/components/ui-outlined-small-button` (the `trial` rows of the
+[keep-local register](../../../../../docs/ui-toolkit.md#keep-local-register)).
+`Settings/SocialNetworks/Comparison` sets the three styles side by side at 375, 768, 1025, 1100
+and 1440 px, idle and busy, and `Settings/SocialTile` shows each style linked, busy and with the
+confirmation open; jest-axe runs over every comparison story. Only `tinted` has browser,
+accessibility-lane and visual evidence, because every browser lane runs the page; `badge` and
+`labelled` are proven in Storybook and jsdom only. The owner picks one style, and the losers with
+their seams, stories, tests and the `tileStyle` prop are removed in one change.
 
 ### The two-factor card
 

@@ -23,6 +23,10 @@ import OutcomeNoticeHeader from '@tests/unit/utils/outcome-notice-header';
 import SessionOutlet from '@tests/unit/utils/session-outlet';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
+jest.mock('@/modules/user/features/settings/hooks/use-social-links', () =>
+  jest.requireActual('@tests/unit/utils/social-links-stub')
+);
+
 const NAME = 'Ваше ПІБ';
 const EMAIL = 'E-mail';
 const NAME_PASSWORD = 'Пароль для зміни імені';

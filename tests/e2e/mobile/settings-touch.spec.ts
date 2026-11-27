@@ -27,6 +27,14 @@ import {
   saveNameButton,
   text,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
+import {
+  cancelUnlinkButton,
+  confirmUnlinkButton,
+  countOf,
+  linkButton,
+  stubSocialLinks,
+  unlinkButton,
+} from '@tests/e2e/modules/user/features/settings/utils/social-links-page';
 import { bellOf, burgerOf, drawerOf, shellText } from '@tests/e2e/utils/app-shell';
 import { test, expect } from '@tests/e2e/utils/fixtures';
 import { t } from '@tests/e2e/utils/initialize-localization';
@@ -245,6 +253,33 @@ test.describe('Settings on touch devices (issue #330)', () => {
     await saveNameButton(page).tap();
 
     await expectSuccessOutcome(page, text.saved);
+  });
+
+  test('links and unlinks a social account with taps on full-size targets', async ({ page }) => {
+    stub = await stubProfile(page);
+    const calls = await stubSocialLinks(page);
+    await openByTap(page);
+    await expectTouchTarget(linkButton(page, 'Google'), 'Google link');
+
+    const opened = page.waitForEvent('popup');
+    await linkButton(page, 'Google').tap();
+    await opened;
+    await expectSuccessOutcome(page, t('settings.social.linked', { provider: 'Google' }));
+    await expectTouchTarget(unlinkButton(page, 'Google'), 'Google unlink');
+    await unlinkButton(page, 'Google').tap();
+    await expectTouchTarget(confirmUnlinkButton(page, 'Google'), 'Google unlink confirmation');
+    await expectTouchTarget(cancelUnlinkButton(page, 'Google'), 'Google unlink cancel');
+    await page.setViewportSize(NARROW_VIEWPORT);
+    await expectNoHorizontalOverflow(page);
+    await confirmUnlinkButton(page, 'Google').tap();
+
+    await expectSuccessOutcome(page, t('settings.social.unlinked', { provider: 'Google' }));
+    await expect(linkButton(page, 'Google')).toBeVisible();
+    expect(countOf(calls, 'CompleteSocialLink')).toBe(1);
+    expect(calls.filter((call) => call.operation === 'UnlinkSocialProvider')).toEqual([
+      { operation: 'UnlinkSocialProvider', input: expect.objectContaining({ provider: 'google' }) },
+    ]);
+    await expectNoHorizontalOverflow(page);
   });
 });
 

@@ -12,6 +12,10 @@ import SessionOutlet from '@tests/unit/utils/session-outlet';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
+jest.mock('@/modules/user/features/settings/hooks/use-social-links', () =>
+  jest.requireActual('@tests/unit/utils/social-links-stub')
+);
+
 const mockRead = jest.fn();
 const mockUpdate = jest.fn();
 const mockProvider = {

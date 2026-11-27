@@ -6,6 +6,7 @@ import {
   withProfileProvider,
 } from '@stories/profile-provider-decorators';
 import { withProtectedOutlet } from '@stories/router-decorators';
+import { withNoSocialLinks } from '@stories/social-link-provider-decorators';
 
 import UserProfile from './index';
 
@@ -13,7 +14,7 @@ const meta: Meta<typeof UserProfile> = {
   title: 'Settings/Pages/UserProfile',
   component: UserProfile,
   tags: ['autodocs'],
-  decorators: [withProtectedOutlet()],
+  decorators: [withNoSocialLinks, withProtectedOutlet()],
   parameters: {
     docs: {
       description: {

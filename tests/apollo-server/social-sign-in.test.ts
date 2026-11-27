@@ -12,9 +12,10 @@ import {
 
 import {
   assertSingleResponse,
+  oauthEnvSandbox,
   PINNED_SDL_FIXTURE,
   PROFILE_SDL_FIXTURE,
-  SOCIAL_SIGN_IN_SDL,
+  SOCIAL_SDL,
   type SingleBody,
 } from './mock-schema-fixtures';
 import { TWO_FACTOR_SDL_FIXTURES } from './two-factor-fixtures';
@@ -52,19 +53,9 @@ const COMPLETE = `
 
 type Result = SingleBody['singleResult'];
 
-const ENV_KEYS = [
-  'OAUTH_MODE',
-  'OAUTH_SPA_ORIGIN',
-  'OAUTH_GOOGLE_CLIENT_ID',
-  'OAUTH_GITHUB_CLIENT_ID',
-  'OAUTH_FACEBOOK_CLIENT_ID',
-  'OAUTH_TWITTER_CLIENT_ID',
-  'REACT_APP_MOCKOON_URL',
-];
-
 describe('pending social sign-in mutations on the mock', () => {
   let server: ApolloServer;
-  const savedEnv = Object.fromEntries(ENV_KEYS.map((key) => [key, process.env[key]]));
+  const oauthEnv = oauthEnvSandbox();
 
   const execute = async (query: string, input: Record<string, string>): Promise<Result> => {
     const response = await server.executeOperation({ query, variables: { input } });
@@ -91,7 +82,7 @@ describe('pending social sign-in mutations on the mock', () => {
   };
 
   beforeEach(async () => {
-    ENV_KEYS.forEach((key) => delete process.env[key]);
+    oauthEnv.clear();
     __socialTest__.issuedStates.clear();
     server = new ApolloServer({
       typeDefs: [
@@ -99,7 +90,7 @@ describe('pending social sign-in mutations on the mock', () => {
         PROFILE_SDL_FIXTURE,
         PASSWORD_RESET_EXTENSION,
         ...TWO_FACTOR_SDL_FIXTURES,
-        ...SOCIAL_SIGN_IN_SDL,
+        ...SOCIAL_SDL,
       ],
       resolvers,
       formatError,
@@ -109,10 +100,7 @@ describe('pending social sign-in mutations on the mock', () => {
 
   afterEach(async () => {
     await server.stop();
-    ENV_KEYS.forEach((key) => {
-      if (savedEnv[key] === undefined) delete process.env[key];
-      else process.env[key] = savedEnv[key];
-    });
+    oauthEnv.restore();
     jest.restoreAllMocks();
   });
 

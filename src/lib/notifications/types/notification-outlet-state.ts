@@ -1,6 +1,6 @@
 import type { RefObject } from 'react';
 
-import type { NotificationMessageKey } from './notification-draft';
+import type { NotificationMessageKey, NotificationMessageValues } from './notification-draft';
 import type { ShownNotificationSet } from './shown-notification';
 
 export interface NotificationAnnouncement {
@@ -35,6 +35,9 @@ export type NotificationClearPatch = Pick<
   'shown' | 'raised' | 'announcement' | 'focus'
 >;
 
-export type NotificationTranslate = (key: NotificationMessageKey) => string;
+export type NotificationTranslate = (
+  key: NotificationMessageKey,
+  values: NotificationMessageValues | undefined
+) => string;
 
 export type NotificationClock = () => number;

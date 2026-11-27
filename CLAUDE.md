@@ -318,10 +318,11 @@ are killed by the integration tests that assert on them. The mutation config exc
 `tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
 instrumentation), the `tests/unit/config/eslint-policy` test (it resolves `eslint.config.mjs`
 through a child `node` process and reaches no `src` module, so it kills nothing and only adds
-process churn) and the settings `ready-story-provider`, `bell-notifications.a11y` and
-`notifications-shell-slot.a11y` tests, which import `*.stories.tsx` files that
-`stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so each fails the dry run of every
-shard that selects it and pins only story wiring outside the mutate scope. The same list is in
+process churn) and the settings `ready-story-provider`, `bell-notifications.a11y`,
+`notifications-shell-slot.a11y` and `social-tile-comparison.a11y` tests, which import
+`*.stories.tsx` files that `stryker.config.mjs` `ignorePatterns` keeps out of the sandbox, so
+each fails the dry run of every shard that selects it and pins only story wiring outside the
+mutate scope. The same list is in
 `scripts/ci/mutation-related-tests.mjs`, and
 `tests/unit/tooling/mutation-related-tests.test.ts` fails when the two differ. The config also uses
 ts-jest `isolatedModules`, and `stryker.config.mjs` sets `ignoreStatic: true`.
@@ -3267,8 +3268,8 @@ would carry a password-reset token into an access log),
 `Permissions-Policy` (camera, microphone, geolocation, payment, usb disabled),
 `Cross-Origin-Resource-Policy: same-origin`. `Cross-Origin-Opener-Policy` is deliberately absent:
 browsers ignore it on a plain-http, non-localhost origin and log a console error per document,
-which the e2e console gate rejects at `http://prod:3001`, and the app opens no popup that needs
-opener isolation.
+which the e2e console gate rejects at `http://prod:3001`, and the one popup the app opens (account
+linking) drops its opener itself and needs its handle, which COOP would sever.
 
 **`style-src` is the one deliberate relaxation.** Emotion/MUI inject `<style>` elements and
 inline `style` attributes at runtime, and `output.inlineStyles` inlines the global stylesheet

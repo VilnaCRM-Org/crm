@@ -23,6 +23,10 @@ import OutcomeNoticeHeader from '@tests/unit/utils/outcome-notice-header';
 import SessionOutlet from '@tests/unit/utils/session-outlet';
 import { resetClientStores } from '@tests/utils/reset-client-stores';
 
+jest.mock('@/modules/user/features/settings/hooks/use-social-links', () =>
+  jest.requireActual('@tests/unit/utils/social-links-stub')
+);
+
 const RESENT = 'Посилання для підтвердження надіслано повторно';
 const FAILED = 'Не вдалося надіслати посилання. Спробуйте ще раз.';
 const STATUS = 'E-mail не підтверджено';

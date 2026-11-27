@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import NotificationOutletActions from '@/lib/notifications/notification-outlet-actions';
+import notificationValuesAdapter from '@/lib/notifications/notification-values-adapter';
 import type { NotificationDraftSet } from '@/lib/notifications/types/notification-draft';
 import useNotificationOutletStore from '@/lib/notifications/use-notification-outlet-store';
 
@@ -16,7 +17,10 @@ const clear = outletActions.clear.bind(outletActions);
 export default function useNotifications(): NotificationsPort {
   const { t } = useTranslation();
   const raise = useCallback(
-    (drafts: NotificationDraftSet): void => outletActions.raise(drafts, t),
+    (drafts: NotificationDraftSet): void =>
+      outletActions.raise(drafts, (key, values) =>
+        t(key, notificationValuesAdapter.options(values))
+      ),
     [t]
   );
 

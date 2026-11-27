@@ -50,6 +50,7 @@ export class InMemoryNotificationRepository implements NotificationRepository {
       messageKey: draft.messageKey,
       createdAt: draft.createdAt,
       read: false,
+      ...(draft.messageValues === undefined ? {} : { messageValues: draft.messageValues }),
     }));
     this.sequence += created.length;
     this.entries = [...this.entries, ...created];

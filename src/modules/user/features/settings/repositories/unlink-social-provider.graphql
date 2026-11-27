@@ -1,0 +1,7 @@
+mutation UnlinkSocialProvider($input: unlinkSocialProviderUserInput!) {
+  unlinkSocialProviderUser(input: $input) {
+    user {
+      success
+    }
+  }
+}

@@ -140,4 +140,51 @@ describe('NotificationHistoryPanel', () => {
 
     expect(findLiveRegions(container)).toEqual([]);
   });
+
+  it('interpolates the message values a record carries', () => {
+    const set: NotificationRecordSet = {
+      items: [
+        {
+          id: 'notification-1',
+          kind: 'success',
+          messageKey: 'settings.social.linked',
+          messageValues: { items: [{ name: 'provider', value: 'Google' }] },
+          createdAt: Date.parse('2026-11-20T08:00:00Z'),
+          read: false,
+        },
+      ],
+    };
+
+    render(<Host locale="en" set={set} />);
+
+    expect(screen.getByText('You have linked Google')).toBeVisible();
+  });
+
+  it.each([
+    ['lng', 'en'],
+    ['ns', 'missing'],
+    ['returnDetails', 'true'],
+  ])('keeps a record value named %s an interpolation variable only', (name, value) => {
+    const set: NotificationRecordSet = {
+      items: [
+        {
+          id: 'notification-1',
+          kind: 'success',
+          messageKey: 'settings.social.linked',
+          messageValues: {
+            items: [
+              { name, value },
+              { name: 'provider', value: 'Google' },
+            ],
+          },
+          createdAt: Date.parse('2026-11-20T08:00:00Z'),
+          read: false,
+        },
+      ],
+    };
+
+    render(<Host locale="uk" set={set} />);
+
+    expect(screen.getByText('Ви успішно підключили Google')).toBeVisible();
+  });
 });

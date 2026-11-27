@@ -7,6 +7,10 @@ import createSettingsLocaleI18n from '@tests/unit/utils/create-settings-locale-i
 
 import { panelProps } from '../../components/two-factor-settings/render-panel';
 
+jest.mock('@/modules/user/features/settings/hooks/use-social-links', () =>
+  jest.requireActual('@tests/unit/utils/social-links-stub')
+);
+
 const mockTwoFactorHook = jest.fn();
 
 jest.mock('@/modules/user/features/settings/hooks/use-two-factor-settings', () => ({

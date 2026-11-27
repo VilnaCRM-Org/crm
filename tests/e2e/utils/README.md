@@ -52,16 +52,20 @@ cannot skip a later match within the same test.
 The gate runs through the existing `e2e-testing.yml` workflow (`make test-e2e`) on
 every pull request — no separate workflow, Makefile, or dependency changes.
 
-## `current-user-backend.ts` — default `CurrentUser` reply (issue #362)
+## `current-user-backend.ts` — `CurrentUser` and `LinkedSocialProviders` replies (issues #362, #150)
 
 The e2e stack (`prod`, `mockoon`, `playwright`) serves no GraphQL endpoint, so the shell's
 `CurrentUser` read on a protected page would fail at the network layer: Chromium logs it as the
 exempted `Failed to load resource:` line, Firefox and WebKit as a CORS console error the gate
 rejects. A second auto fixture in `fixtures.ts`, `currentUserBackend`, therefore answers
-`CurrentUser` on the **browser context** with the default `replyWithProfile()` profile and hands
-every other operation on.
+`CurrentUser` on the **browser context** with the default `replyWithProfile()` profile, answers
+`LinkedSocialProviders` with no linked accounts, and hands every other operation on.
 
 A spec that tests the read itself calls `stubProfile(page, …)` as before: a page route always
 takes precedence over a context route, so its replies and its call counts are unaffected. A route
 helper that passes a request through must call `route.fallback()`, never `route.continue()`,
 which would skip the context route; `overrideRuntimeConfig` does so.
+
+`stubProfile` answers `LinkedSocialProviders` the same way, so the social networks card of
+`/settings` renders with no linked accounts. A spec that tests linking registers
+`stubSocialLinks(page, …)` after `stubProfile`, so its replies win.

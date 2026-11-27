@@ -16,6 +16,7 @@ function draftsOf({ raised }: NotificationOutletState): NotificationRecordDraftS
     items: raised.items.map((item) => ({
       kind: item.kind,
       messageKey: item.messageKey,
+      messageValues: item.messageValues,
       createdAt: item.raisedAt,
     })),
   };

@@ -33,7 +33,10 @@ const BREAKPOINTS_SEAM_TS = 'src/components/ui-breakpoints/index.ts';
 const BASE_SRC_JS = 'src/i18n.js';
 const TEXT_LINK_SEAM_TSX = 'src/components/ui-text-link/index.tsx';
 const PIN_INPUT_SEAM_TSX = 'src/components/ui-pin-input/index.tsx';
+const STATUS_BADGE_SEAM_TSX = 'src/components/ui-status-badge/index.tsx';
+const OUTLINED_SMALL_BUTTON_SEAM_TSX = 'src/components/ui-outlined-small-button/index.tsx';
 const LOCAL_LINK_TSX = 'src/components/ui-link/index.tsx';
+const LOCAL_BUTTON_TSX = 'src/components/ui-button/index.tsx';
 const UI_TOOLKIT = '@vilnacrm/ui-toolkit';
 const UI_TOOLKIT_SUBPATHS = `${UI_TOOLKIT}/*`;
 
@@ -71,7 +74,10 @@ const printedConfigs: Record<string, ResolvedConfig> = Object.fromEntries(
     BASE_SRC_JS,
     TEXT_LINK_SEAM_TSX,
     PIN_INPUT_SEAM_TSX,
+    STATUS_BADGE_SEAM_TSX,
+    OUTLINED_SMALL_BUTTON_SEAM_TSX,
     LOCAL_LINK_TSX,
+    LOCAL_BUTTON_TSX,
   ].map((file) => [
     file,
     JSON.parse(
@@ -178,7 +184,10 @@ const SRC_PROBES = [
   BREAKPOINTS_SEAM_TS,
   TEXT_LINK_SEAM_TSX,
   PIN_INPUT_SEAM_TSX,
+  STATUS_BADGE_SEAM_TSX,
+  OUTLINED_SMALL_BUTTON_SEAM_TSX,
   LOCAL_LINK_TSX,
+  LOCAL_BUTTON_TSX,
 ];
 const NON_SEAM_SRC_PROBES = [LOGIC_TS, COMPONENT_TSX, TYPE_ONLY_TS, HOOK_TS, ROUTE_SHELL_TSX];
 const ALWAYS_FORBIDDEN_TOOLKIT_GROUP = [
@@ -428,6 +437,38 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
     NON_SEAM_SRC_PROBES.forEach((file) => {
       expect(toolkitGroupFor(file)).toEqual(ALWAYS_FORBIDDEN_TOOLKIT_GROUP);
     });
+  });
+
+  it('lets the trial status-badge seam through ui-status-badge only, as its default export', () => {
+    expect(toolkitGroupFor(STATUS_BADGE_SEAM_TSX)).toEqual([
+      ...ALWAYS_FORBIDDEN_TOOLKIT_GROUP,
+      `!${UI_TOOLKIT}/ui-status-badge`,
+    ]);
+    expect(restrictedImportsFor(STATUS_BADGE_SEAM_TSX).paths).toContainEqual(
+      expect.objectContaining({
+        name: `${UI_TOOLKIT}/ui-status-badge`,
+        allowImportNames: ['default'],
+      })
+    );
+    NON_SEAM_SRC_PROBES.forEach((file) => {
+      expect(toolkitGroupFor(file)).toEqual(ALWAYS_FORBIDDEN_TOOLKIT_GROUP);
+    });
+  });
+
+  it('lets only the trial outlined-small seam through ui-button, never the local UIButton', () => {
+    expect(toolkitGroupFor(OUTLINED_SMALL_BUTTON_SEAM_TSX)).toEqual([
+      ...ALWAYS_FORBIDDEN_TOOLKIT_GROUP,
+      `!${UI_TOOLKIT}/ui-button`,
+    ]);
+    expect(restrictedImportsFor(OUTLINED_SMALL_BUTTON_SEAM_TSX).paths).toContainEqual(
+      expect.objectContaining({ name: `${UI_TOOLKIT}/ui-button`, allowImportNames: ['default'] })
+    );
+    expect(toolkitGroupFor(LOCAL_BUTTON_TSX)).toEqual(ALWAYS_FORBIDDEN_TOOLKIT_GROUP);
+    expect(
+      restrictedImportsFor(LOCAL_BUTTON_TSX).paths.filter(
+        ({ allowImportNames }) => allowImportNames
+      )
+    ).toEqual([]);
   });
 
   it('limits a ui-toolkit component seam to its subpath default export (#250)', () => {

@@ -4,8 +4,8 @@ workflowType: 'prd'
 bmadCommand: 'create-prd'
 project_name: 'crm'
 date: '2026-11-18'
-revised: '2026-11-25'
-iteration: 10
+revised: '2026-11-27'
+iteration: 11
 revisionPasses:
   - '2026-11-19 GraphQL only, no ADR; review corrections'
   - '2026-11-20 after #331 merged: D6, FR10-FR12'
@@ -16,6 +16,7 @@ revisionPasses:
   - '2026-11-24 FR/NFR gate iteration 10: NFR6 acceptance'
   - '2026-11-24 FR/NFR gate iteration 11: NFR6 keys, NFR8 refused completions, trace'
   - '2026-11-25 bundle review: FR5-FR8, FR12, NFR7, NFR10'
+  - '2026-11-27 social account linking (owner, 2026-11-23): §5 names the bundle that plans linking'
 slug: 'social-sign-in'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/research-social-sign-in-2026-11-18.md'
@@ -167,5 +168,7 @@ Quality floors restate `.claude/react-sdlc.yml` `quality.*` — raise-only:
 
 ## 5. Out of scope
 
-Provider linking in settings, refresh tokens, backend changes, production enablement (D5),
-new Figma design, Apple/Microsoft providers.
+Provider linking in settings, refresh tokens, backend changes, production enablement (D5), new
+Figma design, Apple/Microsoft providers. _(2026-11-27)_ Linking a provider to a signed-in account
+is its own feature since the owner's decision of 2026-11-23:
+[social account linking](../../social-account-linking/planning-artifacts/prd-social-account-linking-2026-11-23.md).

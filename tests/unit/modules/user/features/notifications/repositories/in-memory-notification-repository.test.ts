@@ -321,4 +321,29 @@ describe('InMemoryNotificationRepository', () => {
       expect(jest.getTimerCount()).toBe(0);
     });
   });
+
+  it('keeps the message values a draft carries on the stored record', async () => {
+    const repository = fresh();
+    const draft = buildNotificationRecordDraft({
+      messageKey: 'settings.social.linked',
+      messageValues: { items: [{ name: 'provider', value: 'Facebook' }] },
+      createdAt: AFTER_SEED,
+    });
+
+    const { items } = await repository.record({ items: [draft] });
+    const listed = await repository.list();
+
+    expect(Object.keys(items[0] ?? {}).sort()).toEqual([
+      'createdAt',
+      'id',
+      'kind',
+      'messageKey',
+      'messageValues',
+      'read',
+    ]);
+    expect(items[0]?.messageValues).toEqual({ items: [{ name: 'provider', value: 'Facebook' }] });
+    expect(listed.items[0]?.messageValues).toEqual({
+      items: [{ name: 'provider', value: 'Facebook' }],
+    });
+  });
 });

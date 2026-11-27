@@ -3,7 +3,7 @@ status: complete
 workflowType: research
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-05
+revised: 2026-11-27
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 inputDocuments:
@@ -82,7 +82,8 @@ section `6242:41691`. Only what user-service has a backend for is planned, over 
   section (not rendered). Both get user-service feature issues and crm follow-ups. Amended
   2026-10-21 (product owner): the social networks card renders UI-only, Figma-exact (`476:46530`,
   `386:27239`, `386:27457`), with no working action; linking, listing and unlinking stay out of
-  scope (G6). Delete
+  scope (G6). Superseded 2026-11-23 (D2b): the tiles link and unlink on a provisional contract,
+  planned in `specs/social-account-linking/`; G6 (user-service #520) is still open. Delete
   account and a sessions list are neither designed nor planned.
 - **Not this feature (D3):** the app-shell sidebar, header and user menu around the page; the
   app-shell PRD excludes navigation menus
@@ -159,7 +160,8 @@ sidebar and header (search, notifications, tasks, user chip) are shell work (D3)
 
 - Title "Настройка", subtitle "Описание страницы настроек"; the right column holds the 2FA card
   and a second card holds social networks (Google, Facebook, GitHub, Twitter; out of scope;
-  amended 2026-10-21: rendered UI-only, its actions still out of scope).
+  amended 2026-10-21: rendered UI-only, its actions still out of scope; superseded 2026-11-23
+  by D2b: the tiles link and unlink, see `specs/social-account-linking/`).
 - Profile card: a 100 px avatar with a pencil badge; "Добро пожаловать!" in `#969B9D` and the
   name in bold; field "Ваше ФИО"; heading "Личные данные" over "Ваш e-mail"; heading "Пароль"
   over "Текущий пароль" and "Новый пароль" (masked, eye toggle, no confirmation field); one

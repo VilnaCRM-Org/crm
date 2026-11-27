@@ -32,6 +32,10 @@ import {
   text,
   unreadDescription,
 } from '@tests/e2e/modules/user/features/settings/utils/settings-page';
+import {
+  linkButton,
+  stubSocialLinks,
+} from '@tests/e2e/modules/user/features/settings/utils/social-links-page';
 import { startOf } from '@tests/e2e/modules/user/features/settings/utils/two-factor-page';
 import { bellOf, chipOf, expectShellReady, logoOf, shellText } from '@tests/e2e/utils/app-shell';
 import fillInput from '@tests/e2e/utils/fill-input';
@@ -42,7 +46,7 @@ import { expectTabOrder } from '@tests/utils/a11y/keyboard';
 const NEW_NAME = buildFullName();
 const password = buildPassword();
 const newPassword = buildPassword();
-const VISIBLE_MAIN_CONTROLS = 10;
+const VISIBLE_MAIN_CONTROLS = 14;
 const DESKTOP = { width: 1440, height: 900 };
 const FAILED_SAVES = 3;
 
@@ -85,8 +89,10 @@ async function failPasswordSaves(page: Page, count: number): Promise<void> {
 
 async function openSettings(page: Page, stub: Promise<StubbedProfile>): Promise<StubbedProfile> {
   const stubbed = await stub;
+  await stubSocialLinks(page);
   await page.goto('/settings', { waitUntil: 'domcontentloaded' });
   await expect(nameField(page)).toHaveValue(PROFILE_NODE.initials);
+  await expect(linkButton(page, 'Google')).toBeVisible();
   await expect(page.getByRole('contentinfo')).toBeVisible();
   return stubbed;
 }
@@ -129,6 +135,10 @@ test.describe('Settings keyboard contract (issue #330)', () => {
       { locator: toggles(page).nth(1), visibleFocus: true },
       { locator: saveButton(page), visibleFocus: true },
       { locator: clearButton(page), visibleFocus: true },
+      { locator: linkButton(page, 'Google'), visibleFocus: true },
+      { locator: linkButton(page, 'Facebook'), visibleFocus: true },
+      { locator: linkButton(page, 'GitHub'), visibleFocus: true },
+      { locator: linkButton(page, 'Twitter'), visibleFocus: true },
       { locator: startOf(page), visibleFocus: true },
       { locator: footer.getByRole('link', { name: privacyLabel }), visibleFocus: true },
       { locator: footer.getByRole('link', { name: termsLabel }), visibleFocus: true },

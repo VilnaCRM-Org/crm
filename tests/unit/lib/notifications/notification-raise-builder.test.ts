@@ -1,6 +1,7 @@
 import ALTERNATING_MARK from '@/lib/live-region/alternating-mark';
 import CLEARED_NOTIFICATION_OUTLET from '@/lib/notifications/cleared-notification-outlet';
 import notificationRaiseBuilder from '@/lib/notifications/notification-raise-builder';
+import type { NotificationMessageValues } from '@/lib/notifications/types/notification-draft';
 import type { NotificationOutletState } from '@/lib/notifications/types/notification-outlet-state';
 import { buildNotificationDraft } from '@tests/builders/notification-draft';
 import loadIsolated from '@tests/unit/utils/isolated-module';
@@ -103,5 +104,36 @@ describe('NotificationRaiseBuilder', () => {
     const next = build([a, b], { ...CLEARED_NOTIFICATION_OUTLET, marked: true });
 
     expect(next.announcement.polite).toBe(`text:${a.messageKey} text:${b.messageKey}`);
+  });
+
+  it('speaks each message with its own values, and with none when it has none', () => {
+    const translateWith = jest.fn(
+      (key: string, values: NotificationMessageValues | undefined): string =>
+        `${key}(${(values?.items ?? []).map(({ name, value }) => `${name}=${value}`).join()})`
+    );
+    const linked = buildNotificationDraft({
+      messageKey: 'settings.social.linked',
+      messageValues: { items: [{ name: 'provider', value: 'Google' }] },
+    });
+    const failed = buildNotificationDraft({ kind: 'error', messageKey: 'settings.toasts.failed' });
+
+    const next = notificationRaiseBuilder.build({
+      state: { ...CLEARED_NOTIFICATION_OUTLET, marked: true },
+      drafts: { items: [linked, failed] },
+      translate: translateWith,
+      raisedAt: RAISED_AT,
+    });
+
+    expect(next.announcement).toEqual({
+      polite: 'settings.social.linked(provider=Google)',
+      assertive: 'settings.toasts.failed()',
+    });
+    expect(translateWith.mock.calls).toEqual([
+      ['settings.social.linked', { items: [{ name: 'provider', value: 'Google' }] }],
+      ['settings.toasts.failed', undefined],
+    ]);
+    expect(next.shown.items[0]?.messageValues).toEqual({
+      items: [{ name: 'provider', value: 'Google' }],
+    });
   });
 });

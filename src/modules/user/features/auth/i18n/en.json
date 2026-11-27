@@ -40,7 +40,9 @@
       "back_to_sign_in": "Back to sign in",
       "callback_title": "Signing in",
       "signing_in": "Signing you in with {{provider}}…",
-      "provider_fallback": "this service"
+      "provider_fallback": "this service",
+      "link_return": "Return to settings to see the result. You can close this window.",
+      "link_title": "Linking your account"
     }
   },
   "sign_up": {

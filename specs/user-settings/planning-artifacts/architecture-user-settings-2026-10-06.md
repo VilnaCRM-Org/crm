@@ -4,8 +4,8 @@ workflowType: architecture
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
 project_name: crm
 date: 2026-10-06
-revised: 2026-11-18
-iteration: 10
+revised: 2026-11-27
+iteration: 12
 feature: user-settings
 issue: https://github.com/VilnaCRM-Org/crm/issues/330
 author: 'architect (Winston), autonomous run'
@@ -21,9 +21,10 @@ inputDocuments:
 
 **Author:** BMad (Architect) **Date:** 2026-10-06, revised 2026-10-08, 2026-10-16, 2026-10-19,
 2026-10-20, 2026-10-21, 2026-11-04 (owner decisions and Figma correction below), 2026-11-05
-(FR/NFR reconciliation), 2026-11-17 (the flag-removal commit cited as 62ddc565) and 2026-11-18
-(owner decision: resend inert only during an e-mail-section save) **Feature:**
-`user-settings`
+(FR/NFR reconciliation), 2026-11-17 (the flag-removal commit cited as 62ddc565), 2026-11-18
+(owner decision: resend inert only during an e-mail-section save), 2026-11-23 (owner decision
+D2b: the social tiles link and unlink) and 2026-11-27 (D2b written into §2, §3, §5, §7, §8,
+§13, §15 and §17 in place) **Feature:** `user-settings`
 
 > **Owner decisions of 2026-11-02 and 2026-11-03, and Figma correction of 2026-11-04.** They
 > supersede this document's text where the two differ; the earlier text is kept as the record of the
@@ -50,6 +51,14 @@ inputDocuments:
 > - **Unconfirmed e-mail row (Figma, 2026-11-04).** Frames `386:27830`, `386:27945` and `386:28059`
 >   draw the status and the resend control 8 px apart with no separator, so the "·" quoted in FR-15,
 >   Story 3.6 and the brief, and the separator in architecture §7.2, are not drawn.
+
+> **Owner decision of 2026-11-23 (D2b, social tiles link and unlink).** `SocialNetworks` links a
+> provider through a popup and unlinks it after an inline confirmation; the
+> [social-account-linking architecture](../../social-account-linking/planning-artifacts/architecture-social-account-linking-2026-11-23.md)
+> owns that design. Its operations are a provisional pending contract, because user-service has no
+> signed-in link, list or unlink yet (G6, user-service #520), so they run against the local mock
+> until #520 agrees them; G6 blocks the production enablement of linking only (§15.1). The
+> `SocialNetworks` passages of §2, §3, §5, §7, §8, §13, §15 and §17 say so in place.
 
 Predecessors: [research](./research-user-settings-2026-10-06.md) (cited "research §N"),
 [brief](./brief-user-settings-2026-10-06.md) ("brief §N") and the authoritative
@@ -459,7 +468,7 @@ frontend carries and displays them; it adds no class, rule or layer around them.
 | ------------------------- | --------------------------------------------------------------- |
 | `UserEntity`              | imported; the page loads it and passes it down as itself (TB-2) |
 | `RestorePasswordDTO`      | not used: #315's forgotten-password request (Q-1, §17.3 G-5)    |
-| `UserSocialNetworkEntity` | not built: no backend; the card is UI-only (G-1, amended 10-21) |
+| `UserSocialNetworkEntity` | not built: the card reads provider names only (G-1, D2b 11-23)  |
 
 The settings password change is `PasswordChange`, a plain pair outside the domain folder: it is
 not a board type, so it carries no `Dto` suffix.
@@ -507,7 +516,7 @@ flowchart TB
   ups["User profile settings<br/>[React component]<br/>UserProfile page, /settings"]:::component
   us["User settings<br/>[React component]<br/>UserProfileSettings"]:::component
   twofa["2FA<br/>[React component]<br/>TwoFactorSettings, #331"]:::external
-  social["Social networks<br/>[React component]<br/>UI only, no actions (FR-7a, 2026-10-21; G6)"]:::component
+  social["Social networks<br/>[React component]<br/>links and unlinks (FR-7a, D2b; G6)"]:::component
   api["API<br/>[Software System]"]:::external
   state[("State [Zustand]<br/>useAuthStore<br/>[Zustand store]")]:::component
   gate["RouteFlagGate, ProtectedRoute<br/>[Decorator]"]:::component
@@ -515,7 +524,7 @@ flowchart TB
   gate -->|"FeatureFlag, RedirectNavigationState"| ups
   ups -->|"UserProfileSettingsProps: UserEntity"| us
   ups -.->|"twoFactorAuth on"| twofa
-  ups -->|"UI only, no props (G-1 amended 2026-10-21)"| social
+  ups -->|"no props; reads its own links (G-1, D2b 2026-11-23)"| social
   ups -->|"1 request to API: read → UserEntity"| api
   us -->|"1 request to API: ProfileChange → UserEntity"| api
   twofa -->|"1 request to API"| api
@@ -605,11 +614,11 @@ flowchart LR
   RPD["PasswordChange<br/>[type], not a board DTO"]:::code
   TFS["TwoFactorSettings<br/>[component], #331"]:::external
   TFE["TwoFactorSettingsEntity<br/>[type], #331"]:::external
-  SN["SocialNetworks<br/>[component], UI only (2026-10-21)"]:::code
+  SN["SocialNetworks<br/>[component], links and unlinks (D2b)"]:::code
   UP -->|"UserEntity, loaded by useProfileLoad"| UE
   UP -->|"UserProfileSettingsProps: UserEntity"| UPS
   UP -.->|"slot, twoFactorAuth on"| TFS
-  UP -->|"UI only, no entity (G-1 amended 2026-10-21)"| SN
+  UP -->|"no props, no entity; reads its own links (G-1, D2b)"| SN
   UPS -->|"UserEntity, the user prop"| UE
   UPS -->|"ChangePasswordProps"| RP
   RP -->|"PasswordChange"| RPD
@@ -1502,8 +1511,8 @@ Story 1.1 (P.1: stacked on PR #340) moves, never copies:
 
 - Only `eye.svg` and `eye-off.svg` move: they are the two icons anything imports
   (`form-section/components/styles.ts`); `eye-hover.svg` and `eye-off-disabled.svg` have no
-  importer and stay where they are. Amended 2026-10-21 (product owner, the UI-only social card,
-  §7.2): the four social brand icons also move, from `@auth/assets/social-links/` to
+  importer and stay where they are. Amended 2026-10-21 (product owner, the social card, §7.2):
+  the four social brand icons also move, from `@auth/assets/social-links/` to
   `src/assets/icons/social/`, and are shared by the settings `SocialNetworks` card and the
   sign-in and sign-up OAuth buttons (`oauth-providers.ts`); "only the eye icons move" is
   superseded.
@@ -2243,9 +2252,11 @@ UserProfile [component]<route> (settings/routes/user-profile/index.tsx)
   │ │ │          ├ UIServerFieldError × ProfileFieldErrorSet items
   │ │ │          ├ p role=status (no-change text), always mounted
   │ │ │          └ Save "Зберегти зміни" + ClearButton "Очистити"
-  │ │ └ SocialNetworks [component] (UI only)   h2 "Соціальні мережі"
-  │ │   └ ul role=list, labelled by the heading: Google, Facebook, GitHub, Twitter tiles,
-  │ │      each with a visually hidden "linking not available yet" status; no action
+  │ │ └ SocialNetworks [component] (links and unlinks, D2b)   h2 "Соціальні мережі"
+  │ │   ├ ul role=list, labelled by the heading: Google, Facebook, GitHub, Twitter tiles,
+  │ │   │  display-only with a hidden "linking not available yet" status until the list answers,
+  │ │   │  and after it fails
+  │ │   └ failed: SocialLoadFailure (message, "Спробувати ще раз"; loading text while retrying)
   │ └ TwoFactorSettings (the grid's second child; twoFactorAuth; 2FA bundle, board 2FASettings)
   └ UIToastStack toasts: ToastItemSet, announcement, returnFocusRef=saveRef
 ```
@@ -2259,9 +2270,11 @@ section holds only the e-mail and the name sits at the top under the header; it 
 `EmailStatusRow`. `ProfileSkeleton` follows the same order. (2) `ProfileHeader` greets with the
 first name and surname derived from the ПІБ (§7.2). (3) The new-password hint is visually hidden but
 stays in `aria-describedby`, and `UIPasswordPolicyRules` renders only while the field has focus or a
-value, held 200 ms after an empty field blurs (§7.2). (4) The profile column gains a UI-only `SocialNetworks`
-card after `UserProfileSettings`, so the desktop grid's second column stays free for 2FA ("Соціальні мережі", Figma `476:46530`, `386:27239`, `386:27457`;
-§7.2), which closes G-1 for the view (§17.3).
+value, held 200 ms after an empty field blurs (§7.2). (4) The profile column gains a
+`SocialNetworks` card after `UserProfileSettings`, so the desktop grid's second column stays free
+for 2FA ("Соціальні мережі", Figma `476:46530`, `386:27239`, `386:27457`; §7.2), which closes G-1
+for the view (§17.3). Since 2026-11-23 (D2b) its tiles link and unlink against the provisional
+contract and the local mock until user-service serves G6 (#520).
 
 `ProfileSkeleton`, `ProfileLoadError`, `ProfileHeader`, `ProfileForm`, `EmailStatusRow` and
 `ClearButton` are child components drawn inside the board's `UserProfileSettings [component]`
@@ -2285,7 +2298,7 @@ root page component; none of them reaches a hook other than its parent's or a Da
 | `ClearButton`         | `profile-form/clear-button`        | child      | FR-13 `type="button"` |
 | `UIToastStack`        | `src/components/ui-toast/index`    | UI library | FR-20 stack, region   |
 | `UIToast`             | `src/components/ui-toast/ui-toast` | UI library | FR-20 toast, close    |
-| `SocialNetworks`      | `social-networks/index` (added)    | component  | FR-7a, UI only        |
+| `SocialNetworks`      | `social-networks/index` (added)    | component  | FR-7a, D2b            |
 
 Every component takes one named props interface from §6.1 or §5.8; no component imports a Data
 provider, Transformer or Repository, even as a type, and no component reaches the container
@@ -2300,15 +2313,21 @@ other than through a hook.
   Олеговна" → "Евгения Маслова"); one or two words show as typed. The monogram is built from the
   greeted name: "Петренко Олена Іванівна" → "Олена Петренко", "ОП"; "Олена Петренко" → "Олена
   Петренко", "ОП"; "Admin" → "A"; empty → the person glyph.
-- **`SocialNetworks`** (added 2026-10-21, product owner; PRD FR-7a). A second card "Соціальні
-  мережі" renders Figma-exact (desktop `476:46530`, tablet `386:27239`, mobile `386:27457`) with
-  four tiles, Google, Facebook, GitHub and Twitter, and no working action, because user-service
-  has no signed-in link, list or unlink (G6). The tiles are the items of a `<ul role="list">`
-  labelled by the heading; each carries a visually hidden status from `settings.social.*`, ",
-  linking not available yet" / ", підключення поки недоступне" (the separator lives in the
-  catalog). The four brand icons move from `@auth/assets/social-links/` to
-  `src/assets/icons/social/` and are shared with the sign-in and sign-up OAuth buttons
-  (`oauth-providers.ts`).
+- **`SocialNetworks`** (added 2026-10-21, product owner; PRD FR-7a; actions 2026-11-23, D2b). A
+  second card "Соціальні мережі" renders Figma-exact (desktop `476:46530`, tablet `386:27239`,
+  mobile `386:27457`) with four tiles, Google, Facebook, GitHub and Twitter, the items of a
+  `<ul role="list">` labelled by the heading. A tile links its provider through a popup and a
+  linked tile unlinks it after an inline confirmation, as the social-account-linking architecture
+  specifies, against the provisional contract
+  `src/api/contracts/pending/social-account-linking.graphql`: user-service has no signed-in link,
+  list or unlink yet (G6, user-service #520), so the actions run against the local mock until it
+  does. Until the list of linked providers answers, and after it fails, every tile is
+  display-only and carries a visually hidden status from `settings.social.*`, ", linking not
+  available yet" / ", підключення поки недоступне" (the separator lives in the catalog). A failed
+  list adds a localized message and a "Спробувати ще раз" button under the tiles; while the retry
+  runs, the message says the list is loading. The four brand icons move from
+  `@auth/assets/social-links/` to `src/assets/icons/social/` and are shared with the sign-in and
+  sign-up OAuth buttons (`oauth-providers.ts`).
 - **New password at rest** (amended 2026-10-21, product owner; PRD FR-10). Figma draws no hint
   and no rule list, so the optional-field hint is visually hidden but stays in the field's
   `aria-describedby`, and the four rules render only while the field has focus or a value. When
@@ -2582,8 +2601,9 @@ NEW unless marked MOD or MOVE. `settings/` = `src/modules/user/features/settings
 - `src/components/ui-form-input-field/theme.ts` MOD (`error.text`); `src/styles/colors.ts` MOD.
 - `src/assets/icons/{eye,eye-off,toast-success,toast-error}.svg`; `src/assets/icons/social/`
   (the four brand icons, MOVE, amendment 2026-10-21).
-- `settings/components/social-networks/` with its story (the UI-only card, amendment 2026-10-21,
-  §7.2).
+- `settings/components/social-networks/` with its stories (the card, amendment 2026-10-21, §7.2;
+  its link and unlink files since 2026-11-23, D2b, are placed by the social-account-linking
+  architecture).
 - `src/hooks/use-toast-queue.ts` (its types live in `src/components/types/ui-toast/index.ts`).
 - `src/features/home/{index.tsx,styles.ts,i18n/en.json,i18n/uk.json}` MOD (§5.15).
 - `src/config/runtime/{feature-flag-service,app-config-schema}.ts`, `types/feature-flag.ts`
@@ -2885,7 +2905,7 @@ type, TB-1 position 8); literals only where the value is the case.
 | FR-5         | read, IRI passthrough         | read, `cache.write` spy | stubbed read         |
 | FR-6         | section states, retry focus   | read failure classes    | failure + retry      |
 | FR-7         | monogram cases                | —                       | visual header        |
-| FR-7a        | social-networks tiles, status | —                       | —                    |
+| FR-7a        | tiles, link, unlink, failure  | provider, apollo-server | link, unlink, visual |
 | FR-8         | labels, autocomplete, toggles | —                       | keyboard spec        |
 | FR-9, FR-10  | dirty-only rules, policy      | —                       | field-error flows    |
 | FR-11        | detector, input keys          | exact input keys        | request bodies       |
@@ -3133,9 +3153,13 @@ G1 to G8 (user-service #513 to #522) and #514, linked by Story 4.6.
 | G3  | Own unchanged e-mail rejected by `UniqueEmail`; regression test first  | nothing         |
 | G4  | Profile update without the current password; OAuth users               | nothing         |
 | G5  | Avatar field, upload and storage                                       | nothing         |
-| G6  | Signed-in social link, list and unlink                                 | nothing         |
+| G6  | Signed-in social link, list and unlink                                 | linking in prod |
 | G7  | GraphQL `updateUser` and `deleteUser` bypass the limiters              | nothing         |
 | G8  | Machine-readable `extensions.code` on domain errors (one issue w/ 2FA) | nothing         |
+
+G6 (user-service #520) blocks only the production enablement of social linking (D2b): the tiles
+link and unlink against a provisional contract and the local mock until #520 agrees it, so no
+implementation work, in this feature or in the social-account-linking bundle, waits on it.
 
 G8 also names the wrong-password exception and the owner refusal, the messages §5.4 matches by
 text. Nothing in research §4.9 is filed again.
@@ -3234,7 +3258,7 @@ captured 2026-10-08 (contract §1; screenshots in `crm-worktrees/_planning-share
 | User module `[module]` (25)                      | `src/modules/user`, feature `settings`                               |
 | "User profile settings" `[React component]` (01) | `UserProfile` page at `/settings`                                    |
 | → "User settings" `[React component]` (01)       | `UserProfileSettings`                                                |
-| → "2FA", → "Social networks" (01)                | #331's slot; `SocialNetworks` UI-only (G-1)                          |
+| → "2FA", → "Social networks" (01)                | #331's slot; `SocialNetworks` links and unlinks (G-1, D2b)           |
 | "User settings" → API "1 request to API" (01)    | `GraphQLProfileRepository` → user-service                            |
 | "User profile" → BFF "Log-out" (01)              | not on this page (G-2)                                               |
 | State `[Redux]` (01)                             | `useAuthStore`, drawn `State [Zustand]`                              |
@@ -3242,7 +3266,7 @@ captured 2026-10-08 (contract §1; screenshots in `crm-worktrees/_planning-share
 | `UserProfile` → `UserEntity [type]` (21)         | `useProfileLoad` in the page; #315's type                            |
 | `UserProfile` → `UserProfileSettings` (21)       | in the grid's first child, `Box.profileColumn`                       |
 | `UserProfile` → `2FASettings` (21)               | the `TwoFactorSettings` slot (#331), the grid's second child         |
-| `UserProfile` → `SocialNetworks` (21)            | UI-only card in `Box.profileColumn`, no entity (G-1, 2026-10-21)     |
+| `UserProfile` → `SocialNetworks` (21)            | card in `Box.profileColumn`, no props, no entity (G-1, 2026-10-21)   |
 | `UserProfileSettings` → `UserEntity` (21)        | the `user` prop, the page's `UserEntity`                             |
 | `UserProfileSettings` → `RestorePassword` (21)   | `ChangePassword`, renamed (G-5)                                      |
 | `RestorePassword` → `RestorePasswordDTO` (21)    | #315's flow (Q-1); here `PasswordChange`                             |
@@ -3278,13 +3302,13 @@ box (§17.2) and the gaps of §17.3.
 
 ### 17.3 Gaps and conformance notes
 
-- **G-1.** `SocialNetworks [component]` and `UserSocialNetworkEntity [type]` are not built:
-  user-service has no signed-in link, list or unlink (D2, G6, Follow-up 5.5). Amended 2026-10-21
-  (product owner): `SocialNetworks [component]` is built UI-only, Figma-exact (`476:46530`,
-  `386:27239`, `386:27457`), four tiles in a `<ul role="list">` labelled by "Соціальні мережі",
-  each with a visually hidden "linking not available yet" status and no action (§7.2, PRD FR-7a).
-  `UserSocialNetworkEntity [type]` stays unbuilt: the card takes no data, and linking stays out
-  of scope until G6 ships.
+- **G-1.** `SocialNetworks [component]` is built Figma-exact (`476:46530`, `386:27239`,
+  `386:27457`): four tiles in a `<ul role="list">` labelled by "Соціальні мережі" (2026-10-21,
+  product owner; §7.2, PRD FR-7a). Since 2026-11-23 (D2b) the tiles link and unlink through the
+  social-account-linking bundle's own repository, Data provider and hooks, against a provisional
+  contract until user-service serves G6 (#520, Follow-up 5.5); the board draws no popup or
+  callback for it. `UserSocialNetworkEntity [type]` stays unbuilt: the card reads provider names
+  only, and #520's per-provider dates are not shown.
 - **G-2.** The component-level "User profile" card (header menu with "user settings" and
   "Log-out" to the BFF) is app-shell work (D3, Follow-up 5.6); the home link stands in for its
   "user settings" entry and touches no BFF.

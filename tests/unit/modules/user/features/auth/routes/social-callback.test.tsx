@@ -1,9 +1,9 @@
 import '@testing-library/jest-dom';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { type JSX, type ReactNode, StrictMode } from 'react';
+import { type JSX, type ReactNode, StrictMode, useCallback } from 'react';
 import { I18nextProvider } from 'react-i18next';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router';
 
 import SocialCallback from '@auth/routes/social-callback';
 import type { SocialProvider } from '@auth/types/social-sign-in/social-provider';
@@ -14,6 +14,7 @@ import type {
 import socialSignInFlowSource from '@auth/utils/social-sign-in-flow-source';
 import socialSignInNavigator from '@auth/utils/social-sign-in-navigator';
 import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
+import FakeBroadcastChannel from '@tests/unit/utils/fake-broadcast-channel';
 
 const mockStart = jest.fn<Promise<SocialStartOutcome>, unknown[]>();
 const mockComplete = jest.fn<Promise<SocialSignInOutcome>, unknown[]>();
@@ -39,6 +40,39 @@ const EXPIRED = 'Спроба входу застаріла або вже вик
 const AUTHORIZE = 'https://accounts.google.com/o/oauth2/v2/auth?state=issued';
 
 let entryCounter = 0;
+
+const LINK_RETURN = {
+  provider: 'google',
+  code: 'granted',
+  state: 'link.issued',
+  error: null,
+};
+
+function NextEntry({ search }: { search: string }): JSX.Element {
+  const navigate = useNavigate();
+  const open = useCallback((): void => {
+    window.history.replaceState(null, '', `${CALLBACK}${search}`);
+    void navigate(CALLBACK);
+  }, [navigate, search]);
+  return (
+    <button type="button" onClick={open}>
+      next entry
+    </button>
+  );
+}
+
+const reusedPage = (search: string): JSX.Element => (
+  <StrictMode>
+    <I18nextProvider i18n={i18n}>
+      <MemoryRouter initialEntries={[CALLBACK]}>
+        <NextEntry search={search} />
+        <Routes>
+          <Route path="/auth/callback/:provider" element={<SocialCallback />} />
+        </Routes>
+      </MemoryRouter>
+    </I18nextProvider>
+  </StrictMode>
+);
 
 function ChallengeProbe(): JSX.Element {
   const { state } = useLocation();
@@ -97,6 +131,90 @@ describe('SocialCallback page', () => {
     window.sessionStorage.clear();
     window.history.replaceState(null, '', '/');
     jest.restoreAllMocks();
+  });
+
+  describe('returning to a linking popup', () => {
+    beforeEach(() => {
+      FakeBroadcastChannel.install();
+      jest.spyOn(window, 'close').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => FakeBroadcastChannel.uninstall());
+
+    it('hands the code to the settings tab once under StrictMode, strips it and closes', () => {
+      visit(CALLBACK, '?code=granted&state=link.issued');
+
+      const posted = FakeBroadcastChannel.opened.flatMap((channel) => channel.posted);
+      expect(posted).toEqual([LINK_RETURN]);
+      expect(window.location.search).toBe('');
+      expect(window.close).toHaveBeenCalledTimes(1);
+    });
+
+    it('reads the query again for a new history entry on the same route', async () => {
+      window.history.replaceState(null, '', `${CALLBACK}?code=first&state=link.first`);
+      render(reusedPage('?code=granted&state=link.issued'));
+
+      await userEvent.click(screen.getByRole('button', { name: 'next entry' }));
+
+      const posted = FakeBroadcastChannel.opened.flatMap((channel) => channel.posted);
+      expect(posted).toEqual([{ ...LINK_RETURN, code: 'first', state: 'link.first' }, LINK_RETURN]);
+      expect(window.location.search).toBe('');
+    });
+
+    it('decides sign-in or linking again for a new history entry on the same route', async () => {
+      socialSignInFlowSource.saveState({ provider: 'google', state: 'link.issued' });
+      window.history.replaceState(null, '', CALLBACK);
+      render(reusedPage('?code=granted&state=link.issued'));
+      expect(await screen.findByText(/не повернув даних для входу/)).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: 'next entry' }));
+
+      expect(mockResolve).not.toHaveBeenCalled();
+      const posted = FakeBroadcastChannel.opened.flatMap((channel) => channel.posted);
+      expect(posted).toEqual([LINK_RETURN]);
+      expect(document.title).toContain('Підключення облікового запису');
+    });
+
+    it('hands a provider refusal to the settings tab', () => {
+      visit(CALLBACK, '?error=access_denied&state=link.issued');
+
+      expect(FakeBroadcastChannel.opened[0]?.posted[0]).toEqual({
+        provider: 'google',
+        code: null,
+        state: 'link.issued',
+        error: 'access_denied',
+      });
+    });
+
+    it('never signs in, not even for a state this tab saved, and offers no retry', () => {
+      returnFrom('google', { code: 'granted', state: 'link.issued' });
+
+      expect(mockResolve).not.toHaveBeenCalled();
+      expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    });
+
+    it('titles the page and focuses its only heading, with what to do next', () => {
+      visit(CALLBACK, '?code=granted&state=link.issued');
+
+      expect(document.title).toContain('Підключення облікового запису');
+      expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
+      expect(screen.getByRole('heading')).toHaveAttribute('tabindex', '-1');
+      expect(screen.getByRole('heading')).toHaveStyle({ fontSize: '1.375rem', fontWeight: '700' });
+      expect(screen.getByRole('heading')).toHaveTextContent('Підключення облікового запису');
+      expect(
+        screen.getByText(
+          'Поверніться до налаштувань, щоб побачити результат. Це вікно можна закрити.'
+        )
+      ).toBeInTheDocument();
+    });
+
+    it('keeps an unmarked state a sign-in', () => {
+      visit(CALLBACK, '?code=granted&state=unknown');
+
+      expect(FakeBroadcastChannel.opened).toHaveLength(0);
+      expect(window.close).not.toHaveBeenCalled();
+      expect(document.title).toContain('Вхід');
+    });
   });
 
   describe('starting from a provider button', () => {

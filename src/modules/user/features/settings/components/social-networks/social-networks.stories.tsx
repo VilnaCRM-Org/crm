@@ -1,20 +1,41 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
-import SocialNetworks from './index';
+import { noop, noopAsync } from '@stories/story-callbacks';
 
-const meta: Meta<typeof SocialNetworks> = {
+import type { SocialLinks } from '../../types/social-link/social-links';
+
+import { SocialNetworksCard } from './index';
+
+const UNLINKED: SocialLinks = {
+  status: 'ready',
+  linked: { items: [] },
+  busy: false,
+  link: noopAsync,
+  unlink: noopAsync,
+  retry: noop,
+};
+
+const meta: Meta<typeof SocialNetworksCard> = {
   title: 'Settings/SocialNetworks',
-  component: SocialNetworks,
+  component: SocialNetworksCard,
   tags: ['autodocs'],
+  args: { links: UNLINKED, tileStyle: 'tinted' },
+  argTypes: {
+    links: { control: false },
+    tileStyle: { control: 'select', options: ['tinted', 'badge', 'labelled'] },
+  },
   parameters: {
     docs: {
       description: {
         component:
-          'The social networks card under the profile card: Google, Facebook, GitHub and Twitter ' +
-          'tiles drawn as Figma draws an unlinked account. user-service cannot list, link or ' +
-          'unlink a social account yet, so the tiles are a plain list, not buttons, and each ' +
-          'one tells a screen reader that linking is not available yet. Below 768 px the ' +
-          'tiles show the icon only and fill the columns first, like the sign-in provider grid.',
+          'The social networks card under the profile card. A tile that is not linked is a ' +
+          'button that opens the provider in a popup; a linked tile is light blue with an ' +
+          'unlink button. Until the linked providers are known, and after they could not be ' +
+          'loaded, the tiles are a plain list. Below 768 px the tiles show the icon only and ' +
+          'fill the columns first, like the sign-in provider grid. Figma 315:11754. The ' +
+          '`tileStyle` control switches the linked tiles between the three trial styles that ' +
+          'Settings/SocialNetworks/Comparison sets side by side; the settings page always ' +
+          'renders `tinted`.',
       },
       story: { inline: false },
     },
@@ -23,6 +44,22 @@ const meta: Meta<typeof SocialNetworks> = {
 
 export default meta;
 
-type Story = StoryObj<typeof SocialNetworks>;
+type Story = StoryObj<typeof SocialNetworksCard>;
 
 export const NotConnected: Story = {};
+
+export const Connected: Story = {
+  args: {
+    links: { ...UNLINKED, linked: { items: ['google', 'facebook', 'github', 'twitter'] } },
+  },
+};
+
+export const Busy: Story = {
+  args: { links: { ...UNLINKED, busy: true, linked: { items: ['google'] } } },
+};
+
+export const Loading: Story = { args: { links: { ...UNLINKED, status: 'loading' } } };
+
+export const LoadFailed: Story = { args: { links: { ...UNLINKED, status: 'failed' } } };
+
+export const Retrying: Story = { args: { links: { ...UNLINKED, status: 'retrying' } } };

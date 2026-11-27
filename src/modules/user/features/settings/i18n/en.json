@@ -29,7 +29,28 @@
     },
     "social": {
       "heading": "Social networks",
-      "linking_unavailable": ", linking not available yet"
+      "linking_unavailable": ", linking not available yet",
+      "loading": "Loading your linked accounts…",
+      "load_failed": "Your linked accounts could not be loaded",
+      "link": "{{provider}}: connect account (opens a new window)",
+      "linked_status": ", linked",
+      "linked_badge": "Linked",
+      "unlink": "Unlink {{provider}}",
+      "unlink_question": "Unlink {{provider}}?",
+      "unlink_confirm": "Unlink",
+      "unlink_cancel": "Cancel",
+      "linked": "You have linked {{provider}}",
+      "unlinked": "You have unlinked {{provider}}",
+      "failures": {
+        "cancelled": "Linking {{provider}} was cancelled.",
+        "blocked": "The browser blocked the {{provider}} window. Allow pop-ups for this site and try again.",
+        "already_linked": "This {{provider}} account is already linked to another user.",
+        "provider_linked": "Your {{provider}} account is already linked.",
+        "last_method": "{{provider}} is your only way to sign in. Set a password or link another account first.",
+        "expired": "The attempt to link {{provider}} expired. Try again.",
+        "unavailable": "The service is not responding, so it is not known whether {{provider}} changed. Try again in a minute.",
+        "generic": "The {{provider}} link could not be changed. Try again."
+      }
     },
     "toasts": {
       "saved": "Changes saved",

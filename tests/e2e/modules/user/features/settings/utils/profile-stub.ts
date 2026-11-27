@@ -52,6 +52,9 @@ export const replyWithUnparsedUpdate: Reply = (route) =>
 export const replyWithResent = (): Reply => (route) =>
   json(route, 200, { data: { resendEmailToUser: { user: { ...PROFILE_NODE } } } });
 
+export const replyWithNoSocialLinks: Reply = (route) =>
+  json(route, 200, { data: { linkedSocialProviders: [] } });
+
 export const replyWithGraphQLError = (message: string, status?: number): Reply => {
   const extensions = status === undefined ? undefined : { status };
   return (route) => json(route, 200, { data: null, errors: [{ message, extensions }] });
@@ -146,6 +149,7 @@ export async function stubProfile(
 
   await page.route(GRAPHQL_URL, async (route: Route) => {
     const name = (route.request().postDataJSON() as { operationName?: string }).operationName;
+    if (name === 'LinkedSocialProviders') return replyWithNoSocialLinks(route);
     if (!isProfileOperation(name)) return route.fallback();
     const caller = name === 'CurrentUser' && split ? split.callerOfNextRead() : 'page';
     if (caller === 'chip') {

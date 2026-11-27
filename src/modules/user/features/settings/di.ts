@@ -3,17 +3,21 @@ import type { DependencyContainer } from 'tsyringe';
 import type { ModuleRegistrar } from '@/config/types/module-registrar';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import ProfileProvider, {
+  SocialLinkProvider,
   TwoFactorSettingsProvider,
 } from '@/modules/user/features/settings/data-providers';
 import GraphQLProfileRepository, {
+  GraphQLSocialLinkRepository,
   GraphQLTwoFactorSettingsRepository,
 } from '@/modules/user/features/settings/repositories';
 import GraphQLProfileTransformer, {
+  GraphQLSocialLinkTransformer,
   GraphQLTwoFactorSettingsTransformer,
 } from '@/modules/user/features/settings/transformers';
 
 class UserSettingsRegistrar implements ModuleRegistrar {
   public register(container: DependencyContainer): void {
+    this.registerSocialLink(container);
     container.registerSingleton(AUTH_TOKENS.GraphQLProfileRepository, GraphQLProfileRepository);
     container.registerSingleton(AUTH_TOKENS.GraphQLProfileTransformer, GraphQLProfileTransformer);
     container.registerSingleton(AUTH_TOKENS.ProfileProvider, ProfileProvider);
@@ -26,6 +30,18 @@ class UserSettingsRegistrar implements ModuleRegistrar {
       GraphQLTwoFactorSettingsTransformer
     );
     container.registerSingleton(AUTH_TOKENS.TwoFactorSettingsProvider, TwoFactorSettingsProvider);
+  }
+
+  private registerSocialLink(container: DependencyContainer): void {
+    container.registerSingleton(
+      AUTH_TOKENS.GraphQLSocialLinkRepository,
+      GraphQLSocialLinkRepository
+    );
+    container.registerSingleton(
+      AUTH_TOKENS.GraphQLSocialLinkTransformer,
+      GraphQLSocialLinkTransformer
+    );
+    container.registerSingleton(AUTH_TOKENS.SocialLinkProvider, SocialLinkProvider);
   }
 }
 

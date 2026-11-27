@@ -184,3 +184,19 @@ GraphQL URL at it, and the pin bump removes the pending contract.
   enter this repository, its issues or its pull requests; `make scan-secrets` would flag them.
 - Keep the Google app in **Testing** and the Facebook app in **Development**, and delete the
   clients when you no longer need them.
+
+## Linking an account in settings
+
+Sign in, open `/settings` and press a tile of the "Соціальні мережі" card: the same consent page
+opens in a popup, with the same modes, client IDs and redirect URIs as above. Both "Allow"
+choices, "Unverified email" and "No email shared" link the account, because only a sign-in reads
+them; "Deny", "Expired state", "Duplicate email" and "Provider unavailable" each give their own
+failure. The mock remembers links until it restarts, as one set for every browser, because it
+serves one account. A link attempt expires like a sign-in one: after ten minutes, or once it is
+used. The mock keeps the newest 1000 pending attempts: it forgets the oldest one only when a new
+attempt starts while 1000 are pending, and an attempt that was completed, or refused at completion for
+anything but a blank `code` or an unknown provider name, has already left the store.
+User-service has no linking API yet (user-service #520 is open), so linking runs against this mock
+and a provisional contract only (`src/api/contracts/pending/social-account-linking.graphql`).
+Planning is in
+[`specs/social-account-linking/`](../specs/social-account-linking/planning-artifacts/prd-social-account-linking-2026-11-23.md).
