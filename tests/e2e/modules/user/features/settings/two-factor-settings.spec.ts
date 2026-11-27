@@ -47,7 +47,9 @@ const SETTINGS_URL = '/settings';
 const socialTitle: string = t('settings.social.heading');
 const CODE = buildTotpCode();
 const SECRETS = { secret: SETUP_SECRET, uri: SETUP_URI, code: RECOVERY_CODES[0] ?? '' };
-async function boxOf(locator: Locator): Promise<{ x: number; y: number }> {
+async function boxOf(
+  locator: Locator
+): Promise<{ x: number; y: number; width: number; height: number }> {
   const box = await locator.boundingBox();
   if (box === null) throw new Error(`${locator.toString()} has no bounding box`);
   return box;
@@ -252,6 +254,7 @@ test.describe('Two-factor settings section (issue #331)', () => {
       await stubConfirm(page);
       await page.goto(SETTINGS_URL);
       await reachCodes(page);
+      const restingBox = await boxOf(copyCodesOf(page));
 
       await copyCodesOf(page).click();
 
@@ -260,8 +263,10 @@ test.describe('Two-factor settings section (issue #331)', () => {
         page.getByRole('status').filter({ hasText: twoFactorText.codesCopied })
       ).toBeAttached();
       await expect(copiedCodesOf(page)).toBeVisible();
+      expect(await boxOf(copiedCodesOf(page))).toEqual(restingBox);
       await expect(copyLineOf(page, twoFactorText.codesCopied)).toHaveCount(0);
       await expect(copyCodesOf(page)).toBeVisible({ timeout: 5000 });
+      expect(await boxOf(copyCodesOf(page))).toEqual(restingBox);
     });
 
     test('shows the manual-copy line above the button while the clipboard refuses', async ({
