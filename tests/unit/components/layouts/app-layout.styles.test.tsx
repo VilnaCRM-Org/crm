@@ -8,9 +8,11 @@ import testI18n from '@tests/i18n/test-i18n';
 import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 
 jest.mock('react-router', () => ({
+  ...jest.requireActual<typeof import('react-router')>('react-router'),
   Outlet: (): ReactElement => <span>route-outlet</span>,
   useLocation: (): { state: null } => ({ state: null }),
   useNavigate: (): jest.Mock => jest.fn(),
+  useNavigationType: (): string => 'POP',
   useOutletContext: (): { signOut: () => void } => ({ signOut: (): void => undefined }),
 }));
 

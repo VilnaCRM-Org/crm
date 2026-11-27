@@ -93,6 +93,10 @@ describe('ResetPasswordForm', () => {
     expect(submit()).toHaveAttribute('type', 'submit');
     expect(screen.queryAllByRole('link')).toHaveLength(0);
     expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(emailField()).toHaveAttribute('aria-invalid', 'false');
+    expect(
+      screen.queryByText('Перевірте адресу електронної пошти та спробуйте ще раз')
+    ).not.toBeInTheDocument();
   });
 
   it('rejects an empty value with the required message without calling onSubmit', async () => {

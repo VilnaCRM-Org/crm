@@ -281,11 +281,12 @@ until then the drawer served everything below 1024 px as a 313×622 panel at 62,
 as the Figma frame draws it. The panel slides in over 200 ms and the scrim fades in over 200 ms;
 under `prefers-reduced-motion: reduce` both durations are 0 (`useDrawerMotion`).
 
-Focus: the close button takes focus on open. Escape, the close button, a tap anywhere outside the
-panel (the scrim, the untinted footer, or the header outside the close button) close the drawer and
-return focus to the burger. A navigation row, a sub-item, Settings, Sign out or any route change
-close it without restoring the burger, so the destination's `<main>` keeps the focus
-`useArrivalFocus` gave it; widening the viewport unmounts the drawer and focuses
+Focus: the close button takes focus on open. Escape, the close button and a tap on the header
+outside the close button close the drawer and return focus to the burger. The header is the only
+spot outside the panel: the settled panel covers everything below it, so the invisible backdrop
+answers a tap only while the panel is still sliding in. A navigation row, a sub-item, Settings, Sign
+out or any route change close it without restoring the burger, so the destination's `<main>` keeps
+the focus `useArrivalFocus` gave it; widening the viewport unmounts the drawer and focuses
 `main[tabindex="-1"]`. MUI enforces the trap while the drawer is open, so focus moved to the page
 behind it by script returns to the dialog. `MobileNavigation` renders the drawer before the burger
 for that reason: on unmount React detaches the drawer's trap root first, so the burger's detach can
@@ -324,10 +325,10 @@ aria-hidden layer that takes no pointer events and ends at the top of the page f
 (`useFooterInset` measures the `<footer>` outside `<main>` on open and on resize, and keeps the whole
 viewport when no footer is in view), so the footer paints untinted and unblurred as Figma draws it
 (V-3); the 56 px header is painted above the scrim. Under it, MUI's backdrop is `invisible`: it paints
-nothing and stays the full-viewport hit target, so a tap on the footer closes the drawer instead of
-following a footer link. Measured at 375×812 on `/boards`: the footer starts at y 604.4, the scrim
-box is 0,0, 375×604.4 and the backdrop is `rgba(0, 0, 0, 0)`. With the user resolved
-(one stubbed `CurrentUser` reply) the avatar copy and the header avatar it covers
+nothing and stays the full-viewport hit target, so until the panel has slid over the footer a tap
+there closes the drawer instead of following a footer link. Measured at 375×812 on `/boards`: the
+footer starts at y 604.4, the scrim box is 0,0, 375×604.4 and the backdrop is `rgba(0, 0, 0, 0)`.
+With the user resolved (one stubbed `CurrentUser` reply) the avatar copy and the header avatar it covers
 both measure 280,8, 40×40, `rgb(225, 231, 234)`, a 50 % radius and `ОП` in 15 px Golos 700
 `rgb(26, 28, 30)`; the copy sits under `aria-hidden`, holds no focusable element, and the page made
 one `CurrentUser` request in all. Before the user resolves the copy is the 24 px person glyph.
