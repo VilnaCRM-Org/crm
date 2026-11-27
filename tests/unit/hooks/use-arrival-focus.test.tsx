@@ -84,6 +84,52 @@ function routerWithLeavingPage(leave: (router: TestRouter) => void): TestRouter 
   return router;
 }
 
+interface PendingTarget {
+  readonly router: TestRouter;
+  readonly settle: () => Promise<void>;
+}
+
+function routerWithPendingTarget(leave: (router: TestRouter) => Promise<void>): PendingTarget {
+  let release = (): void => undefined;
+  const loaded = new Promise<null>((resolve) => {
+    release = (): void => resolve(null);
+  });
+  const leaving: Promise<void>[] = [];
+  const pending = [
+    (): void => {
+      leaving.push(leave(router));
+    },
+  ];
+  const router = createMemoryRouter(
+    [
+      {
+        element: <Landmark label="layout" />,
+        children: [
+          {
+            id: 'landing',
+            path: '/',
+            loader: (): Promise<null> => loaded,
+            element: <p>landing page</p>,
+          },
+          { path: '/boards', element: <LeavingPage pending={pending} /> },
+          { path: '/deals', loader: (): Promise<null> => loaded, element: <p>deals page</p> },
+        ],
+      },
+    ],
+    { hydrationData: { loaderData: { landing: null } } }
+  );
+  render(<RouterProvider router={router} />);
+
+  return {
+    router,
+    settle: () =>
+      act(async () => {
+        release();
+        await Promise.all(leaving);
+      }),
+  };
+}
+
 const history = (): HTMLElement => screen.getByRole('status', { name: 'history' });
 
 describe('useArrivalFocus', () => {
@@ -313,5 +359,51 @@ describe('useArrivalFocus', () => {
       pathname: '/boards',
       state: { focusMain: false },
     });
+  });
+
+  it('keeps the entry a pending Back is loading when the marker would be cleared', async () => {
+    const { router, settle } = routerWithPendingTarget((current) => current.navigate(-1));
+    const home = router.state.location;
+
+    await act(() => router.navigate('/boards', { state: { focusMain: true } }));
+
+    expect(router.state.navigation).toMatchObject({
+      state: 'loading',
+      location: { pathname: '/' },
+    });
+
+    await settle();
+
+    expect(router.state.location).toEqual(home);
+    expect(router.state.historyAction).toBe('POP');
+    expect(screen.getByText('landing page')).toBeInTheDocument();
+  });
+
+  it('lets a pending push finish and clears its abandoned marker on the next visit', async () => {
+    const { router, settle } = routerWithPendingTarget((current) => current.navigate('/deals'));
+
+    await act(() => router.navigate('/boards', { state: { focusMain: true } }));
+
+    expect(router.state.navigation).toMatchObject({
+      state: 'loading',
+      location: { pathname: '/deals' },
+    });
+
+    await settle();
+
+    expect(router.state.location.pathname).toBe('/deals');
+    expect(router.state.historyAction).toBe('PUSH');
+    expect(screen.getByText('deals page')).toBeInTheDocument();
+
+    const main = screen.getByRole('main');
+    act(() => main.blur());
+
+    await act(() => router.navigate(-1));
+
+    expect(router.state.location).toMatchObject({
+      pathname: '/boards',
+      state: { focusMain: false },
+    });
+    expect(main).not.toHaveFocus();
   });
 });

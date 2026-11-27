@@ -1,5 +1,6 @@
 import { type RefCallback, useContext, useEffect, useMemo } from 'react';
 import {
+  type DataRouter,
   type Location,
   NavigationType,
   UNSAFE_DataRouterContext,
@@ -18,6 +19,13 @@ function withoutOneTimeMarkers(state: RedirectNavigationState | null): RedirectN
 
 function carriesMarker(location: Location<RedirectNavigationState | null>): boolean {
   return Boolean(location.state?.focusMain);
+}
+
+function isSettledOn(router: DataRouter | undefined, location: Location): boolean {
+  if (router === undefined) return true;
+
+  const { location: current, navigation } = router.state;
+  return navigation.state === 'idle' && current.key === location.key;
 }
 
 function isRevisit(location: Location, action: NavigationType): boolean {
@@ -42,8 +50,7 @@ export default function useArrivalFocus(): RefCallback<HTMLElement> | null {
   const router = useContext(UNSAFE_DataRouterContext)?.router;
 
   useEffect(() => {
-    const currentKey = router?.state.location.key ?? location.key;
-    if (!carriesMarker(location) || currentKey !== location.key) return;
+    if (!carriesMarker(location) || !isSettledOn(router, location)) return;
 
     navigate(location, { replace: true, state: withoutOneTimeMarkers(location.state) });
   }, [location, navigate, router]);
