@@ -34,6 +34,7 @@
       "load_failed": "Не вдалося завантажити підключені облікові записи",
       "link": "{{provider}}: підключити обліковий запис (відкриється нове вікно)",
       "linked_status": ", підключено",
+      "linked_badge": "Підключено",
       "unlink": "Відключити {{provider}}",
       "unlink_question": "Відключити {{provider}}?",
       "unlink_confirm": "Відключити",

@@ -6,27 +6,16 @@ import { useTranslation } from 'react-i18next';
 import { ReactComponent as UnlinkIcon } from '../../assets/trash-04.svg';
 import useTileFocus from '../../hooks/use-tile-focus';
 import type {
+  LinkedTileRenderers,
   SocialInertTileProps,
   SocialTileControlProps,
-  SocialTileLabelProps,
   SocialTileProps,
 } from '../../types/components/social-networks';
 
+import BadgeLinkedTile from './social-tile-badge';
+import TileLabel from './social-tile-label';
+import LabelledLinkedTile from './social-tile-labelled';
 import styles from './styles';
-
-function TileLabel({ tile, status }: SocialTileLabelProps): JSX.Element {
-  return (
-    <>
-      <SvgIcon component={tile.Icon} inheritViewBox sx={styles.icon} />
-      <Box component="span" sx={styles.label}>
-        {tile.label}
-        <Box component="span" sx={styles.status}>
-          {status}
-        </Box>
-      </Box>
-    </>
-  );
-}
 
 function LinkControl({ tile, busy, controlRef, onActivate }: SocialTileControlProps): JSX.Element {
   const { t } = useTranslation();
@@ -67,6 +56,12 @@ function LinkedTile({ tile, busy, controlRef, onActivate }: SocialTileControlPro
   );
 }
 
+const LINKED_TILES: LinkedTileRenderers = {
+  tinted: LinkedTile,
+  badge: BadgeLinkedTile,
+  labelled: LabelledLinkedTile,
+};
+
 export function SocialInertTile({ tile }: SocialInertTileProps): JSX.Element {
   const { t } = useTranslation();
 
@@ -81,6 +76,7 @@ export default function SocialTile({
   tile,
   linked,
   busy,
+  tileStyle,
   onLink,
   onUnlink,
 }: SocialTileProps): JSX.Element {
@@ -90,7 +86,7 @@ export default function SocialTile({
     controlRef.current?.focus();
     act({ id: tile.id, label: tile.label, controlRef });
   };
-  const Control = linked ? LinkedTile : LinkControl;
+  const Control = linked ? LINKED_TILES[tileStyle] : LinkControl;
 
   return (
     <Box component="li" sx={styles.item}>

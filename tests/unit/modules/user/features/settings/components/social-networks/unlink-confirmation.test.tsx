@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { JSX } from 'react';
+import type { ComponentProps, JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
 import { SocialNetworksCard } from '@/modules/user/features/settings/components/social-networks';
@@ -11,12 +11,20 @@ import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations'
 
 import buildSocialLinks from './social-links-fixture';
 
+type SocialTileStyle = ComponentProps<typeof SocialNetworksCard>['tileStyle'];
+
 const LINKED = { items: ['google', 'github'] } as const;
 
-const card = (links: SocialLinks, language: 'uk' | 'en' = 'uk'): JSX.Element => (
+const TILE_STYLES: readonly SocialTileStyle[] = ['tinted', 'badge', 'labelled'];
+
+const card = (
+  links: SocialLinks,
+  language: 'uk' | 'en' = 'uk',
+  tileStyle: SocialTileStyle = 'tinted'
+): JSX.Element => (
   <I18nextProvider i18n={createSettingsLocaleI18n(language, [])}>
     <main>
-      <SocialNetworksCard links={links} />
+      <SocialNetworksCard links={links} tileStyle={tileStyle} />
     </main>
   </I18nextProvider>
 );
@@ -30,9 +38,12 @@ const row = (provider = 'Google'): HTMLElement =>
 const inRow = (name: string, provider?: string): HTMLElement =>
   within(row(provider)).getByRole('button', { name });
 
-const open = async (overrides: Partial<SocialLinks> = {}): Promise<SocialLinks> => {
+const open = async (
+  overrides: Partial<SocialLinks> = {},
+  tileStyle: SocialTileStyle = 'tinted'
+): Promise<SocialLinks> => {
   const links = buildSocialLinks({ linked: LINKED, ...overrides });
-  render(card(links));
+  render(card(links, 'uk', tileStyle));
   await userEvent.click(bin());
   return links;
 };
@@ -85,44 +96,6 @@ describe('unlink confirmation', () => {
     expect(inRow('Скасувати', 'GitHub')).toHaveFocus();
   });
 
-  it('cancels with the button and returns to the bin', async () => {
-    const links = await open();
-
-    await userEvent.click(inRow('Скасувати'));
-
-    expect(screen.queryByRole('group')).not.toBeInTheDocument();
-    expect(bin()).toHaveFocus();
-    expect(links.unlink).not.toHaveBeenCalled();
-  });
-
-  it('cancels with Escape inside the row only', async () => {
-    const links = await open();
-
-    fireEvent.keyDown(bin('GitHub'), { key: 'Escape' });
-    fireEvent.keyDown(inRow('Відключити'), { key: 'a' });
-    expect(row()).toBeInTheDocument();
-    fireEvent.keyDown(inRow('Відключити'), { key: 'Escape' });
-
-    expect(screen.queryByRole('group')).not.toBeInTheDocument();
-    expect(bin()).toHaveFocus();
-    expect(links.unlink).not.toHaveBeenCalled();
-  });
-
-  it('unlinks the named provider once it is confirmed, from the bin', async () => {
-    const links = await open();
-
-    await userEvent.click(inRow('Відключити'));
-
-    expect(screen.queryByRole('group')).not.toBeInTheDocument();
-    expect(bin()).toHaveFocus();
-    expect(links.unlink).toHaveBeenCalledTimes(1);
-    expect(links.unlink).toHaveBeenCalledWith({
-      id: 'google',
-      label: 'Google',
-      controlRef: { current: bin() },
-    });
-  });
-
   it('stays open and sends nothing while something else is busy', async () => {
     const links = buildSocialLinks({ linked: LINKED });
     const { rerender } = render(card(links));
@@ -161,6 +134,77 @@ describe('unlink confirmation', () => {
     const { rerender } = render(card(buildSocialLinks({ linked: LINKED })));
     await userEvent.click(bin());
     rerender(card(buildSocialLinks({ linked: LINKED, busy })));
+
+    await expectNoA11yViolations(screen.getByRole('main'));
+  });
+});
+
+describe.each(TILE_STYLES)('unlink confirmation from a %s tile', (tileStyle) => {
+  it('opens from the unlink control and focuses Cancel, sending nothing yet', async () => {
+    const links = await open({}, tileStyle);
+
+    expect(inRow('Скасувати')).toHaveFocus();
+    expect(screen.getAllByRole('group')).toEqual([row()]);
+    expect(links.unlink).not.toHaveBeenCalled();
+    expect(links.link).not.toHaveBeenCalled();
+  });
+
+  it('asks in English from the unlink control, focusing Cancel', async () => {
+    const links = buildSocialLinks({ linked: LINKED });
+    render(card(links, 'en', tileStyle));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Unlink Google' }));
+
+    const group = screen.getByRole('group', { name: 'Unlink Google?' });
+    expect(within(group).getByRole('button', { name: 'Cancel' })).toHaveFocus();
+    expect(
+      within(group)
+        .getAllByRole('button')
+        .map((each) => each.textContent)
+    ).toEqual(['Cancel', 'Unlink']);
+    expect(links.unlink).not.toHaveBeenCalled();
+  });
+
+  it('cancels with the button and returns to the unlink control', async () => {
+    const links = await open({}, tileStyle);
+
+    await userEvent.click(inRow('Скасувати'));
+
+    expect(screen.queryByRole('group')).not.toBeInTheDocument();
+    expect(bin()).toHaveFocus();
+    expect(links.unlink).not.toHaveBeenCalled();
+  });
+
+  it('cancels with Escape inside the row only, returning to the unlink control', async () => {
+    const links = await open({}, tileStyle);
+
+    fireEvent.keyDown(bin('GitHub'), { key: 'Escape' });
+    fireEvent.keyDown(inRow('Відключити'), { key: 'a' });
+    expect(row()).toBeInTheDocument();
+    fireEvent.keyDown(inRow('Відключити'), { key: 'Escape' });
+
+    expect(screen.queryByRole('group')).not.toBeInTheDocument();
+    expect(bin()).toHaveFocus();
+    expect(links.unlink).not.toHaveBeenCalled();
+  });
+
+  it('unlinks the named provider once it is confirmed, from the unlink control', async () => {
+    const links = await open({}, tileStyle);
+
+    await userEvent.click(inRow('Відключити'));
+
+    expect(screen.queryByRole('group')).not.toBeInTheDocument();
+    expect(bin()).toHaveFocus();
+    expect(links.unlink).toHaveBeenCalledTimes(1);
+    expect(links.unlink).toHaveBeenCalledWith({
+      id: 'google',
+      label: 'Google',
+      controlRef: { current: bin() },
+    });
+  });
+
+  it('has no axe violations while the row is open', async () => {
+    await open({}, tileStyle);
 
     await expectNoA11yViolations(screen.getByRole('main'));
   });

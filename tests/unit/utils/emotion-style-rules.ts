@@ -1,5 +1,6 @@
 type StyleRuleLike = { selectorText: string; style: CSSStyleDeclaration };
 type MediaRuleLike = { media: { mediaText: string }; cssRules: CSSRuleList };
+type ContainerRuleLike = { conditionText: string; cssRules: CSSRuleList };
 
 const isStyleRule = (rule: CSSRule): rule is CSSRule & StyleRuleLike =>
   typeof (rule as Partial<StyleRuleLike>).selectorText === 'string';
@@ -8,6 +9,10 @@ const isMediaRule = (rule: CSSRule): rule is CSSRule & MediaRuleLike => {
   const candidate = rule as Partial<MediaRuleLike>;
   return typeof candidate.media?.mediaText === 'string' && candidate.cssRules !== undefined;
 };
+
+const isContainerRule = (rule: CSSRule): rule is CSSRule & ContainerRuleLike =>
+  rule.cssText.startsWith('@container') &&
+  typeof (rule as Partial<ContainerRuleLike>).conditionText === 'string';
 
 const topLevelRules = (): CSSRule[] =>
   Array.from(document.styleSheets).flatMap((sheet) => Array.from(sheet.cssRules));
@@ -65,12 +70,31 @@ export const mediaStyleRuleFor = (
 ): CSSStyleDeclaration | undefined =>
   declarationIn(mediaRulesMatching(mediaFragment), element, suffix);
 
+/**
+ * The emotion declaration block generated for `element` inside the container query whose
+ * condition contains `conditionFragment` (whitespace-insensitive, e.g. `'min-width:16rem'`).
+ */
+export const containerStyleRuleFor = (
+  element: Element,
+  conditionFragment: string,
+  suffix = ''
+): CSSStyleDeclaration | undefined =>
+  declarationIn(
+    topLevelRules()
+      .filter(isContainerRule)
+      .filter((rule) => compact(rule.conditionText).includes(compact(conditionFragment)))
+      .flatMap((rule) => Array.from(rule.cssRules)),
+    element,
+    suffix
+  );
+
 export const winningMediaValueFor = (
   element: Element,
   mediaFragment: string,
-  property: string
+  property: string,
+  suffix = ''
 ): string | undefined =>
-  declarationsIn(mediaRulesMatching(mediaFragment), element, '')
+  declarationsIn(mediaRulesMatching(mediaFragment), element, suffix)
     .map((style) => style.getPropertyValue(property))
     .filter((value) => value !== '')
     .at(-1);

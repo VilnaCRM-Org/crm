@@ -6,7 +6,9 @@ seam it replaces: the container, typography, the four skeleton leaves and back-t
 v0.8.0 bump added the toolkit checkbox and the toolkit text link, and the two-factor change
 ([#331](https://github.com/VilnaCRM-Org/crm/issues/331)) later adopted the toolkit pin input
 (`UiPinInput`, behind `src/components/ui-pin-input`) from the same release, each behind its own
-seam (see [Adoption in v0.8.0](#adoption-in-v080)). Every other CRM primitive stays local, with its
+seam (see [Adoption in v0.8.0](#adoption-in-v080)). The social account linking change mounts two
+more, the status badge and the outlined small button, on trial only (see [Importing](#importing)
+and the `trial` rows of the register). Every other CRM primitive stays local, with its
 reason recorded below. The installation was scoped by issue
 [#250](https://github.com/VilnaCRM-Org/crm/issues/250); why it is a release tarball is under
 [What is installed](#what-is-installed), and why each remaining primitive stays local is in the
@@ -70,24 +72,42 @@ import {
   seam passes its props through `React.createElement` or by name, never as a JSX spread, which
   `react/jsx-props-no-spreading` rejects.
 
+- **Trial component subpaths:** two more subpaths are mounted for the linked social tile trial
+  (S3.4), where the product owner compares three tile styles in Storybook. They follow the same
+  rules as an adopted seam: `default` export only, and only inside their own seam:
+
+  | Toolkit subpath                   | CRM trial seam                                      |
+  | --------------------------------- | --------------------------------------------------- |
+  | `ui-status-badge` (static)        | `src/components/ui-status-badge/index.tsx`          |
+  | `ui-button` (`outlined`, `small`) | `src/components/ui-outlined-small-button/index.tsx` |
+
+  `UIStatusBadge` takes `label`, `active` and `sx` and never passes `onToggle`, so it always
+  renders the static `role="img"` badge. `UIOutlinedSmallButton` pins `variant="outlined"`,
+  `size="small"` and `disableRipple`, and forwards `ref`, `aria-label`, `aria-disabled`,
+  `onClick`, `sx` and its children; it passes no `name`, `type`, `disabled` or `loading`, so the
+  toolkit renders a `<button type="button">` with no `name` attribute, and `aria-disabled` never
+  sets the native `disabled` attribute. The `ui-button` subpath is open to this seam only, never
+  to CRM's own `src/components/ui-button`, which stays local (R2 R3 R13 R14).
+
 - **Theme subpath:** `ui-breakpoints` is read by named export only: `crmBreakpointsTheme` and
   `heightBreakpoints`, in `src/components/ui-breakpoints/index.ts`.
 - **Forbidden:** the root barrel `@vilnacrm/ui-toolkit` (352,296 B raw across 69 files,
   including `swiper`); `@vilnacrm/ui-toolkit/styles.css` (the toolkit fonts, see
   [Fonts](#fonts)); the `ui-color-theme` subpath (R9); the `default` export of `ui-breakpoints`,
   which is the website theme with xs 375 and sm 640; any `website*` export; every subpath not
-  listed above; and an adopted subpath imported anywhere but its own seam.
+  listed above; and an adopted or trial subpath imported anywhere but its own seam.
 - **Eager path:** no module in the `src/index.tsx` closure may import the toolkit, so the
   470,000 B initial-entrypoint budget is untouched. Every seam is reached only from lazily
   loaded route and footer chunks.
 - **Enforcement:** the ESLint `no-restricted-imports` gate in `eslint.config.mjs` fails
   `make lint-eslint` on the root barrel, `styles.css`, `ui-color-theme`, the `ui-breakpoints`
-  `default` export, every subpath not adopted, and an adopted subpath imported anywhere but its
-  own seam. It is set in each flat-config block that configures the rule, because flat config
-  replaces a rule's options per file. `no-restricted-imports` only sees static `import` and
-  `export` declarations, so a dynamic `import()` or a `require()` of a toolkit subpath is held
-  by review; no `src` file does either today. The `website*` named exports are held by review. The Jest
-  mapper in `jest.config.ts` resolves only `[a-z-]+` subpaths, to `build/<subpath>.mjs`. It
+  `default` export, every subpath neither adopted nor on trial, and an adopted or trial subpath
+  imported anywhere but its own seam. It is set in each flat-config block that configures the
+  rule, because flat config replaces a rule's options per file. `no-restricted-imports` only
+  sees static `import` and `export` declarations, so a dynamic `import()` or a `require()` of a
+  toolkit subpath is held by review; no `src` file does either today. The `website*` named
+  exports are held by review. The Jest mapper in `jest.config.ts` resolves only `[a-z-]+`
+  subpaths, to `build/<subpath>.mjs`. It
   names the same file as the `default` export condition v0.6.0 added, so removing it is
   optional; the `transformIgnorePatterns` entry and the `.mjs` transform stay required.
 
@@ -215,9 +235,9 @@ script, test or constant changes. Running `make update-ui-toolkit` to clear a re
 
 ## Keep-local register
 
-This is the one register of the CRM primitives and themes, adopted or local, with the reason
-each local one stays local. The reason codes belong to this register only, and each holds for
-v0.6.0. A code keeps its number while its reason is true, and a retired code is never reused.
+This is the one register of the CRM primitives and themes, adopted, on trial or local, with the
+reason each local one stays local. The reason codes belong to this register only, and each holds
+for v0.6.0. A code keeps its number while its reason is true, and a retired code is never reused.
 v0.7.0 closed the upstream issues behind several codes (ui-toolkit #186 closes #191 to #199);
 the v0.8.0 bump adopted only the checkbox and the text link, the two-factor change (#331) adopted
 the pin input from the same release, and each local row stays local until a design-checked swap
@@ -278,6 +298,8 @@ rule.
 | `ui-checkbox`                                           | 1          | adopted | -             |
 | `ui-text-link` (toolkit `ui-link`, `appearance="text"`) | 1          | adopted | -             |
 | `ui-pin-input` (toolkit `ui-pin-input`)                 | 2          | adopted | overrides     |
+| `ui-status-badge` (toolkit `ui-status-badge`)           | 1 (trial)  | trial   | S3.4          |
+| `ui-outlined-small-button` (toolkit `ui-button`)        | 1 (trial)  | trial   | S3.4          |
 | `ui-button`                                             | 7          | local   | R2 R3 R13 R14 |
 | `ui-form`                                               | 2          | local   | R3 R14 R15    |
 | `ui-footer`                                             | 3          | local   | R16           |
@@ -296,6 +318,29 @@ rule.
 
 `ui-color-theme` stays local until a CRM consumer reads a toolkit-only palette key, or upstream
 ships a CRM-distinct palette; either one reverses R9.
+
+The two `trial` rows exist only for the linked social tile trial, S3.4 of the
+[social account linking epics](../specs/social-account-linking/planning-artifacts/epics-social-account-linking-2026-11-23.md):
+the settings card always renders the tinted tile, and the badge and labelled styles that mount
+these seams are compared in Storybook until the product owner picks one. A trial row is removed if
+its variant loses, together with its seam, prop type, story, seam tests, `uiToolkitSeams` entry
+and `tests/unit/config/eslint-policy.test.ts` pin, in the one change that removes the losing
+variants (S4.2); the winning variant's row turns `adopted`. What each renders:
+
+- `ui-status-badge`: the static badge, a 26 px `span[role="img"]` named by `label` around an
+  `aria-hidden` check. Active is the UI kit "done" state (Figma 451:25845): a `#38B386` fill and
+  border with a white check, the toolkit's shared success colour rather than CRM's `#4CAF50`,
+  kept as shipped. It is 2.64:1 against white, under the 3:1 of SC 1.4.11, an accepted non-text
+  gap tracked under #276. Its colours are static palette tokens, so neither R2 nor R3 applies.
+- `ui-outlined-small-button`: the UI kit secondary pill (Figma 439:19257, 137 × 50 around its
+  label): Golos 500 15/18 `#1B2327` on white, a 1 px `#969B9D` border, a `3.563rem` radius and
+  `0.9375rem 1.4375rem` padding; hover fills `#EAECEE` with a transparent border. R2 applies:
+  the values come from the website `uiTheme` fallback, which carries the UI kit's values for
+  these keys. R3 does not: the outlined small rule has no `sm` rule. R13 does not bite: the app
+  theme has no `MuiButton` `styleOverrides`, and the caller's `sx` is merged last, so it wins.
+  R14 does not apply: the seam passes no `loading`. The label is 15.95:1 on white; the border is
+  2.81:1, but the label, not the border, identifies the control, so SC 1.4.11 asks nothing of it
+  and the seam adds no contrast gap.
 
 What each adopted row renders, and what it changes:
 

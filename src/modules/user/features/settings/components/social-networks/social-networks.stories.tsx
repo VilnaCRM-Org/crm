@@ -19,8 +19,11 @@ const meta: Meta<typeof SocialNetworksCard> = {
   title: 'Settings/SocialNetworks',
   component: SocialNetworksCard,
   tags: ['autodocs'],
-  args: { links: UNLINKED },
-  argTypes: { links: { control: false } },
+  args: { links: UNLINKED, tileStyle: 'tinted' },
+  argTypes: {
+    links: { control: false },
+    tileStyle: { control: 'select', options: ['tinted', 'badge', 'labelled'] },
+  },
   parameters: {
     docs: {
       description: {
@@ -29,7 +32,10 @@ const meta: Meta<typeof SocialNetworksCard> = {
           'button that opens the provider in a popup; a linked tile is light blue with an ' +
           'unlink button. Until the linked providers are known, and after they could not be ' +
           'loaded, the tiles are a plain list. Below 768 px the tiles show the icon only and ' +
-          'fill the columns first, like the sign-in provider grid. Figma 315:11754.',
+          'fill the columns first, like the sign-in provider grid. Figma 315:11754. The ' +
+          '`tileStyle` control switches the linked tiles between the three trial styles that ' +
+          'Settings/SocialNetworks/Comparison sets side by side; the settings page always ' +
+          'renders `tinted`.',
       },
       story: { inline: false },
     },

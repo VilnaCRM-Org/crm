@@ -34,6 +34,7 @@
       "load_failed": "Your linked accounts could not be loaded",
       "link": "{{provider}}: connect account (opens a new window)",
       "linked_status": ", linked",
+      "linked_badge": "Linked",
       "unlink": "Unlink {{provider}}",
       "unlink_question": "Unlink {{provider}}?",
       "unlink_confirm": "Unlink",

@@ -9,14 +9,22 @@ import type {
   UnlinkConfirmation,
 } from '../social-link/social-links';
 
+import type { SocialTileStyle } from './social-tile-style';
+
 export interface SocialListProps {
   readonly links: SocialLinks;
   readonly confirmation: UnlinkConfirmation;
   readonly headingId: string;
+  readonly tileStyle: SocialTileStyle;
+}
+
+export interface SocialNetworksProps {
+  readonly tileStyle?: SocialTileStyle;
 }
 
 export interface SocialNetworksCardProps {
   readonly links: SocialLinks;
+  readonly tileStyle: SocialTileStyle;
 }
 
 export interface SocialTileProvider {
@@ -29,6 +37,7 @@ export interface SocialTileProps {
   readonly tile: SocialTileProvider;
   readonly linked: boolean;
   readonly busy: boolean;
+  readonly tileStyle: SocialTileStyle;
   readonly onLink: SocialLinkStep;
   readonly onUnlink: SocialLinkStep;
 }
@@ -43,6 +52,12 @@ export interface SocialTileControlProps {
   readonly busy: boolean;
   readonly controlRef: Ref<HTMLButtonElement>;
   readonly onActivate: () => void;
+}
+
+export interface LinkedTileRenderers {
+  readonly tinted: ComponentType<SocialTileControlProps>;
+  readonly badge: ComponentType<SocialTileControlProps>;
+  readonly labelled: ComponentType<SocialTileControlProps>;
 }
 
 export interface SocialInertTileProps {

@@ -47,6 +47,10 @@ decisions are recorded in `## User Settings decisions` of the [user module READM
   shows the name-less chip,
   and is captured through `observabilityCore` (`source: 'settings:current-user'`) unless the
   caller aborted the read. The settings page itself still reads through `ProfileProvider`.
+- `components/social-networks/` — `SocialNetworksCard` and `SocialTile`, which draws a linked tile
+  with one of three renderers (`LinkedTile`, `BadgeLinkedTile` in `social-tile-badge.tsx` and
+  `LabelledLinkedTile` in `social-tile-labelled.tsx`, over `variant-styles.ts`), all sharing
+  `TileLabel`; see [Linked tile styles](#linked-tile-styles).
 - `hooks/` — `useProfileLoad`, `useProfileSave`, `useSaveSettle`, `useEmailResend`, `useEmailRow`,
   `useProfileFormRules`, `useProfileFormModel`, `useSettledFocus`, `useSectionReveal`,
   `useCollapseFocus`, `useBlurHold`, `useDisplayName`,
@@ -326,9 +330,9 @@ Figma section `6242:41691` is the source of truth; the frames are 1440 (`313:102
   read refused with a 401 shows nothing, as `session_ended` does on the profile card.
   `SocialLinkProvider` reports a failure that never reached the link through
   `UnseenFailureReporter` (`source: 'settings:social-link'`), as `ProfileProvider` does. A linked
-  tile is `315:11754`, bin and border included (owner, 2026-11-23: every colour follows Figma;
-  the bin and the border are under 3:1 until #276, and the tile's name carries ", linked"). The
-  bin asks first in one row under the tiles (PRD L6); Figma draws none.
+  tile on the page is the `tinted` style, `315:11754` (see
+  [Linked tile styles](#linked-tile-styles)). The unlink control asks first in one row under the
+  tiles (PRD L6); Figma draws none.
 - **Card padding is the Figma inset minus the 1 px border.** The card declares the inline
   insets as `--settings-card-inset-start` / `--settings-card-inset-end`, and the section
   titles and the divider above Save and "Очистити" bleed through them to the card edges.
@@ -355,6 +359,46 @@ Where the frames contradict each other or the copy, the page follows one reading
   input and centres its text on it, also when a field error grows the row.
 - **Phone values (M-20).** Field values are `#1A1C1E` as on desktop and tablet, not the
   placeholder grey the phone frame draws.
+
+### Linked tile styles
+
+A linked social tile has three trial styles (owner, 2026-11-27, L8 and L9 of the
+[social account linking PRD](../../../../../specs/social-account-linking/planning-artifacts/prd-social-account-linking-2026-11-23.md)),
+compared in Storybook through a `tileStyle` prop (`'tinted' | 'badge' | 'labelled'`):
+`SocialNetworks` takes it optionally, default `tinted`, and passes it through
+`SocialNetworksCard` and `SocialList` to `SocialTile`, where it is required. The page never sets
+it, so it always renders `tinted`; no environment variable, runtime setting or flag chooses a
+style. Unlinked, display-only and loading tiles and the unlink row are the same in all three, and
+so is the contract: the hidden ", підключено" status, one unlink button named
+"Відключити {provider}", `aria-disabled` while busy, the same confirmation row and the same focus
+hand-over through `TileFocusHandler`.
+
+- **`tinted`** is the shipped tile, `315:11754`: fill `#E8F7FF`, a `#1EAEFF` border, 1 px below
+  1025 px and 2 px from 1025 px, and a `#1EAEFF` `trash-04` bin. The phone frame `386:27719` draws
+  a 2 px border; the owner keeps 1 px. The bin (2.2:1 on the fill) and the border (2.2:1 on the
+  fill, 2.5:1 on the card) are under the 3:1 of SC 1.4.11, owner-accepted until #276.
+- **`badge`** is the white social-button tile with its `#E1E7EA` border (UI kit `439:19329`), the
+  toolkit status badge in its "done" state (`451:25845`, `#38B386` as the toolkit ships it, not
+  CRM's `#4CAF50`) and a `#DC3939` `trash-04` bin on the action-icon-bar danger ramp
+  (`632:46703`–`632:46710`: `#DF7878` on hover and pressed, a pressed plate of `#DC3939` at 10%,
+  `#D0D4D8` while busy). The badge is `aria-hidden`, so the state is spoken once; its required
+  label is `settings.social.linked_badge`. The badge (2.64:1) and the bin on hover (2.96:1) and
+  pressed (2.57:1) are accepted gaps under #276; the bin at rest is 4.48:1.
+- **`labelled`** is a white tile with a 2 px `#1EAEFF` selected-card border (`439:19640`) and the
+  toolkit outlined small pill (`439:19257`–`439:19260`): `#1B2327` on white, a 1 px `#969B9D`
+  border, `#EAECEE` on hover. The tile is an inline-size container: the pill reads "Відключити"
+  from a 16rem content box, the word beginning its accessible name, and folds to a 44 px bin
+  circle below that. It has no contrast gap.
+
+The toolkit components arrive only through the trial seams `src/components/ui-status-badge` and
+`src/components/ui-outlined-small-button` (the `trial` rows of the
+[keep-local register](../../../../../docs/ui-toolkit.md#keep-local-register)).
+`Settings/SocialNetworks/Comparison` sets the three styles side by side at 375, 768, 1025, 1100
+and 1440 px, idle and busy, and `Settings/SocialTile` shows each style linked, busy and with the
+confirmation open; jest-axe runs over every comparison story. Only `tinted` has browser,
+accessibility-lane and visual evidence, because every browser lane runs the page; `badge` and
+`labelled` are proven in Storybook and jsdom only. The owner picks one style, and the losers with
+their seams, stories, tests and the `tileStyle` prop are removed in one change.
 
 ### The two-factor card
 

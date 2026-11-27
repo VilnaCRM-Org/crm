@@ -661,7 +661,7 @@ const FIXTURES = [
   {
     id: 'ui-toolkit-unadopted-subpath',
     file: PROBES.component,
-    code: "import UiButton from '@vilnacrm/ui-toolkit/ui-button';\nconst A = () => <UiButton />;",
+    code: "import UiAddButton from '@vilnacrm/ui-toolkit/ui-add-button';\nconst A = () => <UiAddButton />;",
     covers: [],
     expect: 'fail',
     rule: 'no-restricted-imports',

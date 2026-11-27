@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { JSX } from 'react';
+import type { ComponentProps, JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
 import SocialNetworks, {
@@ -13,6 +13,7 @@ import {
   doubledClass,
   mediaStyleRuleFor,
   styleRuleFor,
+  styleRulesFor,
 } from '@tests/unit/utils/emotion-style-rules';
 import expectNoA11yViolations from '@tests/utils/a11y/expect-no-a11y-violations';
 
@@ -25,17 +26,32 @@ jest.mock('@/modules/user/features/settings/hooks/use-social-links', () => ({
   default: (...args: unknown[]): unknown => mockUseSocialLinks(...args),
 }));
 
+type SocialTileStyle = ComponentProps<typeof SocialNetworksCard>['tileStyle'];
+
 const PROVIDERS = ['Google', 'Facebook', 'GitHub', 'Twitter'];
 
-const card = (links: SocialLinks, language: 'uk' | 'en' = 'uk'): JSX.Element => (
+const card = (
+  links: SocialLinks,
+  language: 'uk' | 'en' = 'uk',
+  tileStyle: SocialTileStyle = 'tinted'
+): JSX.Element => (
   <I18nextProvider i18n={createSettingsLocaleI18n(language, [])}>
     <main>
-      <SocialNetworksCard links={links} />
+      <SocialNetworksCard links={links} tileStyle={tileStyle} />
     </main>
   </I18nextProvider>
 );
 
+const page = (tileStyle?: SocialTileStyle): JSX.Element => (
+  <I18nextProvider i18n={createSettingsLocaleI18n('uk', [])}>
+    {tileStyle === undefined ? <SocialNetworks /> : <SocialNetworks tileStyle={tileStyle} />}
+  </I18nextProvider>
+);
+
 const items = (): HTMLElement[] => within(screen.getByRole('list')).getAllByRole('listitem');
+
+const tileShowing = (text: string): HTMLElement =>
+  screen.getByText((_text, element) => element?.tagName === 'DIV' && element.textContent === text);
 
 const button = (name: string): HTMLElement => screen.getByRole('button', { name });
 
@@ -45,18 +61,48 @@ const DISABLED = '[aria-disabled="true"]';
 const ENABLED_HOVER = `:hover:not(${DISABLED})`;
 const FOCUS_OUTLINE = '2px solid #1A1C1E';
 
+const lastDeclared = (element: Element, suffix: string, property: string): string | undefined =>
+  styleRulesFor(element, suffix)
+    .map((style) => style.getPropertyValue(property))
+    .filter((value) => value !== '')
+    .at(-1);
+
 describe('SocialNetworks', () => {
   it('renders the card from the links hook', () => {
     mockUseSocialLinks.mockReturnValue(buildSocialLinks());
 
-    render(
-      <I18nextProvider i18n={createSettingsLocaleI18n('uk', [])}>
-        <SocialNetworks />
-      </I18nextProvider>
-    );
+    render(page());
 
     expect(mockUseSocialLinks).toHaveBeenCalledWith();
     expect(screen.getByRole('list', { name: 'Соціальні мережі' })).toBeInTheDocument();
+  });
+
+  it('draws a linked tile tinted when it is given no tile style', () => {
+    mockUseSocialLinks.mockReturnValue(buildSocialLinks({ linked: { items: ['github'] } }));
+
+    render(page());
+
+    const unlink = button('Відключити GitHub');
+    expect(tileShowing('GitHub, підключено')).toHaveStyle({ backgroundColor: '#E8F7FF' });
+    expect(unlink).toHaveStyle({ color: '#1EAEFF' });
+    expect(unlink).not.toHaveClass('MuiButton-root');
+    expect(screen.queryByRole('img', { name: 'Підключено', hidden: true })).not.toBeInTheDocument();
+  });
+
+  it('forwards the badge tile style it is given', () => {
+    mockUseSocialLinks.mockReturnValue(buildSocialLinks({ linked: { items: ['github'] } }));
+
+    render(page('badge'));
+
+    expect(screen.getByRole('img', { name: 'Підключено', hidden: true })).toBeInTheDocument();
+  });
+
+  it('forwards the labelled tile style it is given', () => {
+    mockUseSocialLinks.mockReturnValue(buildSocialLinks({ linked: { items: ['github'] } }));
+
+    render(page('labelled'));
+
+    expect(button('Відключити GitHub')).toHaveClass('MuiButton-outlined');
   });
 });
 
@@ -96,15 +142,6 @@ describe('SocialNetworksCard', () => {
     expect(items().map((item) => item.textContent)).toEqual(PROVIDERS);
   });
 
-  it('shows a linked provider with one named unlink button', () => {
-    render(card(buildSocialLinks({ linked: { items: ['github'] } })));
-
-    expect(items()[2]).toHaveTextContent('GitHub, підключено');
-    expect(within(items()[2] as HTMLElement).getByRole('button')).toHaveAccessibleName(
-      'Відключити GitHub'
-    );
-  });
-
   it('links with the tile and its live control, focusing the control first', () => {
     const order: string[] = [];
     const link = jest.fn(async () => {
@@ -130,37 +167,13 @@ describe('SocialNetworksCard', () => {
 
   it('draws the link, the linked and the inert tile, each in its own style', () => {
     const { rerender } = render(card(buildSocialLinks({ linked: { items: ['github'] } })));
-    const linked = screen.getByText(
-      (_text, element) => element?.tagName === 'DIV' && element.textContent === 'GitHub, підключено'
-    );
+    const linked = tileShowing('GitHub, підключено');
 
     expect(button(LINK_GOOGLE)).toHaveStyle({ minHeight: '3.625rem', cursor: 'pointer' });
     expect(linked).toHaveStyle({ minHeight: '3.625rem', backgroundColor: '#E8F7FF' });
 
     rerender(card(buildSocialLinks({ status: 'loading' })));
     expect(items()[0]).toHaveStyle({ minHeight: '3.625rem', minWidth: '0' });
-  });
-
-  it('keeps the keyboard on the tile once it is linked', () => {
-    const { rerender } = render(card(buildSocialLinks()));
-    button(LINK_GOOGLE).focus();
-
-    rerender(card(buildSocialLinks({ linked: { items: ['google'] } })));
-
-    expect(button('Відключити Google')).toHaveFocus();
-  });
-
-  it.each([
-    [true, 'true'],
-    [false, 'false'],
-  ])('marks every control when busy is %s, without removing it', (busy, expected) => {
-    render(card(buildSocialLinks({ busy, linked: { items: ['github'] } })));
-
-    screen.getAllByRole('button').forEach((each) => {
-      expect(each).toHaveAttribute('aria-disabled', expected);
-      expect(each).toBeEnabled();
-      expect(each).toHaveAttribute('type', 'button');
-    });
   });
 
   it('gives the hover to an enabled tile control only', () => {
@@ -172,17 +185,6 @@ describe('SocialNetworksCard', () => {
     expect(styleRuleFor(unlink, ':hover')).toBeUndefined();
     expect(styleRuleFor(link, ENABLED_HOVER)?.getPropertyValue('background-color')).toBe('#FBFBFB');
     expect(styleRuleFor(unlink, ENABLED_HOVER)?.getPropertyValue('color')).toBe('#00A3FF');
-  });
-
-  it('keeps the focus ring on a busy tile control', () => {
-    render(card(buildSocialLinks({ busy: true, linked: { items: ['github'] } })));
-
-    [button(LINK_GOOGLE), button('Відключити GitHub')].forEach((control) => {
-      expect(control).toHaveAttribute('aria-disabled', 'true');
-      expect(styleRuleFor(control, ':focus-visible')?.getPropertyValue('outline')).toBe(
-        FOCUS_OUTLINE
-      );
-    });
   });
 
   it('dims the retry and takes the hover and the pointer off it while it runs', () => {
@@ -256,6 +258,73 @@ describe('SocialNetworksCard', () => {
 
     expect(document.body).toHaveFocus();
   });
+});
+
+describe.each([
+  { tileStyle: 'tinted', linkedText: 'GitHub, підключено' },
+  { tileStyle: 'badge', linkedText: 'GitHub, підключено' },
+  { tileStyle: 'labelled', linkedText: 'GitHub, підключеноВідключити' },
+] as const)('SocialNetworksCard with $tileStyle linked tiles', ({ tileStyle, linkedText }) => {
+  const styled = (links: SocialLinks, language: 'uk' | 'en' = 'uk'): JSX.Element =>
+    card(links, language, tileStyle);
+
+  it('shows a linked provider with exactly one unlink button, named for it', () => {
+    render(styled(buildSocialLinks({ linked: { items: ['github'] } })));
+    const github = items()[2] as HTMLElement;
+
+    expect(github).toHaveTextContent(new RegExp(`^${linkedText}$`));
+    expect(tileShowing(linkedText)).toBeInTheDocument();
+    expect(within(github).getAllByRole('button')).toEqual([button('Відключити GitHub')]);
+    expect(screen.getAllByRole('button')).toHaveLength(PROVIDERS.length);
+  });
+
+  it('speaks the linked state and the unlink name in English', () => {
+    render(styled(buildSocialLinks({ linked: { items: ['github'] } }), 'en'));
+    const github = items()[2] as HTMLElement;
+
+    expect(github).toHaveTextContent('GitHub, linked');
+    expect(within(github).getByRole('button')).toHaveAccessibleName('Unlink GitHub');
+  });
+
+  it('keeps the keyboard on the tile once it is linked', () => {
+    const { rerender } = render(styled(buildSocialLinks()));
+    act(() => button(LINK_GOOGLE).focus());
+
+    rerender(styled(buildSocialLinks({ linked: { items: ['google'] } })));
+
+    expect(button('Відключити Google')).toHaveFocus();
+  });
+
+  it('keeps the keyboard on the tile once it is unlinked again', () => {
+    const { rerender } = render(styled(buildSocialLinks({ linked: { items: ['google'] } })));
+    act(() => button('Відключити Google').focus());
+
+    rerender(styled(buildSocialLinks()));
+
+    expect(button(LINK_GOOGLE)).toHaveFocus();
+  });
+
+  it.each([
+    [true, 'true'],
+    [false, 'false'],
+  ])('marks every control when busy is %s, without removing it', (busy, expected) => {
+    render(styled(buildSocialLinks({ busy, linked: { items: ['github'] } })));
+
+    screen.getAllByRole('button').forEach((each) => {
+      expect(each).toHaveAttribute('aria-disabled', expected);
+      expect(each).toBeEnabled();
+      expect(each).toHaveAttribute('type', 'button');
+    });
+  });
+
+  it('keeps the focus ring on a busy tile control', () => {
+    render(styled(buildSocialLinks({ busy: true, linked: { items: ['github'] } })));
+
+    [button(LINK_GOOGLE), button('Відключити GitHub')].forEach((control) => {
+      expect(control).toHaveAttribute('aria-disabled', 'true');
+      expect(lastDeclared(control, ':focus-visible', 'outline')).toBe(FOCUS_OUTLINE);
+    });
+  });
 
   it.each([
     ['loading', buildSocialLinks({ status: 'loading' })],
@@ -265,7 +334,7 @@ describe('SocialNetworksCard', () => {
     ['busy', buildSocialLinks({ busy: true, linked: { items: ['google'] } })],
     ['retrying', buildSocialLinks({ status: 'retrying' })],
   ])('has no axe violations while %s', async (_name, links) => {
-    render(card(links));
+    render(styled(links));
 
     await expectNoA11yViolations(screen.getByRole('main'));
   });

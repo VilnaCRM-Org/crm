@@ -5,10 +5,11 @@ bmadCommand: 'create-prd'
 project_name: 'crm'
 date: '2026-11-23'
 revised: '2026-11-27'
-iteration: 3
+iteration: 4
 revisionPasses:
   - '2026-11-27 review: FR1, FR4, FR6, FR11 — how an attempt ends, the popup return, the list after a 401'
   - '2026-11-27 review: FR8, NFR2 — the linked border is under 3:1, owner-accepted'
+  - '2026-11-27 owner: L8, L9, FR8–FR10, NFR2, NFR4–NFR6 — three linked-tile styles compared in Storybook'
 slug: 'social-account-linking'
 inputDocuments:
   - 'specs/social-sign-in/planning-artifacts/prd-social-sign-in-2026-11-18.md'
@@ -29,6 +30,14 @@ inputDocuments:
 > malformed callback and `success: false`. FR8 and NFR2 record that the linked tile's border,
 > like its bin, is under 3:1 (owner-accepted, #276). The linking API (user-service #520) does not
 > exist yet, so the contract stays provisional (L3).
+
+> **Amendment 2026-11-27 — three linked-tile styles (product owner).** A linked tile can be drawn
+> in three trial styles, `tinted`, `badge` and `labelled` (L8). A `tileStyle` prop that only
+> Storybook sets chooses one (L9); the settings page always renders `tinted`, and nothing at
+> runtime chooses a style. FR8, FR9 and FR10 state one DOM and ARIA contract for every style, NFR2
+> names each style's accepted contrast gaps, and NFR4, NFR5 and NFR6 say what the trial adds to
+> the settings chunk and what it leaves without browser or visual evidence. The owner picks one
+> style; the losers are removed in one change (epics S4.2).
 
 ## 1. Goal
 
@@ -58,9 +67,37 @@ Linking is not a sign-in: it never issues, replaces or ends a session.
   `315:11754` draws them, with the provider name as a message value; they are recorded in the bell
   history and never sent to the notification service.
 - **L6 — Inline unlink confirmation (owner, 2026-11-23).** Figma draws none and #520 asks for none.
-  The bin asks first, in one row under the tiles, because a phone tile is too narrow for a question.
+  The unlink control asks first, in one row under the tiles, because a phone tile is too narrow
+  for a question.
 - **L7 — Last sign-in method.** user-service refuses to unlink the last way to sign in. The SPA
   explains the refusal; it does not guess in advance whether the account has a password.
+- **L8 — Linked-tile styles (owner, 2026-11-27).** A linked tile is drawn in one of three trial
+  styles. Unlinked, display-only and loading tiles and the L6 row are the same in all three.
+  - `tinted` is the shipped tile, Figma `315:11754`: fill `#E8F7FF`, a `#1EAEFF` border, 1px
+    below 1025 px and 2px from 1025 px, and a `#1EAEFF` `trash-04` bin. The phone frame
+    `386:27719` draws a 2px border; the owner keeps 1px.
+  - `badge` keeps the white social-button tile with its `#E1E7EA` border (UI kit `439:19329`),
+    adds the toolkit `UiStatusBadge` "done" check (`451:25845`) in the toolkit's `#38B386`, as
+    shipped, not CRM's `#4CAF50`, and draws a `#DC3939` `trash-04` bin on the `UiActionIconBar`
+    danger ramp (`632:46703`–`632:46710`): hover and pressed `#DF7878`, a pressed plate of
+    `#DC3939` at 10%, and `#D0D4D8` while busy. The UI kit's own `trash-02` glyph is not taken.
+  - `labelled` draws a white tile with a 2px `#1EAEFF` selected-card border (`439:19640`) and the
+    neutral toolkit `UiButton` outlined small pill (`439:19257`–`439:19260`) reading "Відключити".
+    On a tile whose content box is under 16rem the pill folds to a 44 px bin circle. The danger
+    pill (`439:19822`) is not taken: its text is 3.89:1 and would need an axe exception (NFR2).
+  - The toolkit components reach the tiles only through two trial seams,
+    `src/components/ui-status-badge` and `src/components/ui-outlined-small-button`.
+- **L9 — Switch (owner, 2026-11-27).** A `tileStyle` prop compared in Storybook; the owner picks;
+  the losers are removed in one change. `SocialNetworks` takes an optional `tileStyle`
+  (`'tinted' | 'badge' | 'labelled'`, default `tinted`) and passes it through
+  `SocialNetworksCard` and `SocialList` to `SocialTile`, where it is required; the settings page
+  never sets it, and no environment variable, runtime setting or flag chooses a style. The
+  comparison is the `Settings/SocialNetworks/Comparison` stories at 375, 768, 1025, 1100 and
+  1440 px, idle and busy, and the per-style `Settings/SocialTile` stories. Evidence limit: during the trial `badge` and
+  `labelled` are proven in Storybook, in jsdom unit tests and by jest-axe over every comparison
+  story only. They have no real-page browser, accessibility-lane or visual evidence, because
+  every browser lane runs the settings page, which renders `tinted`; `tinted` keeps every lane.
+  The winner gets every lane in the removal change.
 
 ## 3. Functional requirements
 
@@ -102,15 +139,19 @@ Linking is not a sign-in: it never issues, replaces or ends a session.
   aborts (FR12).
 - **FR7** A refusal that the provider is already linked shows the tile as linked. A result changes only its own provider's tile, so answers that arrive out of order, or an
   older list answer, never undo it.
-- **FR8** A linked tile shows Figma `315:11754` (fill `#E8F7FF`, border `#1EAEFF`) and an unlink
-  button named for its provider. The bin and the border are Figma's `#1EAEFF` (owner, 2026-11-23:
-  every colour follows Figma). The bin is 2.2:1 on the fill; the border is 2.2:1 on the fill and
-  2.5:1 on the white card. Both are under the 3:1 of SC 1.4.11, and they, with the fill, are the
-  only visual signs that a tile is linked; the owner accepts that until issue #276. The tile's
-  accessible name carries the state (", linked"), so assistive technology does not rely on them.
-- **FR9** The bin shows the L6 row, named for its provider, with focus on Cancel. Cancel and Escape
-  close it and focus the bin; confirming closes it, focuses the bin and calls `unlinkSocialProviderUser(provider)` once.
-- **FR10** After a tile changes state, keyboard focus moves to the tile's new control.
+- **FR8** A linked tile is drawn in its L8 style, every colour as its design source draws it
+  (owner, 2026-11-23 and 2026-11-27). In every style it has exactly one unlink button, named for
+  its provider ("Відключити {provider}"), `aria-disabled` while the card is busy and never
+  natively disabled, and its accessible name carries the state (", linked"), so assistive
+  technology does not rely on colour. `badge` hides its status badge from assistive technology,
+  so the state is spoken once; the visible "Відключити" of the `labelled` pill begins the pill's
+  accessible name. The contrast each style leaves under 3:1 is listed in NFR2.
+- **FR9** The style's unlink control (the bin in `tinted` and `badge`, the pill or its folded
+  circle in `labelled`) shows the L6 row, named for its provider, with focus on Cancel. Cancel and
+  Escape close it and focus the control; confirming closes it, focuses the control and calls
+  `unlinkSocialProviderUser(provider)` once.
+- **FR10** After a tile changes state, keyboard focus moves to the tile's new control: the link
+  button, or the style's unlink control.
 - **FR11** Success and failure each raise one notification, announced by the settings live regions:
 
   | Source                                                  | Failure kind           |
@@ -130,16 +171,29 @@ Linking is not a sign-in: it never issues, replaces or ends a session.
 ## 4. Non-functional requirements
 
 - **NFR1** 100% unit and integration coverage, Stryker `break` 100, no suppression.
-- **NFR2** WCAG 2.1 AA: names, focus order, visible focus, 44 px targets, 375 px without sideways
-  scroll, forced colours; no new axe exception. The linked tile's bin and border contrast are the
-  one accepted gap (FR8); no axe rule tests non-text contrast.
+- **NFR2** WCAG 2.1 AA in every L8 style: names, focus order, visible focus, 44 px targets, 375 px
+  without sideways scroll, forced colours; no new axe exception. No axe rule tests non-text
+  contrast, so the gaps under the 3:1 of SC 1.4.11 are recorded here, owner-accepted until
+  issue #276 because the colours follow Figma and the UI kit:
+  - `tinted`: the bin (2.2:1 on the fill) and the border (2.2:1 on the fill, 2.5:1 on the white
+    card), which with the fill are the only visual signs that a tile is linked;
+  - `badge`: the status badge (2.64:1), and the bin on hover (2.96:1) and pressed (2.57:1); the
+    bin at rest passes at 4.48:1, and its busy `#D0D4D8` is a disabled state, which is exempt;
+  - `labelled`: none; the pill's text is 15.95:1 on white, and its word or glyph, not a border,
+    identifies the control.
 - **NFR3** `code`, `state` and provider identifiers never reach logs, Sentry, the DOM or the history
   of the settings tab.
-- **NFR4** No growth of the auth page's eager path beyond the 1 kB gzip already allowed.
-- **NFR5** Works in Chromium, Firefox and WebKit on desktop, and in the two mobile projects.
-- **NFR6** Existing visual baselines change only for the social card.
+- **NFR4** No growth of the auth page's eager path beyond the 1 kB gzip already allowed. The two
+  trial seams (L8) and the `badge` and `labelled` renderers load in the lazy settings chunk only.
+- **NFR5** Works in Chromium, Firefox and WebKit on desktop, and in the two mobile projects. During
+  the trial this is proven on the page for `tinted` only (L9).
+- **NFR6** Existing visual baselines change only for the social card. The trial adds and changes
+  none: the page renders `tinted`, and `badge` and `labelled` have no baseline (L9).
 
 ## 5. Non-goals
 
 Account merging, re-authentication before linking, link dates, the auto-link at sign-in
-(user-service #468), and production enablement.
+(user-service #468), and production enablement. A runtime or per-user tile style (L9), a restyle
+of the unlinked, display-only or loading tiles or of the L6 row (L8), adopting the toolkit
+`UiButton` for CRM's other buttons, and any toolkit change: a 44 px action slot with a forwarded
+ref for `UiActionIconBar` goes upstream as a follow-up.

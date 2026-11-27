@@ -15,6 +15,7 @@ import type {
   SocialListProps,
   SocialLoadStatusProps,
   SocialNetworksCardProps,
+  SocialNetworksProps,
   SocialTileProvider,
   SocialUnlinkRowProps,
 } from '../../types/components/social-networks';
@@ -43,7 +44,7 @@ function SocialLoadStatus({ status }: SocialLoadStatusProps): JSX.Element {
   return <UILiveStatus message={text[status]} />;
 }
 
-function SocialList({ links, confirmation, headingId }: SocialListProps): JSX.Element {
+function SocialList({ links, confirmation, headingId, tileStyle }: SocialListProps): JSX.Element {
   const { status, linked, busy } = links;
 
   return (
@@ -55,6 +56,7 @@ function SocialList({ links, confirmation, headingId }: SocialListProps): JSX.El
             tile={tile}
             linked={linked.items.includes(tile.id)}
             busy={busy}
+            tileStyle={tileStyle}
             onLink={confirmation.link}
             onUnlink={confirmation.ask}
           />
@@ -82,7 +84,7 @@ function SocialUnlinkRow({ confirmation, busy }: SocialUnlinkRowProps): JSX.Elem
   );
 }
 
-export function SocialNetworksCard({ links }: SocialNetworksCardProps): JSX.Element {
+export function SocialNetworksCard({ links, tileStyle }: SocialNetworksCardProps): JSX.Element {
   const { t } = useTranslation();
   const headingId = useId();
   const headingRef = useRef<HTMLElement>(null);
@@ -101,7 +103,12 @@ export function SocialNetworksCard({ links }: SocialNetworksCardProps): JSX.Elem
       >
         {t('settings.social.heading')}
       </UITypography>
-      <SocialList links={links} confirmation={confirmation} headingId={headingId} />
+      <SocialList
+        links={links}
+        confirmation={confirmation}
+        headingId={headingId}
+        tileStyle={tileStyle}
+      />
       <SocialUnlinkRow confirmation={confirmation} busy={links.busy} />
       <SocialLoadStatus status={status} />
       {(retrying || status === 'failed') && (
@@ -111,6 +118,6 @@ export function SocialNetworksCard({ links }: SocialNetworksCardProps): JSX.Elem
   );
 }
 
-export default function SocialNetworks(): JSX.Element {
-  return <SocialNetworksCard links={useSocialLinks()} />;
+export default function SocialNetworks({ tileStyle = 'tinted' }: SocialNetworksProps): JSX.Element {
+  return <SocialNetworksCard links={useSocialLinks()} tileStyle={tileStyle} />;
 }

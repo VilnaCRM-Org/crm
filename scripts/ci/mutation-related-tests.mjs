@@ -29,6 +29,7 @@ const IGNORED_TEST_PATTERNS = [
   /^tests\/unit\/config\/eslint-policy\.test\.ts$/,
   /\/settings\/components\/user-profile-settings\/ready-story-provider\.test\.tsx$/,
   /^tests\/unit\/a11y\/(?:bell-notifications|notifications-shell-slot)\.a11y\.test\.tsx$/,
+  /^tests\/unit\/a11y\/social-tile-comparison\.a11y\.test\.tsx$/,
 ];
 
 const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mts', '.json'];
