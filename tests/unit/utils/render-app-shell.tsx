@@ -7,11 +7,11 @@ import { MemoryRouter, Outlet, Route, Routes } from 'react-router';
 import comingSoonEn from '@/components/coming-soon/i18n/en.json';
 import comingSoonUk from '@/components/coming-soon/i18n/uk.json';
 import AppLayout from '@/components/layouts/app-layout';
-import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 import UserMenuSlot from '@/modules/user/features/settings/components/user-menu/user-menu-slot';
 import type { ProtectedSessionContext } from '@/routes/types/protected-outlet-context';
 import type { ShellSlotHostProps } from '@/routes/types/shell-slot';
 
+import addTestCatalog from './add-test-catalog';
 import createAppShellLocaleI18n from './create-app-shell-locale-i18n';
 import { inertSession } from './session-outlet';
 import stubViewportWidth from './stub-viewport-width';
@@ -39,7 +39,7 @@ const renderAppShell = async ({
 }: AppShellRenderOptions): Promise<AppShellRenderResult> => {
   stubViewportWidth(width);
   const i18n = createAppShellLocaleI18n('uk', ['en', 'uk']);
-  lazyCatalogLoader.register(i18n, { en: comingSoonEn, uk: comingSoonUk });
+  addTestCatalog(i18n, { en: comingSoonEn, uk: comingSoonUk });
   const context: ProtectedSessionContext = {
     signOut,
     session: inertSession,

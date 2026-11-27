@@ -16,9 +16,9 @@ import AppLayout from '@/components/layouts/app-layout';
 import type { FallbackLandmark } from '@/components/types/error-boundary';
 import shellEn from '@/components/ui-app-shell/i18n/en.json';
 import shellUk from '@/components/ui-app-shell/i18n/uk.json';
-import lazyCatalogLoader from '@/lib/locale-catalog/lazy-catalog-loader';
 import routeComposer from '@/routes/route-composer';
 import boundaryErrorReporter from '@/services/error-reporting/boundary-error-reporter';
+import addTestCatalog from '@tests/unit/utils/add-test-catalog';
 import stubViewportWidth from '@tests/unit/utils/stub-viewport-width';
 
 import createLocaleI18n from '../../utils/create-locale-i18n';
@@ -314,7 +314,7 @@ describe('RouteError inside a data router', () => {
     view.unmount();
 
     stubViewportWidth(1440);
-    lazyCatalogLoader.register(englishI18n, { en: shellEn, uk: shellUk });
+    addTestCatalog(englishI18n, { en: shellEn, uk: shellUk });
     const thrown = data(null, { status: 404 });
     const { router, onCaughtError } = renderRoutes(
       [
